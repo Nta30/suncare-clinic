@@ -264,13 +264,30 @@ Proxy hiện chỉ áp dụng cho môi trường phát triển.
 
 ---
 
+
 ## 6. Database
 
-Hệ quản trị dự kiến: Microsoft SQL Server.
+### Hệ quản trị
 
-Trạng thái hiện tại:
+- Hệ quản trị: Microsoft SQL Server 2025.
+- ProductVersion: 17.0.1000.7.
+- Edition: Enterprise Evaluation Edition (64-bit).
+- Server name: DESKTOP-4FOOJD8.
+- Công cụ quản trị: SQL Server Management Studio (SSMS).
+- Authentication đã kiểm tra: Windows Authentication.
 
-- [ ] Tạo database.
+### Database
+
+- Tên database: SuncareClinic.
+- Trạng thái: Đã tạo database rỗng.
+- Ngày tạo xác nhận: 2026-11-01.
+- Server: DESKTOP-4FOOJD8.
+
+### Tiến độ
+
+- [x] Kiểm tra SQL Server và SSMS.
+- [x] Kết nối SQL Server bằng SSMS.
+- [x] Tạo database SuncareClinic.
 - [ ] Thiết kế và triển khai SQL schema.
 - [ ] Tạo migration.
 - [ ] Cấu hình Spring Data JPA.
@@ -278,15 +295,81 @@ Trạng thái hiện tại:
 - [ ] Kết nối backend với SQL Server.
 - [ ] Kiểm tra transaction và dữ liệu.
 
-Chưa có database nghiệp vụ.
+### Lưu ý
 
-Không tự tạo schema hoặc bảng khi chưa đến
-giai đoạn triển khai database.
+- Database hiện tại chỉ là database rỗng.
+- Chưa tạo bảng nghiệp vụ.
+- Chưa có Entity và Repository.
+- Chưa cấu hình kết nối Spring Boot.
+- Thiết kế schema phải dựa trên
+  01-nghiep-vu.md và 03-tu-dien-du-lieu.md.
+- Không tự ý sửa database ngoài bước được hướng dẫn.
+- Enterprise Evaluation có thời hạn sử dụng;
+  cần lựa chọn edition phù hợp về lâu dài.
+```
 
-Thiết kế phải dựa trên từ điển dữ liệu
-và quy tắc nghiệp vụ đã thống nhất.
+### 4.3. Cập nhật thông tin chung
+
+Trong mục `## 1. Thông tin chung`, đổi hai dòng:
+
+```markdown
+- Giai đoạn: 01 — SQL SERVER VÀ TẠO DATABASE
+- Trạng thái: ĐÃ TẠO DATABASE RỖNG
+```
+
+Giữ nguyên lịch sử hoàn thành giai đoạn 00 trong mục 3.
+
+### 4.4. Cập nhật nhật ký tiến độ
+
+Trong mục `## 13. Nhật ký tiến độ`, thêm dòng sau vào cuối bảng:
+
+```markdown
+| 2026-11-01 | Kết nối SQL Server và tạo database SuncareClinic | Hoàn thành |
+```
+
+Trong mục `## 12. Hướng phát triển tiếp theo`, thay dòng `- Chuẩn bị SQL Server.` bằng:
+
+```markdown
+- SQL Server và database rỗng đã sẵn sàng.
+- Tiếp theo: Thiết kế schema theo từ điển dữ liệu.
+```
+
+### 4.5. Cập nhật mục tổng kết
+
+Trong `## 14. Trạng thái tổng kết`, thay nội dung bên dưới tiêu đề bằng:
+
+```markdown
+**Giai đoạn:** 01 — SQL SERVER VÀ TẠO DATABASE
+
+**Trạng thái:** HOÀN THÀNH TẠO DATABASE RỖNG
+
+- Đã hoàn thành khởi tạo Backend và Frontend.
+- Đã kiểm tra kết nối React và Spring Boot.
+- Đã kết nối SQL Server qua SSMS.
+- Đã tạo database SuncareClinic.
+- Chưa tạo SQL schema hoặc bảng nghiệp vụ.
+- Chưa kết nối Spring Boot với database.
+
+Giai đoạn tiếp theo là thiết kế và triển khai
+SQL schema dựa trên tài liệu nghiệp vụ
+và từ điển dữ liệu của Suncare Clinic.
+```
+
+### 4.6. Kiểm tra
+
+Sau khi chỉnh sửa:
+
+- [ ] File vẫn nằm trong thư mục `docs`.
+- [ ] Database `SuncareClinic` được đánh dấu đã tạo.
+- [ ] Các phần SQL schema, JPA, JDBC vẫn chưa hoàn thành.
+- [ ] Lịch sử khởi tạo dự án được giữ nguyên.
+- [ ] Đã lưu file bằng `Ctrl + S`.
 
 ---
+
+**Sau khi hoàn thành, hãy nhắn:**
+
+`Bước 4 hoàn thành.`
 
 ## 7. Tích hợp bên ngoài
 
