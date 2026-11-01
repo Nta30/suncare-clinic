@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-suncare-50: #eff8ff;
+  --color-suncare-100: #d9f0ff;
+  --color-suncare-600: #087db5;
+  --color-suncare-700: #086894;
+  --color-suncare-900: #123d5c;
+
+  --color-suncare-teal: #0d9488;
+}
+
+:root {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
