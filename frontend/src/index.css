@@ -1,13 +1,36 @@
 @import "tailwindcss";
 
+/* Suncare Clinic - Sunflower Clinical design tokens (Tailwind CSS v4). */
 @theme {
-  --color-suncare-50: #eff8ff;
-  --color-suncare-100: #d9f0ff;
-  --color-suncare-600: #087db5;
-  --color-suncare-700: #086894;
-  --color-suncare-900: #123d5c;
+  /* Backward-compatible names used by existing suncare-* utilities. */
+  --color-suncare-50: #FFFDF8;
+  --color-suncare-100: #FFF3D6;
+  --color-suncare-200: #FBE7B5;
+  --color-suncare-300: #FAD578;
+  --color-suncare-400: #F4B942;
+  --color-suncare-500: #E7A82E;
+  --color-suncare-600: #936100;
+  --color-suncare-700: #765000;
+  --color-suncare-800: #5C420F;
+  --color-suncare-900: #45350F;
 
-  --color-suncare-teal: #0d9488;
+  /* Legacy class alias, now mapped to accessible botanical green. */
+  --color-suncare-teal: #28634F;
+
+  /* Semantic clinical colors, independent from branding. */
+  --color-clinical-canvas: #FFFDF8;
+  --color-clinical-surface: #FFFFFF;
+  --color-clinical-ink: #26342C;
+  --color-clinical-muted: #6B756C;
+  --color-clinical-border: #E8E3D9;
+  --color-clinical-border-strong: #7B887E;
+  --color-clinical-leaf: #59744B;
+  --color-clinical-leaf-soft: #E8EFE4;
+  --color-clinical-gold-soft: #F9EBC9;
+  --color-clinical-success: #28634F;
+  --color-clinical-info: #146782;
+  --color-clinical-warning: #765000;
+  --color-clinical-danger: #AE2D2A;
 }
 
 :root {
@@ -15,10 +38,237 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  color: #26342C;
+  background-color: #FFFDF8;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid #936100;
+  outline-offset: 2px;
+}
+
+.auth-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  animation: auth-shell-enter 220ms ease-out both;
+}
+
+.auth-shell:not(.auth-shell--register) .auth-form-pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-shell--closing {
+  animation: auth-shell-exit 180ms ease-in both;
+}
+
+.auth-story-pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 27rem;
+  transform: scale(.98);
+  transform-origin: top center;
+  transition: max-width 420ms cubic-bezier(.22, 1, .36, 1), transform 420ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.auth-shell--register .auth-form-inner {
+  max-width: 64rem;
+  transform: scale(1);
+}
+
+.auth-shell--register {
+  flex: 0 0 auto;
+}
+
+.auth-shell--register .auth-form-pane {
+  padding-bottom: 1.5rem;
+}
+
+.auth-register-form {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.auth-photo-composition {
+  position: relative;
+  height: clamp(16rem, 42vw, 30rem);
+  width: 100%;
+}
+
+.auth-photo-composition img {
+  display: block;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.auth-photo-primary {
+  width: 88%;
+  height: 88%;
+  object-position: 35% center;
+}
+
+.auth-photo-accent {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: 53%;
+  border: .45rem solid var(--color-clinical-leaf-soft);
+  box-sizing: border-box;
+}
+
+.auth-form-content {
+  animation: auth-content-enter 240ms ease-out both;
+}
+
+.auth-form-content--leaving {
+  animation: auth-content-exit 140ms ease-in both;
+}
+
+@media (max-width: 767px) {
+  .auth-story-pane {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .auth-shell {
+    flex-direction: row;
+  }
+
+  .auth-form-pane, .auth-story-pane {
+    min-width: 0;
+    transition: flex-basis 420ms cubic-bezier(.22, 1, .36, 1), opacity 220ms ease, padding 420ms ease;
+  }
+
+  .auth-form-pane {
+    flex: 0 0 43%;
+  }
+
+  .auth-story-pane {
+    flex: 0 0 57%;
+  }
+
+  .auth-shell--register .auth-form-pane {
+    flex-basis: 100%;
+  }
+
+  .auth-shell--register .auth-story-pane {
+    flex-basis: 0;
+    padding: 0;
+    opacity: 0;
+  }
+
+  .auth-photo-composition {
+    height: min(38vw, clamp(15rem, calc(100svh - 20rem), 33rem));
+  }
+}
+
+@media (min-width: 1024px) {
+  .auth-register-form {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    column-gap: 3rem;
+    align-items: start;
+  }
+
+  .auth-patient-section {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+  }
+
+  .auth-emergency-section, .auth-credentials-section, .auth-form-message, .auth-submit {
+    grid-column: 2;
+  }
+}
+
+@keyframes auth-shell-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auth-shell-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes auth-content-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auth-content-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-5px); }
+}
+
+.logout-dialog[open] {
+  animation: logout-dialog-enter 180ms ease-out both;
+}
+
+.logout-dialog[open]::backdrop {
+  animation: logout-backdrop-enter 180ms ease-out both;
+}
+
+.logout-dialog--closing[open] {
+  animation: logout-dialog-exit 180ms ease-in both;
+}
+
+.logout-dialog--closing[open]::backdrop {
+  animation: logout-backdrop-exit 180ms ease-in both;
+}
+
+@keyframes logout-dialog-enter {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes logout-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes logout-dialog-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(6px) scale(.98); }
+}
+
+@keyframes logout-backdrop-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell, .auth-shell--closing, .auth-form-content, .auth-form-content--leaving {
+    animation: none;
+  }
+
+  .auth-form-pane, .auth-story-pane, .auth-form-inner {
+    transition: none;
+  }
+
+  .logout-dialog[open], .logout-dialog[open]::backdrop {
+    animation: none;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

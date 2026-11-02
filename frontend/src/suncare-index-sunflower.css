@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Suncare Clinic - Sunflower Clinical design tokens (Tailwind CSS v4). */
+@theme {
+  /* Backward-compatible names used by existing suncare-* utilities. */
+  --color-suncare-50: #FFFDF8;
+  --color-suncare-100: #FFF3D6;
+  --color-suncare-200: #FBE7B5;
+  --color-suncare-300: #FAD578;
+  --color-suncare-400: #F4B942;
+  --color-suncare-500: #E7A82E;
+  --color-suncare-600: #936100;
+  --color-suncare-700: #765000;
+  --color-suncare-800: #5C420F;
+  --color-suncare-900: #45350F;
+
+  /* Preserve old teal token until existing components are migrated. */
+  --color-suncare-teal: #0D9488;
+
+  /* Semantic clinical colors, independent from branding. */
+  --color-clinical-canvas: #FFFDF8;
+  --color-clinical-surface: #FFFFFF;
+  --color-clinical-ink: #26342C;
+  --color-clinical-muted: #6B756C;
+  --color-clinical-border: #E8E3D9;
+  --color-clinical-border-strong: #7B887E;
+  --color-clinical-leaf: #59744B;
+  --color-clinical-success: #28634F;
+  --color-clinical-info: #146782;
+  --color-clinical-warning: #765000;
+  --color-clinical-danger: #AE2D2A;
+}
+
+:root {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color: #26342C;
+  background-color: #FFFDF8;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid #936100;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
