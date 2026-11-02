@@ -59,6 +59,7 @@ export function getCurrentAccount(token) {
 export function logout(token) {
   return request('/api/auth/logout', { method: 'POST', token })
 }
+<<<<<<< HEAD
 
 export function getPersonalProfile(token) {
   return request('/api/accounts/profile', { method: 'GET', token })
@@ -91,3 +92,5 @@ export function setStaffStatus(token, accountId, status) {
     method: 'PATCH', token, body: JSON.stringify({ status }),
   })
 }
+=======
+>>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
