@@ -60,7 +60,7 @@ public class StaffManagementRepository {
 
     public List<StaffSummaryResponse> listStaff() {
         return jdbc.query("""
-                SELECT a.id, a.login_name, a.status, s.code, s.full_name, s.birth_date, s.sex,
+                SELECT a.id, s.id AS staff_id, a.login_name, a.status, s.code, s.full_name, s.birth_date, s.sex,
                        s.phone, s.email, s.address, s.professional_license, s.qualification,
                        s.version, r.code AS role_code
                 FROM dbo.[Account] a JOIN dbo.Staff s ON s.id = a.staff_id
@@ -73,7 +73,7 @@ public class StaffManagementRepository {
                         long id = rs.getLong("id");
                         StaffRow row = rows.get(id);
                         if (row == null) {
-                            row = new StaffRow(id, rs.getString("code"), rs.getString("full_name"),
+                            row = new StaffRow(id, rs.getLong("staff_id"), rs.getString("code"), rs.getString("full_name"),
                                     rs.getString("login_name"), rs.getString("status"),
                                     rs.getObject("birth_date", java.time.LocalDate.class), rs.getString("sex"),
                                     rs.getString("phone"), rs.getString("email"), rs.getString("address"),
@@ -84,7 +84,7 @@ public class StaffManagementRepository {
                         String role = rs.getString("role_code");
                         if (role != null) row.roles.add(role);
                     }
-                    return rows.values().stream().map(row -> new StaffSummaryResponse(row.id, row.code,
+                    return rows.values().stream().map(row -> new StaffSummaryResponse(row.id, row.staffId, row.code,
                             row.name, row.login, row.status, List.copyOf(row.roles), row.birthDate,
                             row.sex, row.phone, row.email, row.address, row.professionalLicense,
                             row.qualification, row.version)).toList();
@@ -149,6 +149,7 @@ public class StaffManagementRepository {
 
     private static class StaffRow {
         final long id;
+        final long staffId;
         final String code;
         final String name;
         final String login;
@@ -163,10 +164,11 @@ public class StaffManagementRepository {
         final String version;
         final List<String> roles = new ArrayList<>();
 
-        StaffRow(long id, String code, String name, String login, String status,
+        StaffRow(long id, long staffId, String code, String name, String login, String status,
                  java.time.LocalDate birthDate, String sex, String phone, String email,
                  String address, String professionalLicense, String qualification, String version) {
             this.id = id;
+            this.staffId = staffId;
             this.code = code;
             this.name = name;
             this.login = login;

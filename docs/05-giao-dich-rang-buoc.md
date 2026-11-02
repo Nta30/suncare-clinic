@@ -34,6 +34,8 @@ Thứ tự logic: **phạm vi lịch/chuyên khoa-ngày → assignment/slot/hold
 
 Khóa staff/ngày và room/ngày liên quan; kiểm tra lịch giao nhau bằng `a.start < b.end AND b.start < a.end`. Room CONSULTATION không hai bác sĩ đồng thời; LAB cho nhiều nhân viên cùng phòng nhưng không một người hai nơi. Không giao assignment ONLINE/ONSITE/LAB của cùng staff. ONLINE chỉ sinh các slot 20 phút trọn vẹn trong khoảng làm; dư cuối khoảng không mở. Assignment ONSITE chiếm toàn ca và sức chứa >0. Kiểm tra vai trò/chuyên khoa/khoa/phòng và giá hiệu lực trước PUBLISHED.
 
+Theo D24, phòng ONLINE cũng là tài nguyên có `room_id`: kiểm tra không có hai assignment giao nhau trên cùng phòng ONLINE khi công bố. Quy tắc này cần migration mới vì CHECK hiện tại trong V3 yêu cầu `room_id IS NULL` cho ONLINE; giữ V3 bất biến.
+
 Nếu đã có Appointment hoặc hold ACTIVE, chặn sửa khoảng giờ, mode, staff, specialty hoặc giảm capacity dưới lượt đã đặt. Không tự điều chuyển người bệnh. Thay danh mục chỉ ảnh hưởng lần tạo mới; bản cũ giữ ID/snapshot.
 
 ### TX03 — Đặt trực tiếp và phân bác sĩ

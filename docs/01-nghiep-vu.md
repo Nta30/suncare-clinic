@@ -31,6 +31,7 @@ Một cơ sở, khám ngoại trú trực tiếp và online; tài khoản, khoa/
 | D21 | Bệnh nhân và bác sĩ có ảnh; ảnh lưu Cloudinary, CSDL lưu URL. Staff dùng chung trường ảnh đại diện; ảnh CLS gắn với phiên bản kết quả qua FileObject/ResultAttachment. |
 | D22 | ID và code nghiệp vụ không thay đổi/không tái sử dụng; dùng FK để truy mã, không lưu bản sao mã định danh trên chứng từ. Nội dung dễ thay đổi như tên, địa chỉ, giá và liều dùng vẫn chốt theo thời điểm phát hành. |
 | D23 | Không có bảng giảm giá hoặc CreditNote. Dịch vụ bị hủy được đánh dấu trên InvoiceLine; hoàn tiền dùng RefundRequest và Refund. |
+| D24 | Quyết định ngày 2026-11-02: phòng khám ONLINE là tài nguyên được tạo, phân công và chống trùng lịch như phòng vật lý. Trưởng khoa phân lịch trong khoa mình phụ trách; màn hình chia calendar thứ Hai–thứ Bảy và bảng nhân viên có tìm kiếm/bộ lọc, chọn khoảng ngày của đợt phân ca. Mỗi đợt có bản nháp và lịch sử riêng; chọn đợt cũ phải nạp đúng phân công lên calendar. Cần migration mới cho Room và WorkAssignment trước khi triển khai lịch online; không sửa migration đã áp dụng. |
 
 ## Luồng chuẩn
 

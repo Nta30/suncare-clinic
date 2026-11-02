@@ -6,6 +6,7 @@ import PersonalProfile from './features/account/PersonalProfile'
 import StaffManagement from './features/account/StaffManagement'
 import OrganizationManagement from './features/organization/OrganizationManagement'
 import RoomManagement from './features/organization/RoomManagement'
+import StaffAssignments from './features/organization/StaffAssignments'
 import clinicReception from './assets/clinic-reception-illustration.jpg'
 import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient, saveToken } from './services/accountApi'
 
@@ -151,6 +152,8 @@ function App() {
                 <button onClick={() => setMode('organization')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Khoa và chuyên khoa</button>}
               {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('rooms')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phòng</button>}
+              {account?.permissions.includes('ACCOUNT_MANAGE') &&
+                <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -240,6 +243,8 @@ function App() {
           <OrganizationManagement onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'rooms' && account?.permissions.includes('CATALOG_MANAGE') &&
           <RoomManagement onSessionExpired={handleSessionExpired} />}
+        {authState === 'signedIn' && mode === 'assignments' && account?.permissions.includes('ACCOUNT_MANAGE') &&
+          <StaffAssignments onSessionExpired={handleSessionExpired} />}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
         onCancel={(event) => { event.preventDefault(); if (!logoutBusy) closeLogoutDialog() }}

@@ -2,8 +2,30 @@
 
 Cập nhật: 2026-11-02
 
-Việc tiếp theo: P09 — kiểm tra UI phòng trên browser với backend thử và chốt P09
-Trạng thái: IN_PROGRESS (P09; P08 DONE theo xác nhận chủ dự án, P07 còn thiếu log browser)
+Việc tiếp theo: P11 — danh mục Service, RoomService và giá CLS
+Trạng thái: DONE (P10; P07 còn thiếu log browser theo mốc cũ)
+
+### Chốt P10 — kiểm tra UI và sửa ngày hiển thị (2026-11-02)
+
+- Dùng backend `migrationtest` cổng 8081 và Vite cổng 5174, tách khỏi phiên `local` cổng 8080/5173. Tạo tài khoản, khoa, chuyên khoa giả P10 trong DB thử; chạy browser headless Edge qua UI thật: đăng nhập, tạo phân khoa, lỗi 409 khi gán trùng khoảng, gán trưởng khoa và chuyên khoa, tải lại thấy lịch sử, kết thúc nhiệm kỳ/phân khoa và ngừng chuyên khoa. Không có lỗi JavaScript.
+- Phát hiện và sửa ngày lịch sử `Invalid Date`: `Timestamp` trong danh sách JDBC bị JSON chuyển múi giờ thêm một lần; API nay trả chuỗi thời điểm UTC, UI hiển thị đúng giờ Việt Nam. Cho phép kết thúc sớm phân công có hạn tương lai. Kiểm tra 320/375/768/1280 px không tràn ngang; đã xem ảnh 320 và 1280 px.
+- Sau sửa cuối: `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest`, gồm định dạng UTC ở GET endpoint; `npm run lint` và `npm run build` PASS. Dọn fixture P10, xác nhận còn 0 Staff/Department/Specialty/Account thử. Đã dừng đúng backend/Vite thử; phiên `local` của người dùng vẫn chạy. Không sửa DB chính. P10 DONE; chưa thử hai kết nối ghi đồng thời, để bộ kiểm chứng cạnh tranh P45.
+
+### Yêu cầu đã nhận cho P13–P14 (2026-11-02)
+
+- Trưởng khoa phân lịch và xem lịch sử chỉ trong khoa mình đang phụ trách. Màn hình phân lịch chia hai phần nhìn đồng thời: calendar từ thứ Hai đến thứ Bảy để đặt/xem ca, và bảng nhân viên có tìm kiếm/bộ lọc theo thuộc tính nhân viên (mã, tên, vai trò, khoa, chuyên khoa, trạng thái khi dữ liệu API hỗ trợ). Chọn ngày bắt đầu và ngày kết thúc của đợt phân ca; không tự đặt ca vào Chủ nhật.
+- Mỗi lần phân ca là một đợt lịch riêng (`WorkSchedule` với các `WorkAssignment` thuộc đợt đó). Danh sách lịch sử hiển thị từng đợt; chọn một đợt sẽ nạp đúng các phân công của đợt ấy lên calendar, kể cả khi đã công bố. Cần giữ bản đã công bố và các phân công lịch sử, không gộp các đợt thành một calendar không phân biệt nguồn.
+- Lịch được lưu ở trạng thái DRAFT trước khi công bố; P14 xử lý publish và khóa kiểm tra xung đột. Không coi bản nháp là lịch bệnh nhân có thể đặt.
+- Chủ dự án đã chốt: phòng ONLINE là tài nguyên được quản lý và phân lịch như phòng vật lý (D24). Hiện V2 chỉ cho Room CONSULTATION/LAB, V3 bắt WorkAssignment ONLINE có `room_id = NULL`, và API P09 cũng chỉ cho hai loại phòng cũ. Khi tới phần triển khai phòng/lịch online, cần migration mới để thêm loại Room ONLINE và đổi CHECK WorkAssignment, đồng thời cập nhật API/UI phòng, kiểm tra chống giao lịch cùng phòng. Không sửa V2/V3 đã áp dụng; chưa triển khai thay đổi schema trong lượt ghi nhận này.
+- Phụ thuộc: hoàn tất P10, P11, P12 trước P13 theo roadmap; giờ ca và sức chứa thực tế cần chốt tại P12. Không đánh dấu P13/P14 đã triển khai từ ghi chú này.
+
+### P10 — phân khoa, chuyên khoa và trưởng khoa (2026-11-02)
+
+- Thêm API `/api/admin/staff-assignments` để xem lịch sử, tạo/kết thúc phân khoa và nhiệm kỳ trưởng khoa, bật/ngừng chuyên khoa. `ACCOUNT_MANAGE` được kiểm tra ở Security filter và service. Phân khoa khóa hàng Staff để tránh ghi khoảng hiệu lực chồng nhau; trưởng khoa khóa Department, yêu cầu role `DEPARTMENT_HEAD`, khoa khám và khoảng phân khoa bao phủ nhiệm kỳ. Chuyên khoa yêu cầu bác sĩ, phân khoa hiện hành và liên kết khoa/chuyên khoa. Mọi thay đổi có audit cùng transaction.
+- Thêm màn hình Phân công, dùng API thật, hiển thị trạng thái tải/rỗng/lỗi/thành công; ngày nhập theo giờ Việt Nam và gửi UTC. `GET /api/admin/staff` bổ sung `staffId` cho form phân công.
+- Kiểm tra: backend compile PASS; `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest` sau khi sửa fixture `granted_at`; frontend `npm run lint` và `npm run build` PASS. Chưa thử UI tương tác/responsive trên browser, chưa chạy test cạnh tranh hai kết nối; không xem các phần này là PASS.
+- Không thay schema hoặc dữ liệu DB chính. Chưa chốt P10 DONE vì thiếu kiểm tra browser với tài khoản quản trị trên DB thử.
+- Tiếp tục ngày 2026-11-02: đối chiếu D19, D24 và tài liệu 03–05; cho phép kết thúc phân công cũ khi Staff đã ngừng hoạt động, vẫn chặn gán mới. Bổ sung test thiếu `ACCOUNT_MANAGE`, chặn kết thúc phân khoa khi nhiệm kỳ trưởng khoa còn hiệu lực, đăng nhập và GET endpoint thực có xác thực. `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest`; sau test còn 0 fixture P10 Staff/Department/Specialty. Chưa kiểm tra browser do cầu nối trình duyệt báo `The browser access host is unavailable`; không sử dụng cửa sổ Edge đang có phiên họp của người dùng. Backend profile `local` ở cổng 8080 trỏ DB chính, không dùng để ghi dữ liệu thử.
 
 ### P09 — quản lý phòng (2026-11-02)
 
@@ -106,8 +128,8 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P06 | DONE | Chủ dự án xác nhận đã tự kiểm tra UI và thấy ổn ngày 2026-11-02; log trước đó ghi API DB thử, lint/build và giới hạn browser của agent. |
 | P07 | IN_PROGRESS | API tạo/list/gán/thu hồi role/khóa và UI đã code; 7 integration test DB thử, REST smoke, lint/build PASS; còn kiểm tra UI trên browser/responsive. |
 | P08 | DONE | API/UI/V14, DB thử và lint/build đạt; chủ dự án xác nhận xong, browser chưa có log kiểm tra của agent. |
-| P09 | IN_PROGRESS | API/UI và integration test DB thử 2/2 đạt; còn kiểm tra browser toàn luồng và responsive. |
-| P10 | TODO | Theo lộ trình trong AGENTS.md. |
+| P09 | DONE | API/UI và integration test DB thử 2/2 đạt; chủ dự án xác nhận hoàn thành. |
+| P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. |
 | P11 | TODO | Theo lộ trình trong AGENTS.md. |
 | P12 | TODO | Theo lộ trình trong AGENTS.md. |
 | P13 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -148,11 +170,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 
 ## Bàn giao phiên sau
 
-- Việc tiếp theo: P05 — UI đăng ký/đăng nhập, đăng xuất và điều hướng theo role/quyền từ `GET /api/auth/me`. JWT đã được chọn ở P04.
-- Đọc trước: `AGENTS.md` phần P04, `docs/04-trang-thai-phan-quyen.md` phần quyền, `Account`/`AccountRole` ở V1–V2/V12, module `account` và endpoint đăng ký P03. Không cần nạp lại tài liệu lịch/CLS/thanh toán.
-- Kiểm tra: login đúng/sai, tài khoản LOCKED, logout, truy `/me` khi chưa xác thực, thu hồi role/khóa tài khoản có hiệu lực ở request tiếp theo; test DB thử, không dùng dữ liệu bệnh nhân thật.
-- Backend khi chạy trong PowerShell mới cần cấu hình JDK 21 và JDBC auth DLL như phần P00. DB chính chưa có admin; khi cần cấp tài khoản nhân viên thì chạy bootstrap theo hướng dẫn P02 với mật khẩu do chủ dự án tự nhập.
-- Các điểm mở sau này: phương thức session/token nếu môn học bắt buộc; giờ ca/giá/sức chứa thực tế; quy trình hoàn tiền, MoMo, video và Cloudinary. Chỉ hỏi khi đến việc phụ thuộc.
+- Việc tiếp theo: P11 — quản lý Service, RoomService và giá CLS theo tài liệu nghiệp vụ; tách danh mục/giá thành việc con nếu phạm vi quá lớn.
+- Đọc trước: `docs/01-nghiep-vu.md`, `docs/03-tu-dien-du-lieu.md`, `docs/05-giao-dich-rang-buoc.md`, V3, module `organization` và code P09/P10.
+- Điều kiện cần: giá dương, khoảng giá không chồng nhau, phòng hỗ trợ đúng loại dịch vụ; test ghi trên `SuncareClinicMigrationTest` với dữ liệu giả. Quyết định D24 về phòng ONLINE được xử lý bằng migration mới ở bước liên quan, không sửa V2/V3.
 
 ### Kiểm tra lỗi import IDE ngày 2026-11-02
 
