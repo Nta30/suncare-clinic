@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Clock;
 import java.util.Base64;
 import java.util.List;
 import java.util.Set;
@@ -183,6 +184,12 @@ public class ClinicalServiceManagementService {
         }
         if (request.validTo() == null || !request.validTo().isAfter(price.validFrom())) {
             throw bad("INVALID_PERIOD", "Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+        }
+        if (price.validTo() != null && !request.validTo().isBefore(price.validTo())) {
+            throw bad("INVALID_PERIOD", "Chỉ được kết thúc mức giá sớm hơn thời điểm đã lưu.");
+        }
+        if (!request.validTo().isAfter(LocalDateTime.now(Clock.systemUTC()))) {
+            throw bad("INVALID_PERIOD", "Không được kết thúc mức giá trong quá khứ.");
         }
 
         if (repository.hasPriceOverlap(serviceId, price.doctorId(), price.visitMode(), price.validFrom(), request.validTo(), priceId)) {

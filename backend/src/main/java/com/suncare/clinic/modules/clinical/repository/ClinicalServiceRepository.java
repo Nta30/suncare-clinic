@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -291,7 +292,7 @@ public class ClinicalServiceRepository {
     }
 
     public EffectivePriceResponse findEffectivePrice(long serviceId, Long doctorId, String visitMode, LocalDateTime targetTime) {
-        LocalDateTime time = targetTime != null ? targetTime : LocalDateTime.now();
+        LocalDateTime time = targetTime != null ? targetTime : LocalDateTime.now(Clock.systemUTC());
         String sql = """
                 SELECT TOP 1 id, service_id, amount,
                        CONVERT(varchar(23), valid_from, 126) + 'Z' AS valid_from,

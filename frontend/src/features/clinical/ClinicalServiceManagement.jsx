@@ -285,7 +285,7 @@ export default function ClinicalServiceManagement({ onSessionExpired }) {
     setPriceError('')
     try {
       const payload = {
-        amount: Number(priceForm.amount),
+        amount: priceForm.amount.trim(),
         validFrom: utcString(priceForm.validFrom),
         validTo: priceForm.validTo ? utcString(priceForm.validTo) : null,
       }

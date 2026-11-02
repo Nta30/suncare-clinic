@@ -366,6 +366,15 @@ class ClinicalServiceIT {
         assertEquals(1, p1List.size());
         assertEquals(150000, p1List.get(0).get("amount").asLong());
 
+        // Khoảng giá đã chốt chỉ được kết thúc sớm, không được kéo dài lịch sử.
+        PriceEndRequest extendReq = new PriceEndRequest(
+                LocalDateTime.of(2027, 1, 1, 0, 0), p1List.get(0).get("version").asText());
+        mvc.perform(put("/api/admin/services/" + clsId + "/prices/" + p1List.get(0).get("id").asLong() + "/end")
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(extendReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PERIOD"));
+
         // 4. Overlapping price: [2026-06-01, 2027-06-01] -> 409 Conflict
         ServicePriceCreateRequest overlapReq = new ServicePriceCreateRequest(
                 new BigDecimal("180000"),

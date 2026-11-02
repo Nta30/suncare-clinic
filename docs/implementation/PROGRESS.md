@@ -2,8 +2,15 @@
 
 Cập nhật: 2026-11-02
 
-Việc tiếp theo: P11 — danh mục Service, RoomService và giá CLS
-Trạng thái: DONE (P10; P07 còn thiếu log browser theo mốc cũ)
+Việc hiện tại: P11 — rà soát danh mục Service, RoomService và giá CLS
+Trạng thái: IN_PROGRESS (P10 DONE; P07 còn thiếu log browser theo mốc cũ)
+
+### Rà soát P11 (2026-11-02)
+
+- Đối chiếu API, UI, DTO, schema V3 và tài liệu nghiệp vụ. Sửa tra giá mặc định dùng UTC thay vì múi giờ máy chủ; thao tác kết thúc giá chỉ cho rút ngắn thời hạn và không hồi tố về quá khứ. Bổ sung kiểm tra từ chối kéo dài khoảng giá.
+- Kiểm tra trên `SuncareClinicMigrationTest`: `ClinicalServiceIT` 5/5 PASS trước ca kiểm tra mới; chạy lại riêng `ClinicalServiceIT#managesClsPricesAndValidatesNonOverlappingValidity` PASS sau sửa cuối. Chưa kiểm tra luồng UI và responsive nên P11 vẫn IN_PROGRESS. Không sửa DB chính.
+- Rà tiếp frontend: form giá gửi chuỗi thập phân nguyên vẹn cho `BigDecimal` thay vì ép `Number` dễ mất độ chính xác. `npm run lint` và `npm run build` PASS sau sửa. Cầu nối browser báo `The browser access host is unavailable`, nên chưa xác nhận luồng tương tác và 320/375/768/1280 px; không coi build là bằng chứng browser.
+- Việc tiếp theo: kiểm tra UI P11 qua API thật trên DB thử, lint/build và responsive; sau đó mới chốt P11.
 
 ### Chốt P10 — kiểm tra UI và sửa ngày hiển thị (2026-11-02)
 
@@ -130,7 +137,7 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P08 | DONE | API/UI/V14, DB thử và lint/build đạt; chủ dự án xác nhận xong, browser chưa có log kiểm tra của agent. |
 | P09 | DONE | API/UI và integration test DB thử 2/2 đạt; chủ dự án xác nhận hoàn thành. |
 | P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. |
-| P11 | TODO | Theo lộ trình trong AGENTS.md. |
+| P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
 | P12 | TODO | Theo lộ trình trong AGENTS.md. |
 | P13 | TODO | Theo lộ trình trong AGENTS.md. |
 | P14 | TODO | Theo lộ trình trong AGENTS.md. |
