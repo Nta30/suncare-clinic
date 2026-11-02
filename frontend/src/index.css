@@ -278,6 +278,22 @@ body {
   to { opacity: .8; transform: translateX(24px); }
 }
 
+.catalog-modal-backdrop {
+  animation: logout-backdrop-enter 200ms ease-out both;
+}
+
+.catalog-modal-panel {
+  animation: logout-dialog-enter 200ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.catalog-modal-closing {
+  animation: logout-backdrop-exit 180ms ease-in both;
+}
+
+.catalog-modal-closing .catalog-modal-panel {
+  animation: logout-dialog-exit 180ms ease-in both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-shell, .auth-shell--closing, .auth-form-content, .auth-form-content--leaving {
     animation: none;
@@ -291,7 +307,7 @@ body {
     animation: none;
   }
 
-  .staff-drawer, .staff-drawer-backdrop {
+  .staff-drawer, .staff-drawer-backdrop, .catalog-modal-backdrop, .catalog-modal-panel {
     animation: none;
   }
 

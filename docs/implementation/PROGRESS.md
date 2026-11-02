@@ -5,6 +5,11 @@ Cập nhật: 2026-11-02
 Việc hiện tại: P11 — rà soát danh mục Service, RoomService và giá CLS
 Trạng thái: IN_PROGRESS (P10 DONE; P07 còn thiếu log browser theo mốc cũ)
 
+### Điều chỉnh UI P08 theo yêu cầu (2026-11-02)
+
+- Màn hình khoa/chuyên khoa chuyển từ các thẻ dài sang bảng có tìm mã/tên và lọc trạng thái. Khoa khám mở hàng chi tiết để xem/bật/ngừng liên kết chuyên khoa; form thêm/sửa nằm trong hộp thoại, có đóng bằng Escape, giữ focus trong hộp thoại và trả focus về nút mở.
+- `npm run lint` và `npm run build` PASS sau sửa. Chưa kiểm tra tương tác và kích thước màn hình trên browser vì cầu nối browser phiên trước báo không khả dụng; bảng có vùng cuộn ngang riêng trên màn hình hẹp. Không thay API/DB. P08 vẫn DONE theo phạm vi nghiệp vụ đã chốt; đây là cải tiến cách trình bày.
+
 ### Rà soát P11 (2026-11-02)
 
 - Đối chiếu API, UI, DTO, schema V3 và tài liệu nghiệp vụ. Sửa tra giá mặc định dùng UTC thay vì múi giờ máy chủ; thao tác kết thúc giá chỉ cho rút ngắn thời hạn và không hồi tố về quá khứ. Bổ sung kiểm tra từ chối kéo dài khoảng giá.
