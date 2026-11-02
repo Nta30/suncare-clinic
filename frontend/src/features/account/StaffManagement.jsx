@@ -264,6 +264,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
       if (!query) return true
       const text = searchable([
         person.fullName, person.staffCode, person.loginName, person.phone, person.email,
+        person.departments?.join(' '), person.specialties?.join(' '),
       ].join(' '))
       return text.includes(query)
     }).sort((first, second) => nameOf(first).localeCompare(nameOf(second), 'vi'))
@@ -650,11 +651,12 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
           <>
             {/* Desktop table: thay vi moi nguoi la mot form khong lo */}
             <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[850px] text-left text-sm">
+              <table className="w-full min-w-[1080px] text-left text-sm">
                 <thead className="bg-suncare-50 text-xs font-bold uppercase tracking-wider text-clinical-muted">
                   <tr>
                     <th scope="col" className="px-6 py-4">Nhân viên</th>
                     <th scope="col" className="px-5 py-4">Tài khoản</th>
+                    <th scope="col" className="px-5 py-4">Khoa / chuyên khoa</th>
                     <th scope="col" className="px-5 py-4">Vai trò</th>
                     <th scope="col" className="px-5 py-4">Trạng thái</th>
                     <th scope="col" className="px-6 py-4 text-right">Thao tác</th>
@@ -674,6 +676,10 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                       </td>
                       <td className="max-w-[190px] px-5 py-4">
                         <span className="block truncate font-medium" title={person.loginName || ''}>{person.loginName || '—'}</span>
+                      </td>
+                      <td className="max-w-[270px] px-5 py-4">
+                        <p className="truncate font-semibold" title={person.departments?.join(' · ') || ''}>{person.departments?.join(' · ') || 'Chưa phân khoa'}</p>
+                        <p className="mt-1 truncate text-xs text-clinical-muted" title={person.specialties?.join(' · ') || ''}>{person.specialties?.join(' · ') || 'Chưa gán chuyên khoa'}</p>
                       </td>
                       <td className="max-w-[300px] px-5 py-4"><RoleList roles={getRoles(person)} /></td>
                       <td className="whitespace-nowrap px-5 py-4"><StatusBadge status={person.status} /></td>
@@ -701,6 +707,10 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                     <button type="button" onClick={() => openDetails(person)} aria-label={`Quản lý ${nameOf(person)}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-clinical-border-strong text-clinical-ink hover:bg-amber-50">
                       <Icon name="chevronRight" />
                     </button>
+                  </div>
+                  <div className="rounded-xl bg-clinical-canvas px-3 py-2 text-sm">
+                    <p className="font-semibold">{person.departments?.join(' · ') || 'Chưa phân khoa'}</p>
+                    <p className="mt-0.5 text-xs text-clinical-muted">{person.specialties?.join(' · ') || 'Chưa gán chuyên khoa'}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2"><StatusBadge status={person.status} /><RoleList roles={getRoles(person)} /></div>
                 </article>
@@ -873,6 +883,8 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                           <DetailRow label="Số điện thoại" value={selectedStaff.phone} />
                           <DetailRow label="Email" value={selectedStaff.email} />
                           <DetailRow label="Địa chỉ" value={selectedStaff.address} />
+                          <DetailRow label="Khoa công tác" value={selectedStaff.departments?.join(' · ')} />
+                          <DetailRow label="Chuyên khoa" value={selectedStaff.specialties?.join(' · ')} />
                           <DetailRow label="Giấy phép hành nghề" value={selectedStaff.professionalLicense} />
                           <DetailRow label="Trình độ chuyên môn" value={selectedStaff.qualification} />
                         </dl>

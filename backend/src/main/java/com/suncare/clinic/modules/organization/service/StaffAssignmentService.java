@@ -11,12 +11,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class StaffAssignmentService {
+    private static final DateTimeFormatter VIETNAMESE_DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private final StaffAssignmentRepository repository;
     private final OrganizationCatalogRepository audit;
 
@@ -54,7 +58,15 @@ public class StaffAssignmentService {
         if (period == null) throw missing();
         long staffId = ((Number) period.get("staff_id")).longValue();
         if (!repository.lockStaff(staffId)) throw bad("Không tìm thấy nhân viên.");
-        if (repository.headWithinMembership(id, end)) throw conflict("Cần kết thúc nhiệm kỳ trưởng khoa trước khi kết thúc phân khoa.");
+        validateEnd(period, end);
+        List<StaffAssignmentRepository.HeadTerm> overlappingHeads = repository.headTermsOverlappingDepartmentEnd(id, end);
+        if (!overlappingHeads.isEmpty()) {
+            String terms = overlappingHeads.stream().map(term -> term.staffName() + " ("
+                    + formatVietnamese(term.validFrom()) + " đến "
+                    + (term.validTo() == null ? "chưa xác định" : formatVietnamese(term.validTo())) + ")")
+                    .collect(Collectors.joining("; "));
+            throw conflict("Cần kết thúc nhiệm kỳ trưởng khoa trước khi kết thúc phân khoa. Nhiệm kỳ đang vướng: " + terms + ".");
+        }
         if (repository.end("StaffDepartment", id, end) != 1) throw bad("Thời điểm kết thúc không hợp lệ.");
         audit.audit(actor.accountId(), "STAFF_DEPARTMENT_ENDED", "StaffDepartment", id);
         return list(actor);
@@ -86,6 +98,7 @@ public class StaffAssignmentService {
         Map<String, Object> period = repository.period("DepartmentHeadAssignment", id);
         if (period == null) throw missing();
         repository.lockDepartment(((Number) period.get("department_id")).longValue());
+        validateEnd(period, end);
         if (repository.end("DepartmentHeadAssignment", id, end) != 1) throw bad("Thời điểm kết thúc không hợp lệ.");
         audit.audit(actor.accountId(), "DEPARTMENT_HEAD_ENDED", "DepartmentHeadAssignment", id);
         return list(actor);
@@ -116,6 +129,26 @@ public class StaffAssignmentService {
 
     private void validPeriod(LocalDateTime from, LocalDateTime to) {
         if (to != null && !to.isAfter(from)) throw bad("Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+    }
+
+    private void validateEnd(Map<String, Object> period, LocalDateTime end) {
+        LocalDateTime from = asLocalDateTime(period.get("valid_from"));
+        LocalDateTime currentEnd = asLocalDateTime(period.get("valid_to"));
+        if (end == null || !end.isAfter(from)) {
+            throw bad("Thời điểm kết thúc phải sau thời điểm bắt đầu " + formatVietnamese(from) + ".");
+        }
+        if (currentEnd != null && !end.isBefore(currentEnd)) {
+            throw bad("Thời điểm kết thúc mới phải trước thời điểm kết thúc hiện tại " + formatVietnamese(currentEnd) + ".");
+        }
+    }
+
+    private String formatVietnamese(LocalDateTime utc) {
+        return utc.plusHours(7).format(VIETNAMESE_DATE_TIME);
+    }
+
+    private LocalDateTime asLocalDateTime(Object value) {
+        if (value instanceof Timestamp timestamp) return timestamp.toLocalDateTime();
+        return (LocalDateTime) value;
     }
 
     private ApiException bad(String message) { return new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ASSIGNMENT", message); }

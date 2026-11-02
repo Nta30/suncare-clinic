@@ -2,13 +2,91 @@
 
 Cập nhật: 2026-11-02
 
-Việc hiện tại: P11 — rà soát danh mục Service, RoomService và giá CLS
+Việc hiện tại: P13 — viết lại luồng phân lịch khoa sau lỗi quyền
 Trạng thái: IN_PROGRESS (P10 DONE; P07 còn thiếu log browser theo mốc cũ)
+
+### Bổ sung khoa/chuyên khoa vào profile và quản lý nhân viên (2026-11-02)
+
+- Profile nhân viên lấy khoa đang có hiệu lực và chuyên khoa đang hoạt động từ API; mục thông tin chuyên môn hiển thị rõ trạng thái chưa được phân/gán nếu chưa có dữ liệu.
+- API danh sách nhân viên quản trị trả thêm khoa/chuyên khoa hiện hành; bảng, tìm kiếm, thẻ màn hình nhỏ và chi tiết nhân viên cùng hiển thị các trường này. Đây là thông tin đọc, không đổi luồng phân công.
+- Kiểm tra: `PersonalProfileIT` 3/3 và `StaffManagementIT` 10/10 PASS trên `SuncareClinicMigrationTest`; `npm run lint`, `npm run build`, `git diff --check` PASS. Không ghi dữ liệu lên DB chính; chưa kiểm tra giao diện trực tiếp trên browser.
+
+### P13 — viết lại luồng phân lịch sau lỗi 403 (2026-11-02)
+
+- Thay luồng UI P13 cũ: nạp độc lập danh sách đợt, quyền/khoa, chi tiết đợt và options; lỗi một API không xóa dữ liệu API khác. Lọc vai trò/chuyên khoa theo mã ID ổn định; báo lỗi quyền, lỗi tải dữ liệu và trạng thái chưa có nhiệm kỳ riêng.
+- Viết lại lịch tuần thành thời khóa biểu toàn chiều ngang: hai hàng sáng/chiều, mỗi ô ngày/ca bấm được; bảng chi tiết bác sĩ mở dưới lịch, có tìm/lọc, thêm phân công và nút Hủy khi nhập dở. Lịch đã công bố chỉ xem; bảng cuộn ngang trong vùng riêng trên màn hình hẹp.
+- Backend dùng `SCHEDULE_PUBLISH_DEPARTMENT` thống nhất giữa security route và service; trả vai trò/chuyên khoa dạng cấu trúc. Trưởng khoa hiện tại được xem lịch trong khoa mình; tạo/sửa vẫn yêu cầu nhiệm kỳ bao trọn thời gian đợt.
+- Kiểm tra: `WorkScheduleIT` 1/1 PASS trên `SuncareClinicMigrationTest`, gồm quyền trưởng khoa/bác sĩ/ẩn danh, đọc danh sách đợt, chặn xem khoa khác, tạo DRAFT, options có mã vai trò/chuyên khoa, phân công hợp lệ, từ chối sửa khi nhiệm kỳ chưa có hiệu lực và các trường hợp sai khoa/phòng/chuyên khoa/ca/ngày/sức chứa/trùng. Sau test, query DB thử thấy 0 fixture Staff/Account/Department/WorkSchedule mã P13. `npm run lint`, `npm run build`, `git diff --check` PASS. Không đổi migration hoặc ghi DB chính.
+- DB chính (chỉ SELECT) xác nhận `demo_head` ACTIVE, role `DEPARTMENT_HEAD`, permission `SCHEDULE_PUBLISH_DEPARTMENT`, nhiệm kỳ khoa lâm sàng `NGOAI` hiệu lực đến 2026-12-31 17:00 UTC. API thật gọi đúng `GET /api/head/schedules` đã trả 200; nguyên nhân 403 trên giao diện được xác nhận sau đó là URL frontend bị nối thành `/api/head/schedulesundefined`, không phải thiếu quyền.
+- Khởi động lại bằng `.\mvnw.cmd '-Dspring-boot.run.profiles=local' spring-boot:run` với Native Authentication trỏ tới thư mục `D:\TaiLieu\Nam4Ky1\Project_1\jdbc-auth\13.4.0`. PID mới 28972; `/api/health` trực tiếp ở 8080 và qua proxy Vite 5173 đều UP.
+- Smoke test API với đăng nhập `demo_head`: login 200; `/api/auth/me` có permission phân lịch; `GET /api/head/schedules` 200 (0 đợt); options 200 (1 khoa, có `NGOAI`); options chi tiết 200 (2 nhân viên, 2 phòng, 2 chuyên khoa, 2 ca). Logout 204; số token đang hoạt động trước/sau vẫn là 6. Không tạo/sửa lịch trên DB chính.
+- API smoke trước khi sửa URL, trên PID 8768: login `demo_head` 200; `/api/auth/me` 200 có `SCHEDULE_PUBLISH_DEPARTMENT`; gọi đúng danh sách đợt 200 (0 đợt); options 200 có khoa `NGOAI`; logout thành công. Không tạo/sửa dữ liệu lịch.
+- Sửa nguyên nhân 403: `listHeadSchedules()` gọi `request()` không có `path`, tạo URL `/api/head/schedulesundefined`; Spring Security áp dụng `denyAll()` và trả 403. `request` nay mặc định `path = ''`, nên gọi đúng `/api/head/schedules`.
+- Sửa xử lý lỗi P13: với HTTP 403, frontend kiểm tra lại `/api/auth/me` bằng token đúng tab và phân biệt thiếu quyền với trường hợp `/me` có quyền nhưng API P13 vẫn từ chối; màn hình hiện tài khoản, endpoint, HTTP status và nút đăng nhập lại. HTTP 401 tự xóa token cũ, chuyển về form đăng nhập và giải thích phiên đã hết hạn. Không còn hiển thị “chưa có đợt” khi API danh sách tải lỗi.
+- Sau khi chủ dự án bật lại backend, PID 57144 hiện giữ cổng 8080; health trực tiếp và qua proxy 5173 đều UP. Smoke test sau sửa, qua proxy: login 200; `/api/auth/me` 200 có quyền; `/api/head/schedules` 200; `/api/head/schedules/options` 200; đường dẫn lỗi cũ `/api/head/schedulesundefined` trả 403 như dự kiến. Logout thành công; không tạo/sửa lịch trên DB chính. Giữ nguyên tiến trình PID 57144.
+- Bổ sung giới hạn ngày tạo đợt theo nhiệm kỳ đang chọn: tính từ `validFrom`/`validTo` UTC sang ngày Saigon và bắt buộc đợt bao trọn ngày; `validFrom` 02/11/2026 17:41 làm ngày bắt đầu sớm nhất là 03/11, `validTo` 01/01/2027 00:00 làm ngày kết thúc muộn nhất là 31/12. Form khóa nút tạo nếu nhiệm kỳ không bao trọn ngày nào; server vẫn là nguồn kiểm tra cuối.
+- Sau khi đổi giao diện thời khóa biểu: `npm run lint`, `npm run build`, `git diff --check` PASS. Ảnh chụp browser hiện có ở desktop 1536×864 cho thấy trang dùng chiều ngang đầy đủ, đủ 6 ngày và hai hàng sáng/chiều; thấy đợt DRAFT và ô ca được chọn, không còn thông báo 403. Không thao tác trên tab Edge đang chia sẻ Meet và không ghi DB chính. Chưa kiểm tra 320/375/768/1280 px hoặc trực quan phần bảng chi tiết/form Hủy bên dưới màn hình; P13 vẫn IN_PROGRESS.
+- Việc tiếp theo duy nhất: kiểm tra responsive 320/375/768/1280 px và bấm một ô để xem bảng phân công, thử mở form rồi Hủy trong browser riêng; không lưu phân công lên DB chính. `JwtTokenService` tự sinh khóa JWT mới sau mỗi lần khởi động nếu thiếu `SUNCARE_JWT_SECRET`, nên phiên cũ cần đăng nhập lại. Chỉ ONSITE theo V3; ONLINE thuộc migration D24 và publish thuộc P14.
+
+### P13 — phiên bản đầu trước khi viết lại (2026-11-02)
+
+- Thêm `/api/head/schedules`: trưởng khoa có thể tạo đợt DRAFT, xem lịch sử trong khoa đang phụ trách, tải WorkAssignment, thêm và gỡ phân công khi bản còn DRAFT.
+- Backend kiểm tra role và nhiệm kỳ trưởng khoa bao phủ toàn kỳ, phòng CONSULTATION cùng khoa, bác sĩ đang thuộc khoa và có chuyên khoa phù hợp, ca đang hoạt động, ngày Thứ Hai–Thứ Bảy, sức chứa dương và giao lịch bác sĩ/phòng trong đợt hoặc lịch PUBLISHED. Lịch làm việc chuyển từ giờ Saigon sang UTC khi lưu. Audit cùng transaction.
+- UI có lịch tuần Thứ Hai–Thứ Bảy, chọn đợt trong lịch sử, bảng nhân viên có tìm kiếm/lọc vai trò/chuyên khoa và form phân công theo ngày, ca, chuyên khoa, phòng, sức chứa. Đợt DRAFT sửa được; lịch đã công bố chỉ xem.
+- Giới hạn: chỉ ONSITE theo cấu trúc V3 hiện tại; phòng ONLINE chưa bật vì cần migration D24. Chưa có thao tác publish (P14).
+- Kiểm tra: backend compile PASS; `WorkScheduleIT` 1/1 PASS trên `SuncareClinicMigrationTest`, xác nhận anonymous 401, bác sĩ 403, trưởng khoa tạo đợt/phân công, chặn sai role, bác sĩ ngoài khoa, phòng khoa khác, chuyên khoa/ca không hợp lệ, ngày ngoài đợt, Chủ Nhật, sức chứa 0 và phân công trùng; đọc lịch và gỡ assignment. Fixture được dọn qua `@AfterEach`. Không sửa V1–V14 hoặc DB chính.
+- Lượt rà soát tiếp theo 2026-11-02: sửa lỗi sau khi tạo/làm mới đợt lịch, options theo khoa không còn bị reset về danh sách rỗng; bổ sung kiểm tra API âm cho role, phạm vi khoa/phòng, specialty, shift, ngày và capacity.
+- Kiểm tra phiên này: `WorkScheduleIT` 1/1 PASS trên `SuncareClinicMigrationTest`; `npm run lint`, `npm run build`, `git diff --check` PASS. Truy vấn DB thử sau test xác nhận còn 0 Staff/Department/Account/Room/WorkSchedule có mã P13. Không ghi DB chính. Backend/Vite thử đã dừng; cổng 8080/5173 của người dùng không bị động tới.
+- Còn lại: chưa kiểm tra tương tác/responsive thực tế trên browser. Cầu nối báo `The browser access host is unavailable`; Edge hiện có cửa sổ đang chia sẻ Meet nên không dùng cửa sổ đó. P13 giữ IN_PROGRESS đến khi kiểm tra UI 320/375/768/1280 px và luồng thực tế. ONLINE cần migration D24 và publish thuộc P14.
+
+### Rà soát thay đổi Antigravity (2026-11-02)
+
+- Tại thời điểm rà soát trước khi bắt đầu P13, phần Antigravity mới trong working tree là P12 (ca làm việc và giá khám); chưa có mã lịch P13. Trạng thái hiện tại cập nhật ở mục P13 phía trên.
+- Gọn UI P12: bỏ hai đoạn giải thích quy tắc dài dưới tiêu đề, bỏ hướng dẫn lặp lại hành động trong empty state và bỏ wrapper thừa quanh tiêu đề. `npm run lint`/`npm run build` PASS; backend không đổi trong lượt rà này.
+- Cần xử lý trước khi dùng vận hành: P12 vẫn có thể khởi tạo giờ mẫu cố định 07:30–11:30 và 13:30–17:30 dù giờ thật chưa được chốt. P13.a chỉ nhận ca đang hoạt động; không xem giờ khởi tạo mẫu là chính sách thật.
+
+### Sửa tiếp P10 — kết thúc phân công (2026-11-02)
+
+- Hộp thoại kết thúc nhiệm kỳ/phân khoa thay `prompt`, hiển thị khoảng hiệu lực hiện tại và kiểm tra mốc kết thúc phải sau ngày bắt đầu, trước ngày kết thúc cũ. Các lỗi giữ nguyên trong hộp thoại để sửa.
+- Nếu kết thúc phân khoa bị nhiệm kỳ trưởng khoa chặn, API trả tên nhân viên cùng thời gian bắt đầu/kết thúc theo giờ Việt Nam; chỉ báo các nhiệm kỳ thật sự giao với mốc kết thúc phân khoa.
+- Kiểm tra: `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest`; xác nhận có đủ mốc thời gian xung đột và ngày kết thúc trước ngày bắt đầu bị chặn với lỗi dễ hiểu. `npm run lint`, `npm run build`, `git diff --check` PASS. Không ghi DB chính; chưa chạy lại browser.
 
 ### Điều chỉnh UI P08 theo yêu cầu (2026-11-02)
 
 - Màn hình khoa/chuyên khoa chuyển từ các thẻ dài sang bảng có tìm mã/tên và lọc trạng thái. Khoa khám mở hàng chi tiết để xem/bật/ngừng liên kết chuyên khoa; form thêm/sửa nằm trong hộp thoại, có đóng bằng Escape, giữ focus trong hộp thoại và trả focus về nút mở.
 - `npm run lint` và `npm run build` PASS sau sửa. Chưa kiểm tra tương tác và kích thước màn hình trên browser vì cầu nối browser phiên trước báo không khả dụng; bảng có vùng cuộn ngang riêng trên màn hình hẹp. Không thay API/DB. P08 vẫn DONE theo phạm vi nghiệp vụ đã chốt; đây là cải tiến cách trình bày.
+
+### P12 — Giá khám theo bác sĩ/hình thức và ShiftDefinition (2026-11-02)
+
+- **Ca làm việc (ShiftDefinition)**:
+  - Thêm DTO (`ShiftDefinitionResponse`, `ShiftDefinitionCreateRequest`, `ShiftDefinitionUpdateRequest`), Repository, Service và Controller (`/api/admin/scheduling/shifts`) trong module `scheduling`.
+  - Hỗ trợ xem danh sách, khởi tạo ca chuẩn (MORNING "Ca sáng" 07:30 - 11:30, AFTERNOON "Ca chiều" 13:30 - 17:30) khi bảng trống, cập nhật tên/giờ/trạng thái với khóa lạc quan (`version`), kiểm tra `local_end > local_start` và ghi `AuditEvent` cùng transaction.
+  - Phân quyền: Yêu cầu quyền `CATALOG_MANAGE` ở SecurityConfig và Service.
+
+- **Giá khám theo bác sĩ & hình thức (Consultation Pricing)**:
+  - Sử dụng bảng `dbo.ServicePrice` theo schema V3: dịch vụ `EXAMINATION` yêu cầu cả `doctor_id` và `visit_mode` (ONSITE / ONLINE).
+  - Thêm DTO (`ConsultationPriceResponse`, `ConsultationPriceCreateRequest`, `DoctorOptionResponse`).
+  - Mở rộng `ClinicalServiceRepository`, `ClinicalServiceManagementService`, `ClinicalServiceController`:
+    - `GET /api/admin/services/doctors`: lấy danh sách bác sĩ đang hoạt động (role DOCTOR, status ACTIVE).
+    - `GET /api/admin/services/consultation-prices`: tra cứu toàn bộ giá khám với các bộ lọc serviceId, doctorId, visitMode, activeOnly.
+    - `GET /api/admin/services/{id}/consultation-prices`: danh sách giá khám của một dịch vụ.
+    - `POST /api/admin/services/{id}/consultation-prices`: thiết lập mức giá khám mới; kiểm tra dịch vụ EXAMINATION, bác sĩ DOCTOR active, visit_mode hợp lệ, amount > 0, valid_to > valid_from, và chống giao khoảng hiệu lực (`PRICE_OVERLAP`) bằng khóa bi quan `WITH (UPDLOCK, HOLDLOCK)`.
+    - `PUT /api/admin/services/{id}/consultation-prices/{priceId}/end`: kết thúc mức giá sớm hơn thời điểm chốt, chống hồi tố về quá khứ và kiểm tra version.
+  - Ghi nhận `AuditEvent` trong cùng transaction cho mọi thao tác.
+
+- **Frontend UI & API**:
+  - Thêm `frontend/src/services/schedulingCatalogApi.js` gọi các endpoint ca làm việc và giá khám.
+  - Thêm màn hình `frontend/src/features/scheduling/SchedulingCatalogManagement.jsx`:
+    - Tab 1: Quản lý khung ca khám (ShiftDefinition), xem khung giờ, nút khởi tạo ca chuẩn, modal chỉnh sửa ca có kiểm tra giờ hợp lệ và optimistic lock.
+    - Tab 2: Quản lý bảng giá khám bệnh theo bác sĩ & hình thức khám, bộ lọc theo dịch vụ/bác sĩ/hình thức/chỉ xem giá đang áp dụng/tìm kiếm nhanh, modal thiết lập giá khám mới có live preview VND và validation, modal kết thúc giá khám sớm.
+    - Tích hợp điều hướng "Ca & giá khám" trong `App.jsx` khi tài khoản có quyền `CATALOG_MANAGE`.
+
+- **Kiểm tra**:
+  - Thêm `backend/src/test/java/com/suncare/clinic/modules/scheduling/SchedulingCatalogIT.java` chạy trên `SuncareClinicMigrationTest`: 2/2 PASS (kiểm tra toàn diện ShiftDefinition và ConsultationPricing: từ chối bác sĩ thiếu quyền, khởi tạo ca chuẩn, lỗi giờ không hợp lệ, cập nhật và xung đột concurrency 409; tạo giá khám EXAMINATION, lỗi amount/mode/period, tạo giá thành công, chặn overlap 409, cho phép khác visit_mode hoặc khác doctor, kết thúc giá sớm).
+  - Chạy lại `ClinicalServiceIT`: 5/5 PASS (không có regression).
+  - Chạy lại default backend tests `mvn test`: 8/8 PASS.
+  - Frontend: `npm run lint` PASS (0 errors), `npm run build` PASS (Vite build 422ms).
+  - Chưa kiểm tra tương tác/responsive trên trình duyệt trực tiếp với backend test, giữ đúng nguyên tắc của repo.
 
 ### Rà soát P11 (2026-11-02)
 
@@ -141,10 +219,10 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P07 | IN_PROGRESS | API tạo/list/gán/thu hồi role/khóa và UI đã code; 7 integration test DB thử, REST smoke, lint/build PASS; còn kiểm tra UI trên browser/responsive. |
 | P08 | DONE | API/UI/V14, DB thử và lint/build đạt; chủ dự án xác nhận xong, browser chưa có log kiểm tra của agent. |
 | P09 | DONE | API/UI và integration test DB thử 2/2 đạt; chủ dự án xác nhận hoàn thành. |
-| P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. |
+| P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. Hộp thoại kết thúc, lịch sử phân công thành bảng có tìm/lọc; `StaffAssignmentIT` 1/1, lint/build PASS; lượt UI mới chưa chạy browser. |
 | P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
-| P12 | TODO | Theo lộ trình trong AGENTS.md. |
-| P13 | TODO | Theo lộ trình trong AGENTS.md. |
+| P12 | IN_PROGRESS | Backend API + DTO + Repository + Service + Controller; 2/2 SchedulingCatalogIT PASS trên migrationtest, ClinicalServiceIT 5/5 PASS; UI SchedulingCatalogManagement.jsx, lint/build PASS; còn kiểm tra browser trực tiếp. |
+| P13 | IN_PROGRESS | API P13 và quyền demo_head trả 200; WorkScheduleIT 1/1 trước đó PASS trên DB thử. Thời khóa biểu 2 hàng sáng/chiều, ô bấm mở bảng bác sĩ, form có Hủy; lint/build/diff-check PASS. Desktop 1536×864 đã xem; còn kiểm tra 320/375/768/1280 px và tương tác bảng/form trên browser riêng. Không ghi DB chính; chưa bật ONLINE hoặc publish. |
 | P14 | TODO | Theo lộ trình trong AGENTS.md. |
 | P15 | TODO | Theo lộ trình trong AGENTS.md. |
 | P16 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -182,9 +260,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 
 ## Bàn giao phiên sau
 
-- Việc tiếp theo: P11 — quản lý Service, RoomService và giá CLS theo tài liệu nghiệp vụ; tách danh mục/giá thành việc con nếu phạm vi quá lớn.
-- Đọc trước: `docs/01-nghiep-vu.md`, `docs/03-tu-dien-du-lieu.md`, `docs/05-giao-dich-rang-buoc.md`, V3, module `organization` và code P09/P10.
-- Điều kiện cần: giá dương, khoảng giá không chồng nhau, phòng hỗ trợ đúng loại dịch vụ; test ghi trên `SuncareClinicMigrationTest` với dữ liệu giả. Quyết định D24 về phòng ONLINE được xử lý bằng migration mới ở bước liên quan, không sửa V2/V3.
+- Việc tiếp theo: P13 — kiểm tra responsive và tương tác chọn ô ca/thêm rồi Hủy trên browser riêng, không tạo phân công DB chính.
+- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `frontend/src/App.jsx`, mục P13 trong tài liệu này.
+- Điều kiện cần: xác minh 320/375/768/1280 px; bảng chỉ cuộn ngang trong vùng lịch, chọn ca mở bảng bác sĩ, Hủy đóng form không lưu. Sau đó ghi kết quả thật rồi mới chuyển P13 sang DONE.
 
 ### Kiểm tra lỗi import IDE ngày 2026-11-02
 
@@ -329,6 +407,11 @@ pm run build PASS.
 - Kiểm tra SQL trên DB chính: 4 Account ACTIVE, 4 Staff khác nhau, đúng role và grantor; đối chiếu BCrypt với file bàn giao PASS 4/4. Mật khẩu chỉ lưu trong `backend/target/demo-staff-credentials.txt` bị Git bỏ qua; không ghi mật khẩu vào tài liệu hoặc log.
 - Đây chỉ là dữ liệu demo để đăng nhập theo role. Chưa tạo khoa/chuyên khoa hay phân công cho bác sĩ/trưởng khoa, chưa chạy luồng UI/API đăng nhập trong phiên này. Không đánh dấu P07 hoặc chức năng nghiệp vụ của các role là DONE.
 - Việc tiếp theo duy nhất của roadmap vẫn là P05 — kiểm tra giao diện và luồng tài khoản trên browser với backend thử; P07 sẽ triển khai API/UI quản lý Staff theo lộ trình.
+
+### Dọn dữ liệu phân công thử của demo_head (2026-11-02)
+
+- Theo yêu cầu của chủ dự án, xóa trong một transaction trên `SuncareClinic`: 3 dòng `StaffDepartment`, 2 dòng `DepartmentHeadAssignment`, 0 dòng `StaffSpecialty` của riêng `demo_head`. Kiểm tra lại còn 0 dòng ở cả ba bảng.
+- Giữ nguyên tài khoản và role `DEPARTMENT_HEAD`; không xóa phân công của nhân viên khác, khoa/chuyên khoa hoặc lịch. Trước khi xóa đã xác nhận không có WorkSchedule liên quan hai khoa này.
 
 ### P05 — kiểm tra lại ứng dụng đang chạy (2026-11-02)
 

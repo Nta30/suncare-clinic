@@ -71,15 +71,20 @@ public class StaffAssignmentRepository {
         return count != null && count > 0;
     }
 
-    public boolean headWithinMembership(long assignmentId, LocalDateTime end) {
-        Integer count = jdbc.queryForObject("""
-                SELECT COUNT(*) FROM dbo.DepartmentHeadAssignment h
-                WHERE h.staff_id = (SELECT staff_id FROM dbo.StaffDepartment WHERE id = ?)
-                  AND h.department_id = (SELECT department_id FROM dbo.StaffDepartment WHERE id = ?)
-                  AND (h.valid_to IS NULL OR h.valid_to > ?)
-                """, Integer.class, assignmentId, assignmentId, end);
-        return count != null && count > 0;
+    public List<HeadTerm> headTermsOverlappingDepartmentEnd(long assignmentId, LocalDateTime end) {
+        return jdbc.query("""
+                SELECT s.full_name, h.valid_from, h.valid_to
+                FROM dbo.DepartmentHeadAssignment h
+                JOIN dbo.StaffDepartment sd ON sd.staff_id = h.staff_id AND sd.department_id = h.department_id
+                JOIN dbo.Staff s ON s.id = h.staff_id
+                WHERE sd.id = ? AND h.valid_from < ? AND (h.valid_to IS NULL OR h.valid_to > ?)
+                ORDER BY h.valid_from
+                """, (rs, rowNum) -> new HeadTerm(rs.getString("full_name"),
+                rs.getTimestamp("valid_from").toLocalDateTime(),
+                rs.getTimestamp("valid_to") == null ? null : rs.getTimestamp("valid_to").toLocalDateTime()), assignmentId, end, end);
     }
+
+    public record HeadTerm(String staffName, LocalDateTime validFrom, LocalDateTime validTo) {}
 
     public long insertDepartment(long staffId, long departmentId, LocalDateTime from, LocalDateTime to, boolean primary) {
         return jdbc.queryForObject("""
@@ -117,7 +122,7 @@ public class StaffAssignmentRepository {
 
     public List<Map<String, Object>> departments() {
         return jdbc.queryForList("""
-                SELECT sd.id, sd.staff_id AS staffId, s.full_name AS staffName, sd.department_id AS departmentId,
+                SELECT sd.id, sd.staff_id AS staffId, s.code AS staffCode, s.full_name AS staffName, sd.department_id AS departmentId,
                        d.name AS departmentName,
                        CONVERT(varchar(23), sd.valid_from, 126) AS validFrom,
                        CONVERT(varchar(23), sd.valid_to, 126) AS validTo, sd.is_primary AS isPrimary
@@ -128,7 +133,7 @@ public class StaffAssignmentRepository {
 
     public List<Map<String, Object>> heads() {
         return jdbc.queryForList("""
-                SELECT h.id, h.staff_id AS staffId, s.full_name AS staffName, h.department_id AS departmentId,
+                SELECT h.id, h.staff_id AS staffId, s.code AS staffCode, s.full_name AS staffName, h.department_id AS departmentId,
                        d.name AS departmentName,
                        CONVERT(varchar(23), h.valid_from, 126) AS validFrom,
                        CONVERT(varchar(23), h.valid_to, 126) AS validTo
@@ -139,7 +144,7 @@ public class StaffAssignmentRepository {
 
     public List<Map<String, Object>> specialties() {
         return jdbc.queryForList("""
-                SELECT ss.staff_id AS staffId, s.full_name AS staffName, ss.specialty_id AS specialtyId,
+                SELECT ss.staff_id AS staffId, s.code AS staffCode, s.full_name AS staffName, ss.specialty_id AS specialtyId,
                        sp.name AS specialtyName, ss.is_active AS isActive
                 FROM dbo.StaffSpecialty ss JOIN dbo.Staff s ON s.id = ss.staff_id
                 JOIN dbo.Specialty sp ON sp.id = ss.specialty_id ORDER BY s.full_name, sp.name

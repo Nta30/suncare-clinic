@@ -5,6 +5,8 @@ import com.suncare.clinic.modules.clinical.dto.ClinicalServiceResponse;
 import com.suncare.clinic.modules.clinical.dto.ClinicalServiceUpdateRequest;
 import com.suncare.clinic.modules.clinical.dto.EffectivePriceResponse;
 import com.suncare.clinic.modules.clinical.dto.RoomServiceMappingResponse;
+import com.suncare.clinic.modules.clinical.dto.ConsultationPriceResponse;
+import com.suncare.clinic.modules.clinical.dto.DoctorOptionResponse;
 import com.suncare.clinic.modules.clinical.dto.ServicePriceResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -313,6 +315,99 @@ public class ClinicalServiceRepository {
                 rs.getString("valid_to")
         ), serviceId, doctorId, doctorId, visitMode, visitMode, time, time);
         return list.isEmpty() ? null : list.getFirst();
+    }
+
+    public List<ConsultationPriceResponse> listConsultationPrices(Long serviceId, Long doctorId, String visitMode, Boolean activeOnly) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT p.id,
+                       p.service_id,
+                       s.code AS service_code,
+                       s.name AS service_name,
+                       p.doctor_id,
+                       d.code AS doctor_code,
+                       d.full_name AS doctor_name,
+                       p.visit_mode,
+                       p.amount,
+                       CONVERT(varchar(23), p.valid_from, 126) + 'Z' AS valid_from,
+                       CONVERT(varchar(23), p.valid_to, 126) + 'Z' AS valid_to,
+                       p.created_by,
+                       COALESCE(st.full_name, a.login_name) AS created_by_name,
+                       CONVERT(varchar(23), p.created_at, 126) + 'Z' AS created_at,
+                       p.version,
+                       CASE WHEN p.valid_from <= SYSUTCDATETIME() AND (p.valid_to IS NULL OR p.valid_to > SYSUTCDATETIME()) THEN 1 ELSE 0 END AS is_effective
+                FROM dbo.ServicePrice p
+                JOIN dbo.[Service] s ON s.id = p.service_id
+                JOIN dbo.Staff d ON d.id = p.doctor_id
+                JOIN dbo.[Account] a ON a.id = p.created_by
+                LEFT JOIN dbo.Staff st ON st.id = a.staff_id
+                WHERE p.doctor_id IS NOT NULL AND p.visit_mode IS NOT NULL
+                """);
+        List<Object> params = new ArrayList<>();
+        if (serviceId != null) {
+            sql.append(" AND p.service_id = ?");
+            params.add(serviceId);
+        }
+        if (doctorId != null) {
+            sql.append(" AND p.doctor_id = ?");
+            params.add(doctorId);
+        }
+        if (visitMode != null && !visitMode.isBlank()) {
+            sql.append(" AND p.visit_mode = ?");
+            params.add(visitMode.trim().toUpperCase());
+        }
+        if (activeOnly != null && activeOnly) {
+            sql.append(" AND p.valid_from <= SYSUTCDATETIME() AND (p.valid_to IS NULL OR p.valid_to > SYSUTCDATETIME())");
+        }
+        sql.append(" ORDER BY p.valid_from DESC, p.id DESC");
+
+        return jdbc.query(sql.toString(), (rs, rowNum) -> new ConsultationPriceResponse(
+                rs.getLong("id"),
+                rs.getLong("service_id"),
+                rs.getString("service_code"),
+                rs.getString("service_name"),
+                rs.getLong("doctor_id"),
+                rs.getString("doctor_code"),
+                rs.getString("doctor_name"),
+                rs.getString("visit_mode"),
+                rs.getBigDecimal("amount"),
+                rs.getString("valid_from"),
+                rs.getString("valid_to"),
+                rs.getLong("created_by"),
+                rs.getString("created_by_name"),
+                rs.getString("created_at"),
+                Base64.getEncoder().encodeToString(rs.getBytes("version")),
+                rs.getBoolean("is_effective")
+        ), params.toArray());
+    }
+
+    public boolean isDoctorActive(long doctorId) {
+        String sql = """
+                SELECT COUNT(*)
+                FROM dbo.Staff s
+                JOIN dbo.[Account] a ON a.staff_id = s.id
+                JOIN dbo.AccountRole ar ON ar.account_id = a.id
+                JOIN dbo.[Role] r ON r.id = ar.role_id
+                WHERE s.id = ? AND r.code = 'DOCTOR' AND s.is_active = 1 AND a.status = 'ACTIVE'
+                """;
+        Integer count = jdbc.queryForObject(sql, Integer.class, doctorId);
+        return count != null && count > 0;
+    }
+
+    public List<DoctorOptionResponse> listActiveDoctors() {
+        String sql = """
+                SELECT DISTINCT s.id, s.code, s.full_name
+                FROM dbo.Staff s
+                JOIN dbo.[Account] a ON a.staff_id = s.id
+                JOIN dbo.AccountRole ar ON ar.account_id = a.id
+                JOIN dbo.[Role] r ON r.id = ar.role_id
+                WHERE r.code = 'DOCTOR' AND s.is_active = 1 AND a.status = 'ACTIVE'
+                ORDER BY s.full_name ASC
+                """;
+        return jdbc.query(sql, (rs, rowNum) -> new DoctorOptionResponse(
+                rs.getLong("id"),
+                rs.getString("code"),
+                rs.getString("full_name")
+        ));
     }
 
     public void audit(long actorId, String action, String entity, long entityId, String detail) {

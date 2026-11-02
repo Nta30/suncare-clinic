@@ -11,10 +11,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.suncare.clinic.modules.account.repository.PersonalProfileRepository;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -89,24 +91,51 @@ class PersonalProfileIT {
     }
 
     @Test
-    void readsStaffProfessionalDetailsWithoutPatientFields() {
+    void readsStaffProfessionalAndCurrentDepartmentDetails() throws Exception {
         String code = "P06S" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         long staffId = jdbc.queryForObject("""
                 INSERT INTO dbo.Staff (code, full_name, sex, professional_license, qualification, is_active)
                 OUTPUT INSERTED.id VALUES (?, ?, 'UNKNOWN', ?, ?, 1)
                 """, Long.class, code, "Demo Doctor", "LICENSE-DEMO", "Bác sĩ chuyên khoa");
+        long departmentId = jdbc.queryForObject("""
+                INSERT INTO dbo.Department (code, name, department_type, is_active)
+                OUTPUT INSERTED.id VALUES (?, 'P06 Department', 'CLINICAL', 1)
+                """, Long.class, code + "D");
+        long specialtyId = jdbc.queryForObject("""
+                INSERT INTO dbo.Specialty (code, name, is_active)
+                OUTPUT INSERTED.id VALUES (?, 'P06 Specialty', 1)
+                """, Long.class, code + "P");
         long staffAccountId = jdbc.queryForObject("""
                 INSERT INTO dbo.[Account] (login_name, password_hash, account_type, staff_id, status)
-                OUTPUT INSERTED.id VALUES (?, 'test-hash', 'STAFF', ?, 'ACTIVE')
-                """, Long.class, "p06.staff." + code, staffId);
+                OUTPUT INSERTED.id VALUES (?, ?, 'STAFF', ?, 'ACTIVE')
+                """, Long.class, "p06.staff." + code, new BCryptPasswordEncoder().encode("test-profile-password-123"), staffId);
         try {
+            jdbc.update("INSERT INTO dbo.DepartmentSpecialty (department_id, specialty_id, is_active) VALUES (?, ?, 1)", departmentId, specialtyId);
+            jdbc.update("INSERT INTO dbo.StaffDepartment (staff_id, department_id, valid_from, is_primary) VALUES (?, ?, DATEADD(day, -1, SYSUTCDATETIME()), 1)", staffId, departmentId);
+            jdbc.update("INSERT INTO dbo.StaffSpecialty (staff_id, specialty_id, is_active) VALUES (?, ?, 1)", staffId, specialtyId);
             var result = profiles.find(staffAccountId, "STAFF");
             assertEquals("LICENSE-DEMO", result.professionalLicense());
             assertEquals("Bác sĩ chuyên khoa", result.qualification());
             assertEquals(null, result.identityNumber());
+            assertEquals(List.of("P06 Department"), result.departments());
+            assertEquals(List.of("P06 Specialty"), result.specialties());
+
+            String loginBody = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"loginName\":\"p06.staff." + code + "\",\"password\":\"test-profile-password-123\"}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            String staffToken = json.readTree(loginBody).get("accessToken").asText();
+            mvc.perform(get("/api/accounts/profile").header("Authorization", "Bearer " + staffToken))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.departments[0]").value("P06 Department"))
+                    .andExpect(jsonPath("$.specialties[0]").value("P06 Specialty"));
         } finally {
+            jdbc.update("DELETE FROM dbo.AuthToken WHERE account_id = ?", staffAccountId);
+            jdbc.update("DELETE FROM dbo.StaffSpecialty WHERE staff_id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.DepartmentSpecialty WHERE department_id = ?", departmentId);
             jdbc.update("DELETE FROM dbo.[Account] WHERE id = ?", staffAccountId);
             jdbc.update("DELETE FROM dbo.Staff WHERE id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.Specialty WHERE id = ?", specialtyId);
+            jdbc.update("DELETE FROM dbo.Department WHERE id = ?", departmentId);
         }
     }
 }
