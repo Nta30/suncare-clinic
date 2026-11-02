@@ -23,11 +23,19 @@ public class SecurityConfig {
                     response.setStatus(401);
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write("{\"code\":\"UNAUTHENTICATED\",\"message\":\"Cần đăng nhập lại.\"}");
+                }).accessDeniedHandler((request, response, error) -> {
+                    response.setStatus(403);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"code\":\"ACCESS_DENIED\",\"message\":\"Bạn không có quyền thực hiện thao tác này.\"}");
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/accounts/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health", "/actuator/health").permitAll()
                         .requestMatchers("/api/auth/me", "/api/auth/logout").authenticated()
+                        .requestMatchers("/api/accounts/profile").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/staff").hasAuthority("ACCOUNT_MANAGE")
+                        .requestMatchers("/api/admin/staff/**").hasAuthority("ACCOUNT_MANAGE")
+                        .requestMatchers(HttpMethod.GET, "/api/admin/staff").hasAuthority("ACCOUNT_MANAGE")
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

@@ -1,16 +1,9 @@
-<<<<<<< HEAD
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeartPulse, faCalendarCheck, faClipboard, faMoneyBill, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import AccountForm from './features/account/AccountForm'
 import PersonalProfile from './features/account/PersonalProfile'
 import StaffManagement from './features/account/StaffManagement'
-=======
-import { useEffect, useRef, useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHeartPulse, faCalendarCheck, faClipboard, faMoneyBill, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
-import AccountForm from './features/account/AccountForm'
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
 import clinicReception from './assets/clinic-reception-illustration.jpg'
 import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient, saveToken } from './services/accountApi'
 
@@ -129,7 +122,6 @@ function App() {
     }
   }
 
-<<<<<<< HEAD
   const handleSessionExpired = useCallback(() => {
     clearToken()
     setAccount(null)
@@ -137,8 +129,6 @@ function App() {
     setMode('login')
   }, [])
 
-=======
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
   const availableLinks = plannedLinks.filter((link) => account?.roles.some((role) => link.roles.includes(role)))
 
   return (
@@ -153,11 +143,8 @@ function App() {
             <button onClick={() => changeMode('home')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Giới thiệu</button>
             {authState === 'signedIn' ? <>
               <button onClick={() => setMode('account')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Tài khoản</button>
-<<<<<<< HEAD
               {account?.permissions.includes('ACCOUNT_MANAGE') &&
                 <button onClick={() => setMode('staff')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Quản lý nhân viên</button>}
-=======
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -219,11 +206,7 @@ function App() {
             </section>
           </div>
         </>}
-<<<<<<< HEAD
         {authState === 'signedIn' && mode !== 'account' && mode !== 'staff' && <>
-=======
-        {authState === 'signedIn' && mode !== 'account' && <>
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -243,14 +226,10 @@ function App() {
             </article>
           </section>}
         </>}
-<<<<<<< HEAD
         {authState === 'signedIn' && mode === 'account' &&
           <PersonalProfile account={account} onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'staff' && account?.permissions.includes('ACCOUNT_MANAGE') &&
           <StaffManagement currentAccountId={account.accountId} onSessionExpired={handleSessionExpired} />}
-=======
-        {authState === 'signedIn' && mode === 'account' && <p className="mt-6 text-sm text-clinical-muted">Chỉnh sửa hồ sơ cá nhân sẽ được triển khai ở P06.</p>}
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
         onCancel={(event) => { event.preventDefault(); if (!logoutBusy) closeLogoutDialog() }}

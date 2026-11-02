@@ -2,13 +2,8 @@
 
 Cập nhật: 2026-11-02
 
-<<<<<<< HEAD
 Việc tiếp theo: P07.c — kiểm tra UI admin trên browser và chốt P07
 Trạng thái: IN_PROGRESS (P07; P00–P06 đã DONE)
-=======
-Việc tiếp theo: P05 — UI đăng ký, đăng nhập và điều hướng theo quyền
-Trạng thái: IN_PROGRESS (P05; P00–P04 đã DONE)
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
 
 ## Hiện trạng đã đối chiếu
 
@@ -78,15 +73,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P02 | DONE | V12 PASS trên DB thử và chính; seed 6/14/14; bootstrap DB thử chạy lặp không nhân đôi; DB chính chưa tạo admin. |
 | P03 | DONE | API + transaction; 4 integration test DB thử PASS; AT01–AT02 và rollback kiểm tra. |
 | P04 | DONE | JWT HS256, AuthToken V13, đăng nhập/đăng xuất/me; 4 integration test trên DB thử PASS, migration V13 DB thử và chính. |
-<<<<<<< HEAD
 | P05 | DONE | Chủ dự án xác nhận hoàn thành ngày 2026-11-02; bằng chứng kiểm tra browser/API toàn luồng chưa được bổ sung vào sổ. |
 | P06 | DONE | Chủ dự án xác nhận đã tự kiểm tra UI và thấy ổn ngày 2026-11-02; log trước đó ghi API DB thử, lint/build và giới hạn browser của agent. |
 | P07 | IN_PROGRESS | API tạo/list/gán/thu hồi role/khóa và UI đã code; 7 integration test DB thử, REST smoke, lint/build PASS; còn kiểm tra UI trên browser/responsive. |
-=======
-| P05 | IN_PROGRESS | Đã có UI đăng ký/đăng nhập/logout và API thật; lint/build PASS. Còn kiểm tra trực quan responsive và luồng trên browser. |
-| P06 | TODO | Theo lộ trình trong AGENTS.md. |
-| P07 | TODO | Theo lộ trình trong AGENTS.md. |
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
 | P08 | TODO | Theo lộ trình trong AGENTS.md. |
 | P09 | TODO | Theo lộ trình trong AGENTS.md. |
 | P10 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -286,7 +275,6 @@ pm run build PASS.
 - `GET /api/health` trực tiếp cổng 8080 và qua Vite proxy cổng 5173 đều trả `UP`. Tại `frontend/`, `npm run lint` và `npm run build` PASS. Tại `backend/`, `.\mvnw.cmd test -q` với JDK 21 và JDBC auth DLL PASS (exit 0); đây là bộ test mặc định, không bao gồm `*IT`.
 - Backend đang chạy trỏ DB chính theo cấu hình mặc định. Chưa gửi đăng ký, đăng nhập hoặc đăng xuất thật và chưa tạo dữ liệu thử trên DB chính. Cầu nối ảnh của cửa sổ Edge trả ảnh VS Code dù cây accessibility của Edge đọc được; vì vậy chưa có bằng chứng bố cục tại 320/375/768/1280 px. P05 tiếp tục `IN_PROGRESS`.
 - Việc tiếp theo duy nhất: P05 — chạy backend với profile `migrationtest`, kiểm tra đăng ký/đăng nhập/đăng xuất bằng dữ liệu giả và xác minh responsive trên trình duyệt.
-<<<<<<< HEAD
 
 ### P06.a — API hồ sơ cá nhân (2026-11-02)
 
@@ -334,5 +322,3 @@ pm run build PASS.
 - Chạy backend thử ở 8081 và Vite thử ở 5174; REST smoke bằng admin/Staff giả trên DB thử PASS: tạo, list, grant, revoke, khóa. Đã xóa Account ID 81–82, Staff ID 50–51, token/role/audit thử; còn 0 Account `p07.%`. Đã dừng server thử, giữ phiên 8080/5173 của người dùng.
 - Cửa sổ Edge có thao tác người dùng đồng thời, bridge trình duyệt không khả dụng/geometry lỗi, nên chưa kiểm tra trực quan UI admin tại 320/375/768/1280 px hoặc bấm toàn bộ luồng qua browser. P07 vẫn `IN_PROGRESS`, chưa tuyên bố DONE. AT03 mới kiểm được Account đa role và quyền đổi ở request sau; giới hạn theo khoa/phòng phải kiểm khi P10/P13 triển khai dữ liệu phân công. Chưa chạy trên DB chính.
 - Việc tiếp theo duy nhất: P07.c — thử trực quan và tương tác UI admin trên browser với backend `migrationtest`, xử lý lỗi phát hiện rồi chốt P07 khi đạt.
-=======
->>>>>>> 8365b9d7707171bab56ce61915ed77604e2e6d71
