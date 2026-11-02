@@ -1,589 +1,244 @@
-
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faHeartPulse,
-  faCalendarCheck,
-  faStethoscope,
-  faFileMedical,
-  faFlaskVial,
-  faWallet,
-  faVideo,
-  faUsers,
-  faServer,
-  faRotate,
-  faCircleCheck,
-  faCircleExclamation,
-  faArrowRight,
-} from '@fortawesome/free-solid-svg-icons'
+import { faHeartPulse, faCalendarCheck, faClipboard, faMoneyBill, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import AccountForm from './features/account/AccountForm'
+import clinicReception from './assets/clinic-reception-illustration.jpg'
+import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient, saveToken } from './services/accountApi'
 
-import { getHealth } from './services/healthApi'
-
-const navigation = [
-  { label: 'Tổng quan', href: '#tong-quan' },
-  { label: 'Kết nối API', href: '#ket-noi' },
-  { label: 'Các phân hệ', href: '#phan-he' },
-]
-
-const modules = [
-  {
-    title: 'Đặt lịch khám',
-    description: 'Quản lý lịch trực tiếp, lịch online và phân công bác sĩ.',
-    icon: faCalendarCheck,
-    color: 'bg-sky-50 text-sky-700',
-  },
-  {
-    title: 'Khám và bệnh án',
-    description: 'Theo dõi lần khám, chẩn đoán và hồ sơ bệnh án điện tử.',
-    icon: faStethoscope,
-    color: 'bg-teal-50 text-teal-700',
-  },
-  {
-    title: 'Cận lâm sàng',
-    description: 'Quản lý chỉ định, hàng đợi và kết quả xét nghiệm.',
-    icon: faFlaskVial,
-    color: 'bg-violet-50 text-violet-700',
-  },
-  {
-    title: 'Thu phí và hoàn tiền',
-    description: 'Quản lý hóa đơn, thanh toán MoMo và hoàn tiền.',
-    icon: faWallet,
-    color: 'bg-amber-50 text-amber-700',
-  },
-  {
-    title: 'Khám trực tuyến',
-    description: 'Hỗ trợ quy trình khám online và phiên video.',
-    icon: faVideo,
-    color: 'bg-indigo-50 text-indigo-700',
-  },
-  {
-    title: 'Tài khoản và nhân sự',
-    description: 'Quản lý bệnh nhân, nhân viên và phân quyền.',
-    icon: faUsers,
-    color: 'bg-rose-50 text-rose-700',
-  },
-]
-
-function FlowStep({ number, icon, title, description }) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
-        <FontAwesomeIcon icon={icon} className="text-lg" />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold">{title}</p>
-        <p className="mt-1 text-xs leading-5 text-blue-100">
-          {description}
-        </p>
-      </div>
-
-      <span className="text-sm font-bold text-white/50">
-        {number}
-      </span>
-    </div>
-  )
+const roleLabels = {
+  PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
+  DEPARTMENT_HEAD: 'Trưởng khoa', CASHIER: 'Thu ngân', SYSTEM_ADMIN: 'Quản trị viên',
 }
 
-function App() {
-  const [refreshIndex, setRefreshIndex] = useState(0)
+const plannedLinks = [
+  { title: 'Lịch khám', icon: faCalendarCheck, roles: ['PATIENT', 'DOCTOR', 'DEPARTMENT_HEAD'] },
+  { title: 'Khám và kết quả', icon: faClipboard, roles: ['DOCTOR', 'LAB_STAFF'] },
+  { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'] },
+  { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
+]
 
-  const [health, setHealth] = useState({
-    state: 'loading',
-    data: null,
-    error: '',
-    checkedAt: null,
-  })
+function App() {
+  const [mode, setMode] = useState('home')
+  const [account, setAccount] = useState(null)
+  const [authState, setAuthState] = useState(getToken() ? 'loading' : 'guest')
+  const [authError, setAuthError] = useState('')
+  const [logoutBusy, setLogoutBusy] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
+  const [authClosing, setAuthClosing] = useState(false)
+  const logoutDialogRef = useRef(null)
+  const authExitTimerRef = useRef(null)
+  const dialogExitTimerRef = useRef(null)
+
+  useEffect(() => () => {
+    window.clearTimeout(authExitTimerRef.current)
+    window.clearTimeout(dialogExitTimerRef.current)
+  }, [])
 
   useEffect(() => {
-    const controller = new AbortController()
-
-    async function checkBackend() {
-      try {
-        const data = await getHealth(controller.signal)
-
-        if (!controller.signal.aborted) {
-          setHealth({
-            state: 'online',
-            data,
-            error: '',
-            checkedAt: new Date().toLocaleTimeString('vi-VN'),
-          })
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          setHealth({
-            state: 'offline',
-            data: null,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Không thể kiểm tra backend.',
-            checkedAt: new Date().toLocaleTimeString('vi-VN'),
-          })
-        }
-      }
-    }
-
-    checkBackend()
-
-    return () => {
-      controller.abort()
-    }
-  }, [refreshIndex])
-
-  function handleRefresh() {
-    setHealth({
-      state: 'loading',
-      data: null,
-      error: '',
-      checkedAt: null,
+    const token = getToken()
+    if (!token) return
+    let active = true
+    getCurrentAccount(token).then((current) => {
+      if (active) { setAccount(current); setAuthState('signedIn') }
+    }).catch((error) => {
+      if (!active) return
+      if (error.status === 401) { clearToken(); setAuthState('guest') }
+      else { setAuthState('error'); setAuthError(error.message) }
     })
+    return () => { active = false }
+  }, [])
 
-    setRefreshIndex((value) => value + 1)
+  async function handleLogin(credentials) {
+    const result = await login(credentials)
+    const current = await getCurrentAccount(result.accessToken)
+    saveToken(result.accessToken)
+    setAuthClosing(true)
+    await new Promise((resolve) => window.setTimeout(resolve, 180))
+    setAccount(current)
+    setAuthState('signedIn')
+    setAuthError('')
+    setAuthClosing(false)
   }
 
-  const isLoading = health.state === 'loading'
-  const isOnline = health.state === 'online'
-  const isOffline = health.state === 'offline'
+  function changeMode(nextMode) {
+    window.clearTimeout(authExitTimerRef.current)
+    if (authState === 'guest' && (mode === 'login' || mode === 'register') && nextMode === 'home') {
+      setAuthClosing(true)
+      authExitTimerRef.current = window.setTimeout(() => {
+        setMode('home')
+        setAuthClosing(false)
+      }, 180)
+      return
+    }
+    setAuthClosing(false)
+    setMode(nextMode)
+  }
 
-  const statusTitle = isLoading
-    ? 'Đang kiểm tra kết nối'
-    : isOnline
-      ? 'Đã kết nối Spring Boot'
-      : 'Không kết nối tới backend'
+  async function handleLogout() {
+    setLogoutBusy(true)
+    setLogoutError('')
+    try {
+      await logout(getToken())
+      clearToken()
+      setAccount(null)
+      setAuthState('guest')
+      setMode('home')
+      closeLogoutDialog()
+    } catch (error) { setLogoutError(error.message) }
+    finally { setLogoutBusy(false) }
+  }
 
-  const statusDescription = isLoading
-    ? 'Đang gửi yêu cầu tới Health API...'
-    : isOnline
-      ? 'API trả về HTTP 200 và JSON hợp lệ.'
-      : 'Chưa nhận được phản hồi Health API hợp lệ.'
+  function openLogoutDialog() {
+    setLogoutError('')
+    logoutDialogRef.current?.classList.remove('logout-dialog--closing')
+    logoutDialogRef.current?.showModal()
+  }
 
-  const statusIcon = isLoading
-    ? faRotate
-    : isOnline
-      ? faCircleCheck
-      : faCircleExclamation
+  function closeLogoutDialog() {
+    const dialog = logoutDialogRef.current
+    if (!dialog?.open) return
+    dialog.classList.add('logout-dialog--closing')
+    window.clearTimeout(dialogExitTimerRef.current)
+    dialogExitTimerRef.current = window.setTimeout(() => {
+      dialog.close()
+      dialog.classList.remove('logout-dialog--closing')
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180)
+  }
 
-  const statusColor = isLoading
-    ? 'border-sky-200 bg-sky-50 text-sky-700'
-    : isOnline
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-      : 'border-rose-200 bg-rose-50 text-rose-700'
+  async function refreshAccount() {
+    setAuthError('')
+    try {
+      setAccount(await getCurrentAccount(getToken()))
+    } catch (error) {
+      if (error.status === 401) {
+        clearToken()
+        setAccount(null)
+        setAuthState('guest')
+        setMode('home')
+      }
+      setAuthError(error.message)
+    }
+  }
+
+  const availableLinks = plannedLinks.filter((link) => account?.roles.some((role) => link.roles.includes(role)))
 
   return (
-    <div className="min-h-screen bg-[#f4f8fc] text-slate-800">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-
-        {/* Desktop sidebar */}
-        <aside className="hidden w-64 shrink-0 flex-col bg-suncare-900 px-6 py-8 text-white lg:flex">
-
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-              <FontAwesomeIcon
-                icon={faHeartPulse}
-                className="text-2xl text-white"
-              />
-            </div>
-
-            <div>
-              <p className="text-xl font-extrabold tracking-wide">
-                SUNCARE
-              </p>
-              <p className="text-xs tracking-[0.25em] text-blue-200">
-                CLINIC
-              </p>
-            </div>
+    <div className="flex min-h-svh flex-col bg-clinical-canvas text-clinical-ink">
+      <header className="shrink-0 border-b border-suncare-200 bg-suncare-50">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8 lg:px-14">
+          <div className="flex items-center gap-3 text-suncare-900">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-suncare-400 text-clinical-ink"><FontAwesomeIcon icon={faHeartPulse} /></span>
+            <span className="text-lg font-extrabold tracking-wide">SUNCARE <span className="text-clinical-leaf">CLINIC</span></span>
           </div>
-
-          <div className="mt-12">
-            <p className="mb-4 px-4 text-xs font-semibold uppercase tracking-widest text-blue-200">
-              Điều hướng
-            </p>
-
-            <nav className="space-y-2" aria-label="Điều hướng chính">
-              {navigation.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-blue-100 transition hover:bg-white/10 hover:text-white"
-                >
-                  <span className="h-2 w-2 rounded-full bg-teal-300" />
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-
-          <div className="mt-auto rounded-2xl border border-white/15 bg-white/10 p-5">
-            <FontAwesomeIcon
-              icon={faHeartPulse}
-              className="text-2xl text-teal-200"
-            />
-
-            <p className="mt-4 text-sm font-bold">
-              Suncare Clinic
-            </p>
-
-            <p className="mt-2 text-xs leading-6 text-blue-100">
-              Nền tảng quản lý phòng khám đang trong giai đoạn khởi tạo.
-            </p>
-
-            <p className="mt-4 text-xs font-semibold text-teal-200">
-              Giai đoạn: Thiết lập hệ thống
-            </p>
-          </div>
-        </aside>
-
-        {/* Main application */}
-        <div className="min-w-0 flex-1">
-
-          {/* Header */}
-          <header className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8 lg:px-10">
-
-            <div className="flex items-center justify-between gap-4">
-
-              <div className="flex items-center gap-3 lg:hidden">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-suncare-600 text-white">
-                  <FontAwesomeIcon icon={faHeartPulse} />
-                </div>
-
-                <div>
-                  <p className="font-extrabold tracking-wide text-suncare-900">
-                    SUNCARE
-                  </p>
-                  <p className="text-xs tracking-widest text-slate-500">
-                    CLINIC
-                  </p>
-                </div>
-              </div>
-
-              <div className="hidden lg:block">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                  Suncare Clinic
-                </p>
-                <h2 className="mt-1 text-lg font-bold text-suncare-900">
-                  Không gian quản lý phòng khám
-                </h2>
-              </div>
-
-              <span className="rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-xs font-semibold text-suncare-700">
-                Bản giao diện khởi tạo
-              </span>
-            </div>
-
-            {/* Mobile navigation */}
-            <nav
-              className="mt-5 flex gap-5 overflow-x-auto text-sm font-semibold text-slate-600 lg:hidden"
-              aria-label="Điều hướng di động"
-            >
-              {navigation.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="shrink-0 pb-1 transition hover:text-suncare-600"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </header>
-
-          <main className="space-y-9 px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
-
-            {/* Hero */}
-            <section
-              id="tong-quan"
-              className="relative scroll-mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-suncare-900 via-suncare-700 to-suncare-600 px-6 py-10 text-white shadow-xl shadow-blue-900/10 sm:px-10 lg:px-12"
-            >
-              <div className="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full border border-white/20" />
-              <div className="pointer-events-none absolute -bottom-40 right-20 h-80 w-80 rounded-full bg-cyan-300/10 blur-3xl" />
-
-              <div className="relative grid items-center gap-10 xl:grid-cols-2">
-
-                <div>
-                  <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-blue-50">
-                    SUNCARE — CLINIC MANAGEMENT
-                  </span>
-
-                  <h1 className="mt-6 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                    Chăm sóc tốt hơn.
-                    <span className="mt-2 block text-cyan-200">
-                      Vận hành rõ ràng hơn.
-                    </span>
-                  </h1>
-
-                  <p className="mt-6 max-w-xl text-sm leading-7 text-blue-100 sm:text-base">
-                    Suncare Clinic hướng tới việc kết nối quy trình
-                    đặt khám, khám bệnh, cận lâm sàng và thanh toán
-                    trong một nền tảng thống nhất.
-                  </p>
-
-                  <a
-                    href="#ket-noi"
-                    className="mt-8 inline-flex items-center gap-3 rounded-xl bg-white px-6 py-3 font-bold text-suncare-900 shadow-lg transition hover:bg-cyan-50"
-                  >
-                    Xem trạng thái kết nối
-
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </a>
-                </div>
-
-                {/* Workflow illustration */}
-                <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-md sm:p-6">
-
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest text-blue-200">
-                        Tổng quan
-                      </p>
-                      <h2 className="mt-1 text-lg font-bold">
-                        Quy trình khám dự kiến
-                      </h2>
-                    </div>
-
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-                      <FontAwesomeIcon icon={faHeartPulse} />
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-3">
-                    <FlowStep
-                      number="01"
-                      icon={faCalendarCheck}
-                      title="Đặt lịch khám"
-                      description="Lựa chọn hình thức và lịch khám."
-                    />
-
-                    <FlowStep
-                      number="02"
-                      icon={faStethoscope}
-                      title="Thăm khám"
-                      description="Bác sĩ tiếp nhận và đánh giá."
-                    />
-
-                    <FlowStep
-                      number="03"
-                      icon={faFileMedical}
-                      title="Hồ sơ và kết quả"
-                      description="Theo dõi kết quả, đơn thuốc khi có."
-                    />
-                  </div>
-
-                  <p className="mt-5 text-xs text-blue-100">
-                    Minh họa giao diện — chưa phát sinh dữ liệu khám.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Health API status */}
-            <section id="ket-noi" className="scroll-mt-6">
-
-              <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-suncare-teal">
-                  Kiểm tra kỹ thuật
-                </p>
-
-                <h2 className="mt-2 text-2xl font-extrabold text-suncare-900">
-                  Trạng thái kết nối hệ thống
-                </h2>
-
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Kiểm tra kết nối thực tế giữa React và Spring Boot.
-                </p>
-              </div>
-
-              <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-
-                <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
-
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-suncare-700">
-                      <FontAwesomeIcon
-                        icon={faServer}
-                        className="text-xl"
-                      />
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-bold text-suncare-900">
-                        Suncare Backend
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        Spring Boot REST API
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    role="status"
-                    aria-live="polite"
-                    className={`mt-7 rounded-2xl border p-5 ${statusColor}`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-5">
-
-                      <div className="flex items-center gap-3">
-                        <FontAwesomeIcon
-                          icon={statusIcon}
-                          className={`text-2xl ${isLoading ? 'animate-spin' : ''}`}
-                        />
-
-                        <div>
-                          <p className="font-bold">
-                            {statusTitle}
-                          </p>
-
-                          <p className="mt-1 text-sm">
-                            {statusDescription}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleRefresh}
-                        disabled={isLoading}
-                        className="inline-flex items-center gap-2 rounded-xl border border-current/20 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <FontAwesomeIcon icon={faRotate} />
-                        Kiểm tra lại
-                      </button>
-                    </div>
-                  </div>
-
-                  {isOffline && (
-                    <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                      <p className="font-semibold">
-                        Không thể xác nhận kết nối.
-                      </p>
-                      <p className="mt-1 break-words">
-                        {health.error}
-                      </p>
-                      <p className="mt-2">
-                        Hãy kiểm tra Spring Boot đang chạy trên cổng 8080.
-                      </p>
-                    </div>
-                  )}
-
-                  <p className="mt-5 text-xs leading-5 text-slate-500">
-                    Trạng thái được kiểm tra khi mở trang hoặc nhấn
-                    nút Kiểm tra lại. Đây không phải hệ thống giám
-                    sát liên tục.
-                  </p>
-                </article>
-
-                {/* API details */}
-                <article className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
-
-                  <h3 className="text-lg font-bold text-suncare-900">
-                    Thông tin API
-                  </h3>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Dữ liệu từ yêu cầu kiểm tra gần nhất.
-                  </p>
-
-                  <dl className="mt-6 space-y-4">
-                    <div className="border-b border-slate-100 pb-3">
-                      <dt className="text-xs font-semibold text-slate-400">
-                        Endpoint
-                      </dt>
-                      <dd className="mt-1 break-all font-mono text-sm font-semibold text-slate-700">
-                        GET /api/health
-                      </dd>
-                    </div>
-
-                    <div className="border-b border-slate-100 pb-3">
-                      <dt className="text-xs font-semibold text-slate-400">
-                        Backend service
-                      </dt>
-                      <dd className="mt-1 font-semibold text-slate-800">
-                        {health.data?.service ?? 'Chưa xác nhận'}
-                      </dd>
-                    </div>
-
-                    <div className="border-b border-slate-100 pb-3">
-                      <dt className="text-xs font-semibold text-slate-400">
-                        Trạng thái phản hồi
-                      </dt>
-                      <dd className="mt-1 font-bold text-slate-800">
-                        {health.data?.status ?? '—'}
-                      </dd>
-                    </div>
-
-                    <div>
-                      <dt className="text-xs font-semibold text-slate-400">
-                        Kiểm tra lúc
-                      </dt>
-                      <dd className="mt-1 font-semibold text-slate-800">
-                        {health.checkedAt ?? '—'}
-                      </dd>
-                    </div>
-                  </dl>
-                </article>
-              </div>
-            </section>
-
-            {/* Planned modules */}
-            <section id="phan-he" className="scroll-mt-6">
-
-              <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-suncare-teal">
-                  Nền tảng Suncare
-                </p>
-
-                <h2 className="mt-2 text-2xl font-extrabold text-suncare-900">
-                  Các phân hệ dự kiến
-                </h2>
-
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Các nhóm chức năng sẽ được triển khai trong những
-                  giai đoạn tiếp theo.
-                </p>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-
-                {modules.map((module) => (
-                  <article
-                    key={module.title}
-                    className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition hover:border-sky-100 hover:shadow-md"
-                  >
-                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${module.color}`}>
-                      <FontAwesomeIcon
-                        icon={module.icon}
-                        className="text-2xl"
-                      />
-                    </div>
-
-                    <h3 className="mt-5 text-lg font-bold text-suncare-900">
-                      {module.title}
-                    </h3>
-
-                    <p className="mt-2 min-h-14 text-sm leading-6 text-slate-500">
-                      {module.description}
-                    </p>
-
-                    <div className="mt-5 border-t border-slate-100 pt-4">
-                      <span className="text-xs font-semibold text-slate-400">
-                        Chưa triển khai
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </main>
-
-          <footer className="mx-5 border-t border-slate-200 py-6 text-center text-xs leading-6 text-slate-500 sm:mx-8 lg:mx-10">
-            © Suncare Clinic — Giao diện khởi tạo kỹ thuật.
-            Chưa sử dụng dữ liệu bệnh nhân thực.
-          </footer>
+          <nav className="flex w-full flex-wrap items-center gap-1 text-sm font-semibold sm:w-auto sm:gap-3" aria-label="Điều hướng tài khoản">
+            <button onClick={() => changeMode('home')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Giới thiệu</button>
+            {authState === 'signedIn' ? <>
+              <button onClick={() => setMode('account')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Tài khoản</button>
+              <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
+            </> : <>
+              <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
+              <button onClick={() => changeMode('register')} className="rounded-lg bg-suncare-400 px-4 py-2 text-clinical-ink hover:bg-suncare-500">Đăng ký</button>
+            </>}
+          </nav>
         </div>
-      </div>
+      </header>
+
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+        {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
+        {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
+        {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
+        {authState === 'guest' && (mode === 'login' || mode === 'register') &&
+          <AccountForm mode={mode} closing={authClosing} onModeChange={changeMode} onLogin={handleLogin} onRegister={registerPatient} />}
+        {authState === 'guest' && mode === 'home' && <>
+          <section className="bg-suncare-100 md:grid md:min-h-[34rem] md:grid-cols-[0.92fr_1.08fr]">
+            <div className="flex flex-col justify-center px-5 py-12 sm:px-10 lg:px-14 lg:py-20">
+              <p className="font-semibold text-suncare-700">Suncare Clinic · Chăm sóc ngoại trú</p>
+              <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">Chăm sóc sức khỏe bắt đầu từ sự an tâm.</h1>
+              <p className="mt-6 max-w-xl text-base leading-8 text-clinical-muted">Suncare xây dựng hành trình khám ngoại trú tại một cơ sở: từ đăng ký tài khoản, đặt lịch, thăm khám đến theo dõi kết quả. Bạn có thể bắt đầu bằng tài khoản bệnh nhân.</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button onClick={() => changeMode('register')} className="rounded-xl bg-suncare-400 px-5 py-3 font-semibold text-clinical-ink hover:bg-suncare-500">Đăng ký tài khoản</button>
+                <button onClick={() => changeMode('login')} className="rounded-xl border border-suncare-700 px-5 py-3 font-semibold text-suncare-700 hover:bg-suncare-200">Đăng nhập</button>
+              </div>
+            </div>
+            <div className="relative min-h-72 sm:min-h-96 md:min-h-full">
+              <img src={clinicReception} alt="Minh họa không gian tiếp đón tại một phòng khám" className="absolute inset-0 h-full w-full object-cover" />
+            </div>
+          </section>
+          <section className="bg-clinical-leaf-soft px-5 py-12 sm:px-10 lg:px-14 lg:py-16" aria-labelledby="care-title">
+            <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+              <div>
+                <h2 id="care-title" className="max-w-md text-3xl font-bold leading-tight sm:text-4xl">Một hành trình khám được thiết kế rõ từng bước</h2>
+                <p className="mt-4 max-w-md leading-7 text-clinical-muted">Suncare tập trung vào khám ngoại trú trực tiếp và trực tuyến. Các bước đặt lịch và thăm khám đang được phát triển.</p>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <article className="border-l-4 border-clinical-leaf pl-5">
+                  <h3 className="text-xl font-bold">Khám trực tiếp</h3>
+                  <p className="mt-3 leading-7 text-clinical-muted">Theo quy trình dự kiến, bệnh nhân chọn chuyên khoa, ngày và ca khám. Hệ thống phân bác sĩ phù hợp với lịch đã công bố.</p>
+                </article>
+                <article className="border-l-4 border-suncare-600 pl-5">
+                  <h3 className="text-xl font-bold">Khám trực tuyến</h3>
+                  <p className="mt-3 leading-7 text-clinical-muted">Theo quy trình dự kiến, bệnh nhân chọn giờ khám; lịch hẹn chỉ được xác nhận sau khi thanh toán được hệ thống kiểm tra.</p>
+                </article>
+              </div>
+            </div>
+          </section>
+          <div className="grid md:grid-cols-2">
+            <section className="bg-clinical-gold-soft px-5 py-12 sm:px-10 lg:px-14" aria-labelledby="departments-title">
+              <FontAwesomeIcon icon={faHeartPulse} className="text-2xl text-clinical-leaf" aria-hidden="true" />
+              <h2 id="departments-title" className="mt-5 text-2xl font-bold">Khoa và chuyên khoa</h2>
+              <p className="mt-3 max-w-lg leading-7 text-clinical-muted">Danh mục cụ thể đang được cập nhật. Khi được công bố, bạn sẽ có thể xem chuyên khoa trước khi chọn lịch khám.</p>
+            </section>
+            <section className="bg-suncare-200 px-5 py-12 sm:px-10 lg:px-14" aria-labelledby="doctors-title">
+              <FontAwesomeIcon icon={faClipboard} className="text-2xl text-suncare-700" aria-hidden="true" />
+              <h2 id="doctors-title" className="mt-5 text-2xl font-bold">Đội ngũ bác sĩ</h2>
+              <p className="mt-3 max-w-lg leading-7 text-clinical-muted">Thông tin bác sĩ và lịch làm việc đang được cập nhật. Suncare sẽ hiển thị danh sách sau khi có dữ liệu được xác nhận.</p>
+            </section>
+          </div>
+        </>}
+        {authState === 'signedIn' && mode !== 'account' && <>
+          <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
+            <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
+            <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-clinical-muted">Các chức năng dành cho tài khoản của bạn sẽ xuất hiện tại đây khi được triển khai.</p>
+          </section>
+          {account && <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_1.3fr]">
+            <article className="rounded-2xl border border-clinical-border bg-white p-6">
+              <h2 className="text-lg font-bold">Tài khoản hiện tại</h2>
+              <p className="mt-3 text-sm text-clinical-muted">Mã tài khoản: {account.accountId}</p>
+              <p className="mt-2 text-sm text-clinical-muted">Vai trò: {account.roles.map((role) => roleLabels[role] || role).join(', ') || 'Chưa được cấp vai trò'}</p>
+              <button onClick={refreshAccount} className="mt-5 text-sm font-semibold text-suncare-700 hover:underline">Làm mới quyền</button>
+            </article>
+            <article className="rounded-2xl border border-clinical-border bg-white p-6">
+              <h2 className="text-lg font-bold">Điều hướng theo vai trò</h2>
+              {availableLinks.length === 0 ? <p className="mt-3 text-sm text-clinical-muted">Chưa có mục phù hợp với vai trò hiện tại.</p> :
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">{availableLinks.map((link) => <div key={link.title} className="rounded-xl bg-clinical-canvas p-4 text-sm"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Sẽ triển khai ở bước sau</p></div>)}</div>}
+            </article>
+          </section>}
+        </>}
+        {authState === 'signedIn' && mode === 'account' && <p className="mt-6 text-sm text-clinical-muted">Chỉnh sửa hồ sơ cá nhân sẽ được triển khai ở P06.</p>}
+      </main>
+      <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
+        onCancel={(event) => { event.preventDefault(); if (!logoutBusy) closeLogoutDialog() }}
+        onClick={(event) => { if (event.target === event.currentTarget && !logoutBusy) closeLogoutDialog() }}
+        className="logout-dialog m-auto w-[min(27rem,calc(100%-2rem))] overflow-hidden rounded-2xl border border-clinical-border bg-white p-0 text-clinical-ink shadow-2xl backdrop:bg-clinical-ink/60">
+        <div className="p-6 sm:p-7">
+          <div className="flex items-start gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-suncare-100 text-lg text-suncare-700" aria-hidden="true"><FontAwesomeIcon icon={faRightFromBracket} /></span>
+            <div>
+              <h2 id="logout-title" className="text-xl font-bold">Bạn muốn đăng xuất?</h2>
+              <p id="logout-description" className="mt-2 text-sm leading-6 text-clinical-muted">Bạn có thể đăng nhập lại bất cứ lúc nào để tiếp tục sử dụng tài khoản.</p>
+            </div>
+          </div>
+          {logoutError && <p role="alert" className="mt-5 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{logoutError}</p>}
+        </div>
+        <div className="grid grid-cols-2 gap-3 border-t border-clinical-border bg-clinical-canvas px-6 py-4 sm:px-7">
+          <button type="button" autoFocus disabled={logoutBusy} onClick={closeLogoutDialog} className="min-h-11 rounded-xl border border-clinical-border-strong bg-white px-3 font-semibold hover:bg-suncare-50 disabled:opacity-60">Ở lại</button>
+          <button type="button" disabled={logoutBusy} onClick={handleLogout} className="min-h-11 rounded-xl bg-suncare-400 px-3 font-semibold text-clinical-ink hover:bg-suncare-500 disabled:opacity-60">{logoutBusy ? 'Đang xử lý...' : 'Đăng xuất'}</button>
+        </div>
+      </dialog>
     </div>
   )
 }
 
 export default App
+
