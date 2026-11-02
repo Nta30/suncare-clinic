@@ -7,6 +7,7 @@ import StaffManagement from './features/account/StaffManagement'
 import OrganizationManagement from './features/organization/OrganizationManagement'
 import RoomManagement from './features/organization/RoomManagement'
 import StaffAssignments from './features/organization/StaffAssignments'
+import ClinicalServiceManagement from './features/clinical/ClinicalServiceManagement'
 import clinicReception from './assets/clinic-reception-illustration.jpg'
 import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient, saveToken } from './services/accountApi'
 
@@ -152,6 +153,8 @@ function App() {
                 <button onClick={() => setMode('organization')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Khoa và chuyên khoa</button>}
               {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('rooms')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phòng</button>}
+              {account?.permissions.includes('CATALOG_MANAGE') &&
+                <button onClick={() => setMode('services')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Dịch vụ & giá CLS</button>}
               {account?.permissions.includes('ACCOUNT_MANAGE') &&
                 <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
@@ -215,7 +218,7 @@ function App() {
             </section>
           </div>
         </>}
-        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms'].includes(mode) && <>
+        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services'].includes(mode) && <>
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -245,6 +248,8 @@ function App() {
           <RoomManagement onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'assignments' && account?.permissions.includes('ACCOUNT_MANAGE') &&
           <StaffAssignments onSessionExpired={handleSessionExpired} />}
+        {authState === 'signedIn' && mode === 'services' && account?.permissions.includes('CATALOG_MANAGE') &&
+          <ClinicalServiceManagement onSessionExpired={handleSessionExpired} />}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
         onCancel={(event) => { event.preventDefault(); if (!logoutBusy) closeLogoutDialog() }}

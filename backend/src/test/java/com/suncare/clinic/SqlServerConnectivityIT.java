@@ -1,4 +1,3 @@
-
 package com.suncare.clinic;
 
 import org.junit.jupiter.api.Test;
@@ -65,7 +64,7 @@ class SqlServerConnectivityIT {
             );
 
             assertEquals(
-                    58,
+                    59,
                     tableCount
             );
         }

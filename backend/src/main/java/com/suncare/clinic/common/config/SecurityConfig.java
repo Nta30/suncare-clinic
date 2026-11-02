@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/admin/staff").hasAuthority("ACCOUNT_MANAGE")
                         .requestMatchers("/api/admin/staff-assignments", "/api/admin/staff-assignments/**").hasAuthority("ACCOUNT_MANAGE")
                         .requestMatchers("/api/admin/organization", "/api/admin/organization/**").hasAuthority("CATALOG_MANAGE")
+                        .requestMatchers("/api/admin/services", "/api/admin/services/**").hasAuthority("CATALOG_MANAGE")
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
