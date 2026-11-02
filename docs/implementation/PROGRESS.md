@@ -5,10 +5,48 @@ Cập nhật: 2026-11-02
 Việc hiện tại: P11 — rà soát danh mục Service, RoomService và giá CLS
 Trạng thái: IN_PROGRESS (P10 DONE; P07 còn thiếu log browser theo mốc cũ)
 
+### Rà soát thay đổi Antigravity (2026-11-02)
+
+- Phần mới trong working tree hiện là P12 (ca làm việc và giá khám); chưa thấy mã `WorkSchedule`/`WorkAssignment` hay giao diện calendar P13. P13 vẫn TODO trong bảng tiến độ.
+- Gọn UI P12: bỏ hai đoạn giải thích quy tắc dài dưới tiêu đề, bỏ hướng dẫn lặp lại hành động trong empty state và bỏ wrapper thừa quanh tiêu đề. `npm run lint`/`npm run build` PASS; backend không đổi trong lượt rà này.
+- Cần xử lý trước khi coi P12 hoàn chỉnh: API/UI hiện có thể khởi tạo giờ ca mẫu cố định 07:30–11:30 và 13:30–17:30, trong khi giờ thật chưa được chủ dự án chốt. Không bấm khởi tạo các ca này như dữ liệu vận hành; bước tiếp theo cần thay bằng cấu hình giờ do quản trị nhập trước P13.
+
 ### Điều chỉnh UI P08 theo yêu cầu (2026-11-02)
 
 - Màn hình khoa/chuyên khoa chuyển từ các thẻ dài sang bảng có tìm mã/tên và lọc trạng thái. Khoa khám mở hàng chi tiết để xem/bật/ngừng liên kết chuyên khoa; form thêm/sửa nằm trong hộp thoại, có đóng bằng Escape, giữ focus trong hộp thoại và trả focus về nút mở.
 - `npm run lint` và `npm run build` PASS sau sửa. Chưa kiểm tra tương tác và kích thước màn hình trên browser vì cầu nối browser phiên trước báo không khả dụng; bảng có vùng cuộn ngang riêng trên màn hình hẹp. Không thay API/DB. P08 vẫn DONE theo phạm vi nghiệp vụ đã chốt; đây là cải tiến cách trình bày.
+
+### P12 — Giá khám theo bác sĩ/hình thức và ShiftDefinition (2026-11-02)
+
+- **Ca làm việc (ShiftDefinition)**:
+  - Thêm DTO (`ShiftDefinitionResponse`, `ShiftDefinitionCreateRequest`, `ShiftDefinitionUpdateRequest`), Repository, Service và Controller (`/api/admin/scheduling/shifts`) trong module `scheduling`.
+  - Hỗ trợ xem danh sách, khởi tạo ca chuẩn (MORNING "Ca sáng" 07:30 - 11:30, AFTERNOON "Ca chiều" 13:30 - 17:30) khi bảng trống, cập nhật tên/giờ/trạng thái với khóa lạc quan (`version`), kiểm tra `local_end > local_start` và ghi `AuditEvent` cùng transaction.
+  - Phân quyền: Yêu cầu quyền `CATALOG_MANAGE` ở SecurityConfig và Service.
+
+- **Giá khám theo bác sĩ & hình thức (Consultation Pricing)**:
+  - Sử dụng bảng `dbo.ServicePrice` theo schema V3: dịch vụ `EXAMINATION` yêu cầu cả `doctor_id` và `visit_mode` (ONSITE / ONLINE).
+  - Thêm DTO (`ConsultationPriceResponse`, `ConsultationPriceCreateRequest`, `DoctorOptionResponse`).
+  - Mở rộng `ClinicalServiceRepository`, `ClinicalServiceManagementService`, `ClinicalServiceController`:
+    - `GET /api/admin/services/doctors`: lấy danh sách bác sĩ đang hoạt động (role DOCTOR, status ACTIVE).
+    - `GET /api/admin/services/consultation-prices`: tra cứu toàn bộ giá khám với các bộ lọc serviceId, doctorId, visitMode, activeOnly.
+    - `GET /api/admin/services/{id}/consultation-prices`: danh sách giá khám của một dịch vụ.
+    - `POST /api/admin/services/{id}/consultation-prices`: thiết lập mức giá khám mới; kiểm tra dịch vụ EXAMINATION, bác sĩ DOCTOR active, visit_mode hợp lệ, amount > 0, valid_to > valid_from, và chống giao khoảng hiệu lực (`PRICE_OVERLAP`) bằng khóa bi quan `WITH (UPDLOCK, HOLDLOCK)`.
+    - `PUT /api/admin/services/{id}/consultation-prices/{priceId}/end`: kết thúc mức giá sớm hơn thời điểm chốt, chống hồi tố về quá khứ và kiểm tra version.
+  - Ghi nhận `AuditEvent` trong cùng transaction cho mọi thao tác.
+
+- **Frontend UI & API**:
+  - Thêm `frontend/src/services/schedulingCatalogApi.js` gọi các endpoint ca làm việc và giá khám.
+  - Thêm màn hình `frontend/src/features/scheduling/SchedulingCatalogManagement.jsx`:
+    - Tab 1: Quản lý khung ca khám (ShiftDefinition), xem khung giờ, nút khởi tạo ca chuẩn, modal chỉnh sửa ca có kiểm tra giờ hợp lệ và optimistic lock.
+    - Tab 2: Quản lý bảng giá khám bệnh theo bác sĩ & hình thức khám, bộ lọc theo dịch vụ/bác sĩ/hình thức/chỉ xem giá đang áp dụng/tìm kiếm nhanh, modal thiết lập giá khám mới có live preview VND và validation, modal kết thúc giá khám sớm.
+    - Tích hợp điều hướng "Ca & giá khám" trong `App.jsx` khi tài khoản có quyền `CATALOG_MANAGE`.
+
+- **Kiểm tra**:
+  - Thêm `backend/src/test/java/com/suncare/clinic/modules/scheduling/SchedulingCatalogIT.java` chạy trên `SuncareClinicMigrationTest`: 2/2 PASS (kiểm tra toàn diện ShiftDefinition và ConsultationPricing: từ chối bác sĩ thiếu quyền, khởi tạo ca chuẩn, lỗi giờ không hợp lệ, cập nhật và xung đột concurrency 409; tạo giá khám EXAMINATION, lỗi amount/mode/period, tạo giá thành công, chặn overlap 409, cho phép khác visit_mode hoặc khác doctor, kết thúc giá sớm).
+  - Chạy lại `ClinicalServiceIT`: 5/5 PASS (không có regression).
+  - Chạy lại default backend tests `mvn test`: 8/8 PASS.
+  - Frontend: `npm run lint` PASS (0 errors), `npm run build` PASS (Vite build 422ms).
+  - Chưa kiểm tra tương tác/responsive trên trình duyệt trực tiếp với backend test, giữ đúng nguyên tắc của repo.
 
 ### Rà soát P11 (2026-11-02)
 
@@ -143,7 +181,7 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P09 | DONE | API/UI và integration test DB thử 2/2 đạt; chủ dự án xác nhận hoàn thành. |
 | P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. |
 | P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
-| P12 | TODO | Theo lộ trình trong AGENTS.md. |
+| P12 | IN_PROGRESS | Backend API + DTO + Repository + Service + Controller; 2/2 SchedulingCatalogIT PASS trên migrationtest, ClinicalServiceIT 5/5 PASS; UI SchedulingCatalogManagement.jsx, lint/build PASS; còn kiểm tra browser trực tiếp. |
 | P13 | TODO | Theo lộ trình trong AGENTS.md. |
 | P14 | TODO | Theo lộ trình trong AGENTS.md. |
 | P15 | TODO | Theo lộ trình trong AGENTS.md. |

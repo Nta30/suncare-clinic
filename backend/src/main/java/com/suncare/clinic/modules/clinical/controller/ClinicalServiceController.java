@@ -9,6 +9,9 @@ import com.suncare.clinic.modules.clinical.dto.PriceEndRequest;
 import com.suncare.clinic.modules.clinical.dto.RoomServiceMappingResponse;
 import com.suncare.clinic.modules.clinical.dto.RoomServiceToggleRequest;
 import com.suncare.clinic.modules.clinical.dto.ServicePriceCreateRequest;
+import com.suncare.clinic.modules.clinical.dto.ConsultationPriceCreateRequest;
+import com.suncare.clinic.modules.clinical.dto.ConsultationPriceResponse;
+import com.suncare.clinic.modules.clinical.dto.DoctorOptionResponse;
 import com.suncare.clinic.modules.clinical.dto.ServicePriceResponse;
 import com.suncare.clinic.modules.clinical.service.ClinicalServiceManagementService;
 import jakarta.validation.Valid;
@@ -107,6 +110,49 @@ public class ClinicalServiceController {
             @PathVariable long priceId,
             @Valid @RequestBody PriceEndRequest request) {
         return service.endPrice(account, id, priceId, request);
+    }
+
+    @GetMapping("/doctors")
+    public List<DoctorOptionResponse> listDoctors(@AuthenticationPrincipal CurrentAccountResponse account) {
+        return service.listActiveDoctors(account);
+    }
+
+    @GetMapping("/consultation-prices")
+    public List<ConsultationPriceResponse> listAllConsultationPrices(
+            @AuthenticationPrincipal CurrentAccountResponse account,
+            @RequestParam(required = false) Long serviceId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) String visitMode,
+            @RequestParam(required = false) Boolean activeOnly) {
+        return service.listConsultationPrices(account, serviceId, doctorId, visitMode, activeOnly);
+    }
+
+    @GetMapping("/{id}/consultation-prices")
+    public List<ConsultationPriceResponse> listConsultationPrices(
+            @AuthenticationPrincipal CurrentAccountResponse account,
+            @PathVariable long id,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) String visitMode,
+            @RequestParam(required = false) Boolean activeOnly) {
+        return service.listConsultationPrices(account, id, doctorId, visitMode, activeOnly);
+    }
+
+    @PostMapping("/{id}/consultation-prices")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<ConsultationPriceResponse> createConsultationPrice(
+            @AuthenticationPrincipal CurrentAccountResponse account,
+            @PathVariable long id,
+            @Valid @RequestBody ConsultationPriceCreateRequest request) {
+        return service.createConsultationPrice(account, id, request);
+    }
+
+    @PutMapping("/{id}/consultation-prices/{priceId}/end")
+    public List<ConsultationPriceResponse> endConsultationPrice(
+            @AuthenticationPrincipal CurrentAccountResponse account,
+            @PathVariable long id,
+            @PathVariable long priceId,
+            @Valid @RequestBody PriceEndRequest request) {
+        return service.endConsultationPrice(account, id, priceId, request);
     }
 
     @GetMapping("/{id}/effective-price")

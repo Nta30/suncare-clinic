@@ -86,6 +86,18 @@ export default function OrganizationManagement({ onSessionExpired }) {
   const openerRef = useRef(null)
   const closeTimerRef = useRef(null)
 
+  const closeForm = useCallback(() => {
+    if (!editing || isClosing) return
+    setIsClosing(true)
+    setActionError('')
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180
+    closeTimerRef.current = window.setTimeout(() => {
+      setEditing(null)
+      setIsClosing(false)
+      openerRef.current?.focus()
+    }, delay)
+  }, [editing, isClosing])
+
   useEffect(() => () => window.clearTimeout(closeTimerRef.current), [])
 
   useEffect(() => {
@@ -108,7 +120,7 @@ export default function OrganizationManagement({ onSessionExpired }) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [editing, busy, isClosing])
+  }, [editing, busy, isClosing, closeForm])
 
   const items = (tab === 'department' ? catalog.departments : catalog.specialties).filter((item) => {
     const query = search.trim().toLocaleLowerCase('vi')
@@ -181,18 +193,6 @@ export default function OrganizationManagement({ onSessionExpired }) {
     setEditing({ kind, item })
     setFieldErrors({})
     setActionError('')
-  }
-
-  function closeForm() {
-    if (!editing || isClosing) return
-    setIsClosing(true)
-    setActionError('')
-    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180
-    closeTimerRef.current = window.setTimeout(() => {
-      setEditing(null)
-      setIsClosing(false)
-      openerRef.current?.focus()
-    }, delay)
   }
 
   async function changeLink(departmentId, specialtyId, active) {

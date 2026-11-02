@@ -9,6 +9,9 @@ import com.suncare.clinic.modules.clinical.dto.EffectivePriceResponse;
 import com.suncare.clinic.modules.clinical.dto.PriceEndRequest;
 import com.suncare.clinic.modules.clinical.dto.RoomServiceMappingResponse;
 import com.suncare.clinic.modules.clinical.dto.ServicePriceCreateRequest;
+import com.suncare.clinic.modules.clinical.dto.ConsultationPriceCreateRequest;
+import com.suncare.clinic.modules.clinical.dto.ConsultationPriceResponse;
+import com.suncare.clinic.modules.clinical.dto.DoctorOptionResponse;
 import com.suncare.clinic.modules.clinical.dto.ServicePriceResponse;
 import com.suncare.clinic.modules.clinical.repository.ClinicalServiceRepository;
 import org.springframework.dao.DuplicateKeyException;
@@ -204,6 +207,110 @@ public class ClinicalServiceManagementService {
 
         repository.audit(account.accountId(), "SERVICE_PRICE_ENDED", "ServicePrice", priceId, "valid_to=" + request.validTo());
         return repository.listPrices(serviceId);
+    }
+
+    public List<ConsultationPriceResponse> listConsultationPrices(
+            CurrentAccountResponse account, Long serviceId, Long doctorId, String visitMode, Boolean activeOnly) {
+        requireCatalogManage(account);
+        if (serviceId != null) {
+            ClinicalServiceRepository.ServiceIdentity service = repository.lockService(serviceId);
+            if (service == null) {
+                throw notFound("SERVICE_NOT_FOUND", "Không tìm thấy dịch vụ.");
+            }
+            if (!"EXAMINATION".equalsIgnoreCase(service.serviceType())) {
+                throw bad("INVALID_SERVICE_TYPE", "Dịch vụ phải là loại EXAMINATION (khám bệnh).");
+            }
+        }
+        return repository.listConsultationPrices(serviceId, doctorId, visitMode, activeOnly);
+    }
+
+    @Transactional
+    public List<ConsultationPriceResponse> createConsultationPrice(
+            CurrentAccountResponse account, long serviceId, ConsultationPriceCreateRequest request) {
+        requireCatalogManage(account);
+        ClinicalServiceRepository.ServiceIdentity service = repository.lockService(serviceId);
+        if (service == null) {
+            throw notFound("SERVICE_NOT_FOUND", "Không tìm thấy dịch vụ.");
+        }
+        if (!"EXAMINATION".equalsIgnoreCase(service.serviceType())) {
+            throw bad("INVALID_SERVICE_TYPE", "Giá khám theo bác sĩ chỉ áp dụng cho dịch vụ loại EXAMINATION.");
+        }
+        if (!service.isActive()) {
+            throw bad("SERVICE_INACTIVE", "Không thể thêm giá cho dịch vụ đã ngưng hoạt động.");
+        }
+
+        if (!repository.isDoctorActive(request.doctorId())) {
+            throw bad("INVALID_DOCTOR", "Bác sĩ không tồn tại, đã ngưng hoạt động hoặc không có vai trò Bác sĩ.");
+        }
+
+        String visitMode = request.visitMode().trim().toUpperCase();
+        if (!"ONSITE".equals(visitMode) && !"ONLINE".equals(visitMode)) {
+            throw bad("INVALID_VISIT_MODE", "Hình thức khám chỉ có thể là ONSITE hoặc ONLINE.");
+        }
+
+        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw bad("INVALID_AMOUNT", "Giá dịch vụ phải lớn hơn 0.");
+        }
+
+        if (request.validTo() != null && !request.validTo().isAfter(request.validFrom())) {
+            throw bad("INVALID_PERIOD", "Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+        }
+
+        if (repository.hasPriceOverlap(serviceId, request.doctorId(), visitMode, request.validFrom(), request.validTo(), null)) {
+            throw conflict("PRICE_OVERLAP", "Khoảng thời gian hiệu lực bị chồng lấn với mức giá đã có của bác sĩ này.");
+        }
+
+        long priceId = repository.insertPrice(serviceId, request.doctorId(), visitMode, request.amount(),
+                request.validFrom(), request.validTo(), account.accountId());
+
+        repository.audit(account.accountId(), "CONSULTATION_PRICE_CREATED", "ServicePrice", priceId,
+                "doctor_id=" + request.doctorId() + ", mode=" + visitMode + ", amount=" + request.amount());
+
+        return repository.listConsultationPrices(serviceId, request.doctorId(), visitMode, null);
+    }
+
+    @Transactional
+    public List<ConsultationPriceResponse> endConsultationPrice(
+            CurrentAccountResponse account, long serviceId, long priceId, PriceEndRequest request) {
+        requireCatalogManage(account);
+        ClinicalServiceRepository.ServiceIdentity service = repository.lockService(serviceId);
+        if (service == null) {
+            throw notFound("SERVICE_NOT_FOUND", "Không tìm thấy dịch vụ.");
+        }
+        ClinicalServiceRepository.PriceIdentity price = repository.lockPrice(priceId);
+        if (price == null || price.serviceId() != serviceId) {
+            throw notFound("PRICE_NOT_FOUND", "Không tìm thấy thông tin giá.");
+        }
+        if (price.doctorId() == null || price.visitMode() == null) {
+            throw bad("INVALID_PRICE_TYPE", "Mức giá này không phải là giá khám theo bác sĩ.");
+        }
+        if (request.validTo() == null || !request.validTo().isAfter(price.validFrom())) {
+            throw bad("INVALID_PERIOD", "Thời điểm kết thúc phải sau thời điểm bắt đầu.");
+        }
+        if (price.validTo() != null && !request.validTo().isBefore(price.validTo())) {
+            throw bad("INVALID_PERIOD", "Chỉ được kết thúc mức giá sớm hơn thời điểm đã lưu.");
+        }
+        if (!request.validTo().isAfter(LocalDateTime.now(Clock.systemUTC()))) {
+            throw bad("INVALID_PERIOD", "Không được kết thúc mức giá trong quá khứ.");
+        }
+
+        if (repository.hasPriceOverlap(serviceId, price.doctorId(), price.visitMode(), price.validFrom(), request.validTo(), priceId)) {
+            throw conflict("PRICE_OVERLAP", "Thời điểm kết thúc làm chồng lấn với khoảng giá khác.");
+        }
+
+        byte[] versionBytes = decodeVersion(request.version());
+        int updated = repository.endPrice(priceId, request.validTo(), versionBytes);
+        if (updated != 1) {
+            throw conflict("CONCURRENT_UPDATE", "Thông tin giá đã thay đổi bởi thao tác khác. Vui lòng tải lại.");
+        }
+
+        repository.audit(account.accountId(), "CONSULTATION_PRICE_ENDED", "ServicePrice", priceId, "valid_to=" + request.validTo());
+        return repository.listConsultationPrices(serviceId, price.doctorId(), price.visitMode(), null);
+    }
+
+    public List<DoctorOptionResponse> listActiveDoctors(CurrentAccountResponse account) {
+        requireCatalogManage(account);
+        return repository.listActiveDoctors();
     }
 
     public EffectivePriceResponse getEffectivePrice(long serviceId, Long doctorId, String visitMode, LocalDateTime targetTime) {
