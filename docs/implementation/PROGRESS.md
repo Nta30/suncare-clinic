@@ -2,8 +2,15 @@
 
 Cập nhật: 2026-11-02
 
-Việc tiếp theo: P09 — quản lý Room, kiểm tra loại phòng/khoa và UI lọc
+Việc tiếp theo: P09 — kiểm tra UI phòng trên browser với backend thử và chốt P09
 Trạng thái: IN_PROGRESS (P09; P08 DONE theo xác nhận chủ dự án, P07 còn thiếu log browser)
+
+### P09 — quản lý phòng (2026-11-02)
+
+- Thêm `GET/POST /api/admin/organization/rooms`, `PUT /api/admin/organization/rooms/{id}` trong module `organization`, chỉ `CATALOG_MANAGE`. Phòng `CONSULTATION` chỉ thuộc khoa `CLINICAL`, phòng `LAB` chỉ thuộc khoa `LAB` đang hoạt động; mã duy nhất, sửa dùng `rowversion`, ngừng hoạt động thay xóa. Giữ khoa và loại phòng bất biến sau tạo để không đổi nghĩa lịch sử sử dụng; audit cùng transaction.
+- Thêm `RoomManagement.jsx` và `roomApi.js`, điều hướng Phòng cho người có `CATALOG_MANAGE`; form tạo/sửa và lọc theo khoa, loại, trạng thái, có tải/rỗng/lỗi/thành công. `RoomManagementIT` 2/2 PASS trên `SuncareClinicMigrationTest`: loại/khoa sai, mã trùng, version cũ, khoa ngừng hoạt động, anonymous/thu hồi quyền, rollback khi audit lỗi. Backend `.\mvnw.cmd test -q`, frontend `npm run lint`/`npm run build` PASS; `git diff --check` không lỗi whitespace. Sau test còn 0 fixture Account/Department/Room `P09`.
+- Chưa thử thao tác UI/responsive trên browser với backend thử, nên P09 tiếp tục IN_PROGRESS theo điều kiện DONE của repo. Không có migration mới cho P09 và không ghi dữ liệu P09 lên DB chính.
+- Việc tiếp theo duy nhất: P09 — thử UI phòng với backend thử tại 320/375/768/1280 px, gồm tạo/sửa/lọc, lỗi và sai quyền; sửa lỗi phát hiện rồi chốt DONE nếu đạt.
 
 ### P08 — xác nhận hoàn thành và chuyển P09 (2026-11-02)
 
@@ -99,7 +106,7 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P06 | DONE | Chủ dự án xác nhận đã tự kiểm tra UI và thấy ổn ngày 2026-11-02; log trước đó ghi API DB thử, lint/build và giới hạn browser của agent. |
 | P07 | IN_PROGRESS | API tạo/list/gán/thu hồi role/khóa và UI đã code; 7 integration test DB thử, REST smoke, lint/build PASS; còn kiểm tra UI trên browser/responsive. |
 | P08 | DONE | API/UI/V14, DB thử và lint/build đạt; chủ dự án xác nhận xong, browser chưa có log kiểm tra của agent. |
-| P09 | TODO | Theo lộ trình trong AGENTS.md. |
+| P09 | IN_PROGRESS | API/UI và integration test DB thử 2/2 đạt; còn kiểm tra browser toàn luồng và responsive. |
 | P10 | TODO | Theo lộ trình trong AGENTS.md. |
 | P11 | TODO | Theo lộ trình trong AGENTS.md. |
 | P12 | TODO | Theo lộ trình trong AGENTS.md. |

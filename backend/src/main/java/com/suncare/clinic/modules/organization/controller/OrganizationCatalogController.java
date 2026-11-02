@@ -4,7 +4,10 @@ import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.organization.dto.DepartmentRequest;
 import com.suncare.clinic.modules.organization.dto.OrganizationCatalogResponse;
 import com.suncare.clinic.modules.organization.dto.SpecialtyRequest;
+import com.suncare.clinic.modules.organization.dto.RoomRequest;
+import com.suncare.clinic.modules.organization.dto.RoomResponse;
 import com.suncare.clinic.modules.organization.service.OrganizationCatalogService;
+import com.suncare.clinic.modules.organization.service.RoomService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,13 +21,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/organization")
 public class OrganizationCatalogController {
     private final OrganizationCatalogService service;
+    private final RoomService rooms;
 
-    public OrganizationCatalogController(OrganizationCatalogService service) {
+    public OrganizationCatalogController(OrganizationCatalogService service, RoomService rooms) {
         this.service = service;
+        this.rooms = rooms;
     }
 
     @GetMapping
@@ -70,5 +77,23 @@ public class OrganizationCatalogController {
     public OrganizationCatalogResponse disableLink(@AuthenticationPrincipal CurrentAccountResponse account,
                                                     @PathVariable long departmentId, @PathVariable long specialtyId) {
         return service.setLink(account, departmentId, specialtyId, false);
+    }
+
+    @GetMapping("/rooms")
+    public List<RoomResponse> listRooms(@AuthenticationPrincipal CurrentAccountResponse account) {
+        return rooms.list(account);
+    }
+
+    @PostMapping("/rooms")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<RoomResponse> createRoom(@AuthenticationPrincipal CurrentAccountResponse account,
+                                         @Valid @RequestBody RoomRequest request) {
+        return rooms.create(account, request);
+    }
+
+    @PutMapping("/rooms/{id}")
+    public List<RoomResponse> updateRoom(@AuthenticationPrincipal CurrentAccountResponse account,
+                                         @PathVariable long id, @Valid @RequestBody RoomRequest request) {
+        return rooms.update(account, id, request);
     }
 }
