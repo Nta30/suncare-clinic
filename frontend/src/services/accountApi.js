@@ -76,6 +76,12 @@ export function createStaff(token, data) {
   return request('/api/admin/staff', { method: 'POST', token, body: JSON.stringify(data) })
 }
 
+export function updateStaff(token, accountId, data) {
+  return request(`/api/admin/staff/${accountId}`, {
+    method: 'PUT', token, body: JSON.stringify(data),
+  })
+}
+
 export function grantStaffRole(token, accountId, roleCode) {
   return request(`/api/admin/staff/${accountId}/roles`, {
     method: 'POST', token, body: JSON.stringify({ roleCode }),

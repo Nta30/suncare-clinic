@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -200,6 +201,63 @@ class StaffManagementIT {
                 SELECT COUNT(*) FROM dbo.AccountRole ar JOIN dbo.[Role] r ON r.id = ar.role_id
                 WHERE ar.account_id = ? AND r.code = 'LAB_STAFF'
                 """, Integer.class, id));
+    }
+
+    @Test
+    void updatesStaffProfileAndRejectsStaleVersionAndProtectedAdmin() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long id = json.readTree(created).get("accountId").asLong();
+        String listed = mvc.perform(get("/api/admin/staff").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var rows = json.readTree(listed);
+        String version = null;
+        for (var row : rows) if (row.get("accountId").asLong() == id) version = row.get("version").asText();
+        String body = updateRequest(version);
+        mvc.perform(put("/api/admin/staff/" + id).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"\",\"sex\":\"MALE\",\"version\":\"" + version + "\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/admin/staff/" + id).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.fullName").value("Nguyễn Văn Test"))
+                .andExpect(jsonPath("$.professionalLicense").value("GP-TEST"));
+        assertEquals("Nguyễn Văn Test", jdbc.queryForObject("""
+                SELECT s.full_name FROM dbo.Staff s JOIN dbo.[Account] a ON a.staff_id = s.id WHERE a.id = ?
+                """, String.class, id));
+        mvc.perform(put("/api/admin/staff/" + id).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
+        mvc.perform(put("/api/admin/staff/" + adminAccountId).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/admin/staff/" + id).contentType(MediaType.APPLICATION_JSON)
+                .content(body)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void profileUpdateRollsBackWhenAuditFails() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long id = json.readTree(created).get("accountId").asLong();
+        String listed = mvc.perform(get("/api/admin/staff").header("Authorization", "Bearer " + token))
+                .andReturn().getResponse().getContentAsString();
+        String version = null;
+        for (var row : json.readTree(listed)) if (row.get("accountId").asLong() == id) version = row.get("version").asText();
+        doThrow(new IllegalStateException("test audit failure")).when(repository)
+                .audit(adminAccountId, "STAFF_PROFILE_UPDATED", id, "profile fields updated");
+        String body = updateRequest(version);
+        assertThrows(Exception.class, () -> mvc.perform(put("/api/admin/staff/" + id)
+                .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON).content(body)));
+        assertEquals("Demo Staff", jdbc.queryForObject("""
+                SELECT s.full_name FROM dbo.Staff s JOIN dbo.[Account] a ON a.staff_id = s.id WHERE a.id = ?
+                """, String.class, id));
+    }
+
+    private String updateRequest(String version) {
+        return "{\"fullName\":\"Nguyễn Văn Test\",\"sex\":\"MALE\","
+                + "\"phone\":\"0900000000\",\"professionalLicense\":\"GP-TEST\","
+                + "\"version\":\"" + version + "\"}";
     }
 
     private String request(String roles) {

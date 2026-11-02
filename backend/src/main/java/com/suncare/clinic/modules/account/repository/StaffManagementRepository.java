@@ -2,6 +2,7 @@ package com.suncare.clinic.modules.account.repository;
 
 import com.suncare.clinic.modules.account.dto.CreateStaffRequest;
 import com.suncare.clinic.modules.account.dto.StaffSummaryResponse;
+import com.suncare.clinic.modules.account.dto.UpdateStaffRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Base64;
 
 @Repository
 public class StaffManagementRepository {
@@ -58,7 +60,9 @@ public class StaffManagementRepository {
 
     public List<StaffSummaryResponse> listStaff() {
         return jdbc.query("""
-                SELECT a.id, a.login_name, a.status, s.code, s.full_name, r.code AS role_code
+                SELECT a.id, a.login_name, a.status, s.code, s.full_name, s.birth_date, s.sex,
+                       s.phone, s.email, s.address, s.professional_license, s.qualification,
+                       s.version, r.code AS role_code
                 FROM dbo.[Account] a JOIN dbo.Staff s ON s.id = a.staff_id
                 LEFT JOIN dbo.AccountRole ar ON ar.account_id = a.id
                 LEFT JOIN dbo.[Role] r ON r.id = ar.role_id AND r.account_type = 'STAFF'
@@ -67,19 +71,35 @@ public class StaffManagementRepository {
                     Map<Long, StaffRow> rows = new LinkedHashMap<>();
                     while (rs.next()) {
                         long id = rs.getLong("id");
-                        StaffRow row = rows.computeIfAbsent(id, key -> new StaffRow(id, rsString(rs, "code"),
-                                rsString(rs, "full_name"), rsString(rs, "login_name"), rsString(rs, "status")));
+                        StaffRow row = rows.get(id);
+                        if (row == null) {
+                            row = new StaffRow(id, rs.getString("code"), rs.getString("full_name"),
+                                    rs.getString("login_name"), rs.getString("status"),
+                                    rs.getObject("birth_date", java.time.LocalDate.class), rs.getString("sex"),
+                                    rs.getString("phone"), rs.getString("email"), rs.getString("address"),
+                                    rs.getString("professional_license"), rs.getString("qualification"),
+                                    Base64.getEncoder().encodeToString(rs.getBytes("version")));
+                            rows.put(id, row);
+                        }
                         String role = rs.getString("role_code");
                         if (role != null) row.roles.add(role);
                     }
                     return rows.values().stream().map(row -> new StaffSummaryResponse(row.id, row.code,
-                            row.name, row.login, row.status, List.copyOf(row.roles))).toList();
+                            row.name, row.login, row.status, List.copyOf(row.roles), row.birthDate,
+                            row.sex, row.phone, row.email, row.address, row.professionalLicense,
+                            row.qualification, row.version)).toList();
                 });
     }
 
-    private String rsString(java.sql.ResultSet rs, String column) {
-        try { return rs.getString(column); }
-        catch (java.sql.SQLException error) { throw new IllegalStateException(error); }
+    public int updateStaff(long accountId, UpdateStaffRequest request, byte[] version) {
+        return jdbc.update("""
+                UPDATE s SET full_name = ?, birth_date = ?, sex = ?, phone = ?, email = ?, address = ?,
+                             professional_license = ?, qualification = ?, updated_at = SYSUTCDATETIME()
+                FROM dbo.Staff s JOIN dbo.[Account] a ON a.staff_id = s.id
+                WHERE a.id = ? AND a.account_type = 'STAFF' AND s.version = ?
+                """, request.fullName().trim(), request.birthDate(), request.sex(), request.phone(),
+                request.email(), request.address(), request.professionalLicense(), request.qualification(),
+                accountId, version);
     }
 
     public StaffAccount lockStaff(long accountId) {
@@ -133,14 +153,32 @@ public class StaffManagementRepository {
         final String name;
         final String login;
         final String status;
+        final java.time.LocalDate birthDate;
+        final String sex;
+        final String phone;
+        final String email;
+        final String address;
+        final String professionalLicense;
+        final String qualification;
+        final String version;
         final List<String> roles = new ArrayList<>();
 
-        StaffRow(long id, String code, String name, String login, String status) {
+        StaffRow(long id, String code, String name, String login, String status,
+                 java.time.LocalDate birthDate, String sex, String phone, String email,
+                 String address, String professionalLicense, String qualification, String version) {
             this.id = id;
             this.code = code;
             this.name = name;
             this.login = login;
             this.status = status;
+            this.birthDate = birthDate;
+            this.sex = sex;
+            this.phone = phone;
+            this.email = email;
+            this.address = address;
+            this.professionalLicense = professionalLicense;
+            this.qualification = qualification;
+            this.version = version;
         }
     }
 

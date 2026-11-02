@@ -2,8 +2,30 @@
 
 Cập nhật: 2026-11-02
 
-Việc tiếp theo: P07.c — kiểm tra UI admin trên browser và chốt P07
-Trạng thái: IN_PROGRESS (P07; P00–P06 đã DONE)
+Việc tiếp theo: P09 — quản lý Room, kiểm tra loại phòng/khoa và UI lọc
+Trạng thái: IN_PROGRESS (P09; P08 DONE theo xác nhận chủ dự án, P07 còn thiếu log browser)
+
+### P08 — xác nhận hoàn thành và chuyển P09 (2026-11-02)
+
+- Chủ dự án xác nhận P08 đã xong và yêu cầu sang P09. Chuyển P08 sang DONE theo xác nhận này; các kiểm tra browser không có log từ agent vẫn là chưa được agent xác minh, không ghi thành kết quả test mới.
+
+### P08 — khoa, chuyên khoa và liên kết (2026-11-02)
+
+- Theo yêu cầu trực tiếp của chủ dự án, triển khai P08 khi P07.c còn thiếu kiểm tra browser; không đổi trạng thái P07. Thêm API `GET /api/admin/organization`, tạo/sửa Department và Specialty, bật/ngừng liên kết DepartmentSpecialty. Tất cả cần `CATALOG_MANAGE`, validate mã/tên/loại, giữ `rowversion` khi sửa, ghi audit cùng transaction; ngừng hoạt động thay vì xóa danh mục.
+- V14 bổ sung `is_active`, `updated_at`, `version` cho DepartmentSpecialty để ngừng/kích hoạt lại liên kết mà giữ dòng lịch sử. V14 đã áp dụng và xác nhận `success=1` trên `SuncareClinicMigrationTest` rồi `SuncareClinic`; chỉ tiến trình tạm cổng 8081 được dừng, tiến trình người dùng ở 8080/5173 được giữ nguyên. Cập nhật từ điển dữ liệu cho cột mới.
+- UI `OrganizationManagement.jsx` và `organizationApi.js` cho danh sách, tạo/sửa khoa và chuyên khoa, liên kết/ngừng liên kết; có tải, rỗng, lỗi, thành công, xung đột và lọc quyền ở điều hướng. `OrganizationCatalogIT` 2/2 PASS trên DB thử: mã trùng, input sai, anonymous/thu hồi quyền, version cũ, liên kết ngừng rồi kích hoạt lại không nhân dòng và rollback khi audit lỗi. Kiểm tra sau test còn 0 Account/Department/Specialty `P08` thử. Backend `.\mvnw.cmd test -q`, frontend `npm run lint`/`npm run build` PASS; `git diff --check` không có lỗi whitespace.
+- Chưa chạy thao tác UI hoặc đo responsive 320/375/768/1280 px trên browser: browser connector báo `The browser access host is unavailable`; Edge đang được người dùng chia sẻ màn hình. Theo điều kiện DONE của repo, P08 tiếp tục IN_PROGRESS. Backend 8080 đang chạy từ trước, cần nạp code mới để thấy API P08 khi thử UI.
+- Sửa trạng thái rỗng của chuyên khoa chiếm đủ hai cột trên màn hình rộng, thống nhất chiều rộng với trạng thái rỗng của khoa. Frontend lint/build PASS sau sửa; chưa kiểm tra trực quan trên browser.
+- Việc tiếp theo duy nhất: P08 — chạy backend/frontend thử và xác minh toàn luồng UI khoa/chuyên khoa, liên kết, lỗi 409, sai quyền và responsive trên browser; sửa lỗi phát hiện rồi chốt DONE nếu đạt.
+
+### P07.c — tinh chỉnh giao diện quản lý nhân viên (2026-11-02)
+
+- Chuẩn hóa nút, nhãn trạng thái/vai trò và hộp xác nhận thành `components/ui/Button.jsx`, `Badge.jsx`, `ConfirmDialog.jsx`; `StaffManagement.jsx` sử dụng các thành phần này, thay màu viết trực tiếp bằng token Sunflower Clinical và giữ nguyên lời gọi API/quyền thao tác.
+- Đặt lại phân trang ngay khi người dùng đổi bộ lọc; loại bỏ effect cập nhật state không cần thiết. Tại `frontend/`, `npm run lint` PASS và `npm run build` PASS; `git diff --check` không có lỗi whitespace.
+- Chưa chạy thử tương tác và responsive trên browser với backend `migrationtest`; P07 tiếp tục IN_PROGRESS. Việc tiếp theo duy nhất: P07.c — thử trực quan và toàn luồng UI admin trên browser với database thử ở 320/375/768/1280 px rồi chốt P07 nếu đạt.
+- Lượt tiếp theo: thay bộ SVG tự viết trong `StaffManagement.jsx` bằng Font Awesome đã có trong ứng dụng. `npm run lint`, `npm run build` và `git diff --check` PASS sau thay đổi. Browser connector trả `The browser access host is unavailable`; môi trường frontend không có Playwright/Puppeteer. Edge hiện đang hiển thị cuộc họp của người dùng nên chưa dùng cửa sổ đó để thao tác. Chưa có bằng chứng browser cho P07.c; giữ nguyên IN_PROGRESS và việc tiếp theo nêu trên.
+- Theo phản hồi của chủ dự án, thêm hiệu ứng mở/đóng cho panel tạo và quản lý nhân viên cùng lớp nền; chỉ tháo panel sau hiệu ứng đóng, tôn trọng `prefers-reduced-motion`. `npm run lint`, `npm run build` và `git diff --check` PASS sau chỉnh sửa. Chưa xem hiệu ứng trực tiếp trên browser; P07.c vẫn IN_PROGRESS, việc tiếp theo là kiểm tra browser trên database thử và các kích thước responsive.
+- Theo yêu cầu mới, panel quản lý hiển thị đầy đủ thông tin Staff do API trả về và có nút `Chỉnh sửa`; form chỉ sửa tên, ngày sinh, giới tính, liên hệ, địa chỉ và thông tin chuyên môn. `PUT /api/admin/staff/{accountId}` cần `ACCOUNT_MANAGE`, giữ mã/tên đăng nhập/role/trạng thái bất biến, kiểm tra `rowversion`, ghi audit cùng transaction. `StaffManagementIT` 9/9 PASS trên `SuncareClinicMigrationTest` (gồm input sai, xung đột, sai quyền, rollback); backend `mvnw.cmd test -q` PASS, frontend lint/build PASS, `git diff --check` không có lỗi whitespace. Chưa thử browser toàn luồng; P07.c vẫn IN_PROGRESS. Việc tiếp theo duy nhất: chạy UI với backend thử và xác minh xem/sửa Staff, xung đột 409, responsive 320/375/768/1280 px.
 
 ## Hiện trạng đã đối chiếu
 
@@ -76,7 +98,7 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P05 | DONE | Chủ dự án xác nhận hoàn thành ngày 2026-11-02; bằng chứng kiểm tra browser/API toàn luồng chưa được bổ sung vào sổ. |
 | P06 | DONE | Chủ dự án xác nhận đã tự kiểm tra UI và thấy ổn ngày 2026-11-02; log trước đó ghi API DB thử, lint/build và giới hạn browser của agent. |
 | P07 | IN_PROGRESS | API tạo/list/gán/thu hồi role/khóa và UI đã code; 7 integration test DB thử, REST smoke, lint/build PASS; còn kiểm tra UI trên browser/responsive. |
-| P08 | TODO | Theo lộ trình trong AGENTS.md. |
+| P08 | DONE | API/UI/V14, DB thử và lint/build đạt; chủ dự án xác nhận xong, browser chưa có log kiểm tra của agent. |
 | P09 | TODO | Theo lộ trình trong AGENTS.md. |
 | P10 | TODO | Theo lộ trình trong AGENTS.md. |
 | P11 | TODO | Theo lộ trình trong AGENTS.md. |

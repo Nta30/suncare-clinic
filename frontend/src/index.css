@@ -252,6 +252,32 @@ body {
   to { opacity: 0; }
 }
 
+.staff-drawer {
+  animation: staff-drawer-enter 220ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.staff-drawer--closing {
+  animation: staff-drawer-exit 180ms ease-in both;
+}
+
+.staff-drawer-backdrop {
+  animation: logout-backdrop-enter 220ms ease-out both;
+}
+
+.staff-drawer-backdrop--closing {
+  animation: logout-backdrop-exit 180ms ease-in both;
+}
+
+@keyframes staff-drawer-enter {
+  from { opacity: .8; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes staff-drawer-exit {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: .8; transform: translateX(24px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-shell, .auth-shell--closing, .auth-form-content, .auth-form-content--leaving {
     animation: none;
@@ -262,6 +288,10 @@ body {
   }
 
   .logout-dialog[open], .logout-dialog[open]::backdrop {
+    animation: none;
+  }
+
+  .staff-drawer, .staff-drawer-backdrop {
     animation: none;
   }
 

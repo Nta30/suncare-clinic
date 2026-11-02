@@ -21,7 +21,7 @@ Tiền `decimal(19,0)` VND; số lượng `decimal(12,3)`; số đo `decimal(18,
 | RolePermission | role_id → Role; permission_id → Permission; PK(role_id,permission_id). |
 | Department | code UQ; name nvarchar(150); department_type CLINICAL/LAB; is_active bit. |
 | Specialty | code UQ; name nvarchar(150); is_active bit. |
-| DepartmentSpecialty | department_id → Department; specialty_id → Specialty; PK(department_id,specialty_id). |
+| DepartmentSpecialty | department_id → Department; specialty_id → Specialty; PK(department_id,specialty_id); is_active bit để ngừng liên kết mà không xóa lịch sử; updated_at, version (V14). |
 | StaffDepartment | staff_id → Staff; department_id → Department; valid_from datetime2(3); valid_to? datetime2(3); is_primary bit mặc định 1. Không giao khoảng cho cùng staff. |
 | StaffSpecialty | staff_id → Staff; specialty_id → Specialty; PK(staff_id,specialty_id); is_active bit. |
 | DepartmentHeadAssignment | staff_id → Staff; department_id → Department; valid_from datetime2(3); valid_to? datetime2(3); assigned_by → Account. Phạm vi quyền của trưởng khoa, không suy từ Role đơn thuần. |

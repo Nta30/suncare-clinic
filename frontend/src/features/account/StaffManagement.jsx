@@ -1,4 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowRight, faCheck, faChevronLeft, faChevronRight, faFilter,
+  faInfoCircle, faLock, faPlus, faRotate, faSearch, faShieldHalved,
+  faStethoscope, faUsers, faXmark,
+} from '@fortawesome/free-solid-svg-icons'
+import Badge from '../../components/ui/Badge'
+import Button from '../../components/ui/Button'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import {
   createStaff,
   getToken,
@@ -6,9 +15,9 @@ import {
   listStaff,
   revokeStaffRole,
   setStaffStatus,
+  updateStaff,
 } from '../../services/accountApi'
 
-// Giu nguyen contract cua accountApi. Khong can them thu vien UI/icon.
 const ROLE_OPTIONS = [
   { code: 'DOCTOR', label: 'Bác sĩ', description: 'Khám và điều trị' },
   { code: 'LAB_STAFF', label: 'Nhân viên CLS', description: 'Thực hiện cận lâm sàng' },
@@ -35,47 +44,24 @@ const EMPTY_FORM = {
   qualification: '',
   roles: [],
 }
+const EDIT_FIELDS = ['fullName', 'birthDate', 'sex', 'phone', 'email', 'address', 'professionalLicense', 'qualification']
 
-const primaryButton =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-suncare-400 px-5 py-2.5 text-sm font-bold text-clinical-ink shadow-sm transition hover:bg-suncare-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50'
-const outlineButton =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-clinical-border-strong bg-white px-4 py-2.5 text-sm font-semibold text-clinical-ink transition hover:border-amber-300 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-50'
+function staffEditForm(person) {
+  return Object.fromEntries(EDIT_FIELDS.map((field) => [field, person?.[field] ?? (field === 'sex' ? 'UNKNOWN' : '')]))
+}
+
 const fieldClass =
   'mt-1.5 block min-h-11 w-full min-w-0 rounded-xl border border-clinical-border-strong bg-white px-3.5 py-2.5 text-sm text-clinical-ink outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 aria-[invalid=true]:border-rose-400'
 
 function Icon({ name, size = 19, className = '' }) {
-  const paths = {
-    plus: <path d="M12 5v14M5 12h14" />,
-    search: <><circle cx="10.8" cy="10.8" r="6.3" /><path d="m16 16 4.2 4.2" /></>,
-    refresh: <><path d="M20 11a8 8 0 0 0-14-5L4 8" /><path d="M4 4v4h4M4 13a8 8 0 0 0 14 5l2-2" /><path d="M20 20v-4h-4" /></>,
-    users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
-    check: <path d="m5 12 4 4L19 6" />,
-    lock: <><rect x="4.5" y="10" width="15" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
-    doctor: <><path d="M6 3v6a5 5 0 0 0 10 0V3M4 3h4M14 3h4" /><path d="M11 14v2a4 4 0 0 0 8 0v-1" /><circle cx="19" cy="13" r="2" /></>,
-    chevronLeft: <path d="m15 18-6-6 6-6" />,
-    chevronRight: <path d="m9 18 6-6-6-6" />,
-    close: <path d="M18 6 6 18M6 6l12 12" />,
-    shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></>,
-    filter: <><path d="M4 7h16M7 12h10M10 17h4" /></>,
-    arrow: <path d="M5 12h14m-6-6 6 6-6 6" />,
-    info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>,
+  const icons = {
+    plus: faPlus, search: faSearch, refresh: faRotate, users: faUsers,
+    check: faCheck, lock: faLock, doctor: faStethoscope,
+    chevronLeft: faChevronLeft, chevronRight: faChevronRight,
+    close: faXmark, shield: faShieldHalved, filter: faFilter,
+    arrow: faArrowRight, info: faInfoCircle,
   }
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {paths[name] || paths.info}
-    </svg>
-  )
+  return <FontAwesomeIcon icon={icons[name] || faInfoCircle} width={size} className={className} aria-hidden="true" />
 }
 
 function getRoles(person) {
@@ -120,20 +106,18 @@ function StatusBadge({ status }) {
   const active = status === 'ACTIVE'
   const locked = status === 'LOCKED'
   return (
-    <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${active
-      ? 'bg-emerald-50 text-emerald-800'
-      : locked ? 'bg-rose-50 text-rose-800' : 'bg-slate-100 text-slate-700'}`}>
-      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-500' : locked ? 'bg-rose-500' : 'bg-slate-500'}`} />
+    <Badge tone={active ? 'success' : locked ? 'danger' : 'neutral'}>
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-clinical-success' : locked ? 'bg-clinical-danger' : 'bg-clinical-muted'}`} />
       {active ? 'Hoạt động' : locked ? 'Đã khóa' : status || 'Chưa xác định'}
-    </span>
+    </Badge>
   )
 }
 
 function RoleBadge({ code }) {
   return (
-    <span className="inline-flex max-w-full items-center rounded-lg border border-amber-100 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+    <Badge tone="warning">
       {ROLE_LABELS[code] || code}
-    </span>
+    </Badge>
   )
 }
 
@@ -147,15 +131,15 @@ function RoleList({ roles }) {
 
 function StatCard({ label, value, icon, detail, highlight = false }) {
   return (
-    <div className={`min-w-0 rounded-2xl border p-4 shadow-[0_8px_30px_rgba(50,70,54,0.035)] sm:p-5 ${highlight
-      ? 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white'
+    <div className={`min-w-0 rounded-2xl border p-4 sm:p-5 ${highlight
+      ? 'border-suncare-200 bg-suncare-100'
       : 'border-clinical-border bg-white'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-clinical-muted sm:text-sm">{label}</p>
           <p className="mt-2 text-2xl font-extrabold tabular-nums tracking-tight text-clinical-ink sm:text-3xl">{value}</p>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${highlight ? 'bg-amber-200 text-amber-900' : 'bg-[#F4F7EE] text-[#55715C]'}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${highlight ? 'bg-suncare-200 text-suncare-800' : 'bg-clinical-leaf-soft text-clinical-leaf'}`}>
           <Icon name={icon} size={20} />
         </div>
       </div>
@@ -209,16 +193,22 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
   const [actionError, setActionError] = useState('')
+  const [detailMessage, setDetailMessage] = useState('')
   const [message, setMessage] = useState('')
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [page, setPage] = useState(1)
   const [panel, setPanel] = useState(null) // null | {kind:'create'} | {kind:'detail', accountId}
+  const [panelClosing, setPanelClosing] = useState(false)
   const [form, setForm] = useState(() => ({ ...EMPTY_FORM, roles: [] }))
   const [formErrors, setFormErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState(() => staffEditForm(null))
+  const [editErrors, setEditErrors] = useState({})
+  const [saving, setSaving] = useState(false)
   const [selectedRole, setSelectedRole] = useState('')
   const [pending, setPending] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -229,7 +219,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   const latestRequestRef = useRef(0)
 
   useEffect(() => { onExpiredRef.current = onSessionExpired }, [onSessionExpired])
-  useEffect(() => { busyRef.current = busy || creating }, [busy, creating])
+  useEffect(() => { busyRef.current = busy || creating || saving }, [busy, creating, saving])
 
   const load = useCallback(async () => {
     const requestId = ++latestRequestRef.current
@@ -254,8 +244,9 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   }, [])
 
   useEffect(() => {
-    void load()
-    return () => { latestRequestRef.current += 1 }
+    let active = true
+    Promise.resolve().then(() => { if (active) void load() })
+    return () => { active = false; latestRequestRef.current += 1 }
   }, [load])
 
   const stats = useMemo(() => ({
@@ -293,8 +284,14 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   const panelIsOpen = Boolean(panel)
   const confirmIsOpen = Boolean(pending)
 
-  useEffect(() => { setPage(1) }, [search, roleFilter, statusFilter])
-  useEffect(() => { setPage((previous) => Math.min(previous, totalPages)) }, [totalPages])
+  useEffect(() => {
+    if (!panelClosing) return undefined
+    const timer = window.setTimeout(() => {
+      setPanel(null)
+      setPanelClosing(false)
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220)
+    return () => window.clearTimeout(timer)
+  }, [panelClosing])
 
   // Focus/keyboard management cho drawer va modal xac nhan.
   useEffect(() => {
@@ -314,7 +311,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
         if (busyRef.current) return
         event.preventDefault()
         if (confirmIsOpen) setPending(null)
-        else setPanel(null)
+        else setPanelClosing(true)
       }
       if (event.key !== 'Tab') return
       const nodes = focusables()
@@ -344,6 +341,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   }
 
   function openCreate() {
+    setPanelClosing(false)
     setForm({ ...EMPTY_FORM, roles: [] })
     setFormErrors({})
     setShowPassword(false)
@@ -352,24 +350,73 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   }
 
   function openDetails(person) {
+    setPanelClosing(false)
+    setEditing(false)
+    setDetailMessage('')
     setSelectedRole('')
     setActionError('')
     setPanel({ kind: 'detail', accountId: person.accountId })
   }
 
   function closePanel() {
-    if (busy || creating) return
-    setPanel(null)
-    setForm({ ...EMPTY_FORM, roles: [] })
-    setFormErrors({})
+    if (busy || creating || saving || panelClosing) return
+    setPanelClosing(true)
+  }
+
+  function startEdit(person) {
+    setEditForm(staffEditForm(person))
+    setEditErrors({})
     setActionError('')
-    setShowPassword(false)
+    setDetailMessage('')
+    setEditing(true)
+  }
+
+  function changeEdit(event) {
+    const { name, value } = event.target
+    setEditForm((current) => ({ ...current, [name]: value }))
+    setEditErrors((current) => ({ ...current, [name]: undefined }))
+  }
+
+  async function submitEdit(event) {
+    event.preventDefault()
+    if (!selectedStaff || saving) return
+    const errors = {}
+    if (!editForm.fullName.trim() || editForm.fullName.trim().length > 150) errors.fullName = 'Nhập họ và tên, tối đa 150 ký tự.'
+    if (editForm.birthDate && editForm.birthDate > new Date().toISOString().slice(0, 10)) errors.birthDate = 'Ngày sinh không được ở tương lai.'
+    if (editForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) errors.email = 'Email không đúng định dạng.'
+    for (const [name, max] of Object.entries({ phone: 20, email: 254, address: 500, professionalLicense: 100, qualification: 150 })) {
+      if (editForm[name].trim().length > max) errors[name] = `Tối đa ${max} ký tự.`
+    }
+    setEditErrors(errors)
+    if (Object.keys(errors).length) return
+    setSaving(true)
+    setActionError('')
+    setMessage('')
+    try {
+      const data = Object.fromEntries(EDIT_FIELDS.map((field) => [field, editForm[field].trim() || null]))
+      data.sex = editForm.sex
+      data.version = selectedStaff.version
+      const updated = await updateStaff(getToken(), selectedStaff.accountId, data)
+      setStaff((current) => current.map((person) => person.accountId === updated.accountId ? updated : person))
+      setEditing(false)
+      setDetailMessage('Đã lưu thông tin nhân viên.')
+      setMessage('Đã cập nhật thông tin nhân viên.')
+    } catch (failure) {
+      if (failure?.status === 401) onExpiredRef.current?.()
+      else {
+        setActionError(messageOf(failure, 'Không thể cập nhật thông tin nhân viên.'))
+        setEditErrors(failure?.fieldErrors && typeof failure.fieldErrors === 'object' ? failure.fieldErrors : {})
+      }
+    } finally {
+      setSaving(false)
+    }
   }
 
   function clearFilters() {
     setSearch('')
     setRoleFilter('ALL')
     setStatusFilter('ALL')
+    setPage(1)
   }
 
   function change(event) {
@@ -430,9 +477,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
         qualification: form.qualification.trim() || null,
         roles: [...form.roles],
       })
-      setPanel(null)
-      setForm({ ...EMPTY_FORM, roles: [] })
-      setShowPassword(false)
+      setPanelClosing(true)
       setMessage('Đã tạo tài khoản nhân viên và cấp vai trò thành công.')
       await load()
     } catch (failure) {
@@ -498,12 +543,12 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => void load()} disabled={loading} className={outlineButton}>
+          <Button onClick={() => void load()} disabled={loading}>
             <Icon name="refresh" size={17} /> Tải lại
-          </button>
-          <button type="button" onClick={openCreate} className={primaryButton}>
+          </Button>
+          <Button variant="primary" onClick={openCreate}>
             <Icon name="plus" size={18} /> Thêm nhân viên
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -534,9 +579,9 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
               <h2 id="staff-list-title" className="text-lg font-extrabold">Danh sách nhân viên</h2>
               <p className="mt-1 text-sm text-clinical-muted">Tra cứu và quản lý tất cả tài khoản nhân sự.</p>
             </div>
-            <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">
+            <Badge tone="warning">
               {filteredStaff.length} kết quả
-            </span>
+            </Badge>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_190px_165px_auto]">
             <label className="relative min-w-0">
@@ -545,7 +590,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => { setSearch(event.target.value); setPage(1) }}
                 placeholder="Tìm tên, mã nhân viên, tài khoản..."
                 className="min-h-11 w-full min-w-0 rounded-xl border border-clinical-border-strong bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               />
@@ -554,7 +599,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
               <span className="sr-only">Lọc theo vai trò</span>
               <select
                 value={roleFilter}
-                onChange={(event) => setRoleFilter(event.target.value)}
+                onChange={(event) => { setRoleFilter(event.target.value); setPage(1) }}
                 className="min-h-11 w-full rounded-xl border border-clinical-border-strong bg-white px-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               >
                 {ROLE_FILTERS.map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}
@@ -564,7 +609,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
               <span className="sr-only">Lọc theo trạng thái</span>
               <select
                 value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
+                onChange={(event) => { setStatusFilter(event.target.value); setPage(1) }}
                 className="min-h-11 w-full rounded-xl border border-clinical-border-strong bg-white px-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               >
                 <option value="ALL">Mọi trạng thái</option>
@@ -572,9 +617,9 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                 <option value="LOCKED">Đã khóa</option>
               </select>
             </label>
-            <button type="button" onClick={clearFilters} disabled={!hasFilters} className={`${outlineButton} px-3.5`}>
+            <Button onClick={clearFilters} disabled={!hasFilters} className="px-3.5">
               <Icon name="filter" size={17} /> Đặt lại
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -597,16 +642,16 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
             <p className="mt-2 max-w-sm text-sm leading-6 text-clinical-muted">
               {hasFilters ? 'Thử từ khóa khác hoặc đặt lại bộ lọc để xem toàn bộ nhân viên.' : 'Tạo tài khoản đầu tiên để bắt đầu quản lý nhân sự.'}
             </p>
-            <button type="button" className={`${outlineButton} mt-5`} onClick={hasFilters ? clearFilters : openCreate}>
+            <Button className="mt-5" onClick={hasFilters ? clearFilters : openCreate}>
               {hasFilters ? 'Xóa bộ lọc' : 'Thêm nhân viên'}
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             {/* Desktop table: thay vi moi nguoi la mot form khong lo */}
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[850px] text-left text-sm">
-                <thead className="bg-[#FBFAF6] text-xs font-bold uppercase tracking-wider text-slate-500">
+                <thead className="bg-suncare-50 text-xs font-bold uppercase tracking-wider text-clinical-muted">
                   <tr>
                     <th scope="col" className="px-6 py-4">Nhân viên</th>
                     <th scope="col" className="px-5 py-4">Tài khoản</th>
@@ -617,7 +662,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                 </thead>
                 <tbody className="divide-y divide-clinical-border">
                   {visibleStaff.map((person) => (
-                    <tr key={person.accountId} className="transition hover:bg-[#FFFCF5]">
+                    <tr key={person.accountId} className="transition hover:bg-suncare-50">
                       <td className="px-6 py-4">
                         <div className="flex min-w-0 items-center gap-3">
                           <Avatar person={person} />
@@ -670,9 +715,9 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
               Hiển thị <strong className="text-clinical-ink">{showingFrom}–{showingTo}</strong> trong <strong className="text-clinical-ink">{filteredStaff.length}</strong> nhân viên
             </p>
             <nav aria-label="Phân trang nhân viên" className="flex items-center gap-2">
-              <button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Trang trước" className={`${outlineButton} min-w-11 px-3`}><Icon name="chevronLeft" size={17} /></button>
+              <Button onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={currentPage === 1} aria-label="Trang trước" className="min-w-11 px-3"><Icon name="chevronLeft" size={17} /></Button>
               <span className="min-w-24 text-center text-sm font-semibold tabular-nums">{currentPage} / {totalPages}</span>
-              <button type="button" onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages} aria-label="Trang sau" className={`${outlineButton} min-w-11 px-3`}><Icon name="chevronRight" size={17} /></button>
+              <Button onClick={() => setPage((value) => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages} aria-label="Trang sau" className="min-w-11 px-3"><Icon name="chevronRight" size={17} /></Button>
             </nav>
           </footer>
         )}
@@ -681,13 +726,13 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
       {/* Shared side drawer: create or account details */}
       {panel && (
         <div className="fixed inset-0 z-[60] flex" role="presentation">
-          <button type="button" aria-label="Đóng bảng điều khiển" onClick={closePanel} className="absolute inset-0 h-full w-full cursor-default bg-slate-950/45 backdrop-blur-[2px]" />
+          <button type="button" aria-label="Đóng bảng điều khiển" onClick={closePanel} disabled={panelClosing} className={`staff-drawer-backdrop absolute inset-0 h-full w-full cursor-default bg-slate-950/45 backdrop-blur-[2px] ${panelClosing ? 'staff-drawer-backdrop--closing' : ''}`} />
           <aside
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="staff-panel-title"
-            className="relative ml-auto flex h-full w-full max-w-[570px] flex-col overflow-hidden border-l border-amber-100 bg-[#FFFCF7] shadow-2xl"
+            className={`staff-drawer relative ml-auto flex h-full w-full max-w-[570px] flex-col overflow-hidden border-l border-suncare-200 bg-suncare-50 shadow-2xl ${panelClosing ? 'staff-drawer--closing' : ''}`}
           >
             <div className="flex items-start justify-between gap-4 border-b border-clinical-border bg-white px-5 py-5 sm:px-7">
               <div className="min-w-0">
@@ -699,7 +744,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                   {panel.kind === 'create' ? 'Tạo tài khoản và thiết lập vai trò ban đầu.' : 'Xem hồ sơ, cập nhật vai trò và quyền truy cập.'}
                 </p>
               </div>
-              <button type="button" onClick={closePanel} disabled={busy || creating} aria-label="Đóng" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-clinical-border bg-white hover:bg-slate-50 disabled:opacity-50">
+              <button type="button" onClick={closePanel} disabled={busy || creating || saving} aria-label="Đóng" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-clinical-border bg-white hover:bg-slate-50 disabled:opacity-50">
                 <Icon name="close" size={20} />
               </button>
             </div>
@@ -762,10 +807,10 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                   </fieldset>
                 </div>
                 <div className="flex shrink-0 items-center justify-end gap-3 border-t border-clinical-border bg-white px-5 py-4 sm:px-7">
-                  <button type="button" onClick={closePanel} disabled={creating} className={outlineButton}>Hủy</button>
-                  <button type="submit" disabled={creating} className={primaryButton}>
+                  <Button onClick={closePanel} disabled={creating}>Hủy</Button>
+                  <Button type="submit" variant="primary" disabled={creating}>
                     <Icon name="plus" size={17} /> {creating ? 'Đang tạo...' : 'Tạo tài khoản'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             ) : (
@@ -775,6 +820,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                 ) : (
                   <>
                     {actionError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{actionError}</p>}
+                    {detailMessage && <p role="status" className="rounded-xl border border-clinical-leaf bg-clinical-leaf-soft p-3 text-sm text-clinical-success">{detailMessage}</p>}
                     <div className="flex items-center gap-4 rounded-2xl border border-clinical-border bg-white p-4">
                       <Avatar person={selectedStaff} large />
                       <div className="min-w-0 flex-1">
@@ -785,15 +831,52 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                     </div>
 
                     <div className="rounded-2xl border border-clinical-border bg-white p-5">
-                      <h3 className="mb-3 font-extrabold">Thông tin tài khoản</h3>
-                      <dl className="grid gap-x-5 sm:grid-cols-2">
-                        <DetailRow label="Tên đăng nhập" value={selectedStaff.loginName} />
-                        <DetailRow label="Mã nhân viên" value={selectedStaff.staffCode} />
-                        <DetailRow label="Số điện thoại" value={selectedStaff.phone} />
-                        <DetailRow label="Email" value={selectedStaff.email} />
-                        <DetailRow label="Giấy phép hành nghề" value={selectedStaff.professionalLicense} />
-                        <DetailRow label="Trình độ chuyên môn" value={selectedStaff.qualification} />
-                      </dl>
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-extrabold">Thông tin nhân viên</h3>
+                        {!editing && !isProtected(selectedStaff) && (
+                          <Button onClick={() => startEdit(selectedStaff)}>Chỉnh sửa</Button>
+                        )}
+                      </div>
+                      {editing ? (
+                        <form onSubmit={submitEdit} className="space-y-4" noValidate>
+                          <p className="text-xs text-clinical-muted">Mã nhân viên và tên đăng nhập không thay đổi tại đây.</p>
+                          <FormField name="fullName" label="Họ và tên" value={editForm.fullName} onChange={changeEdit} error={editErrors.fullName} maxLength={150} required />
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <FormField name="birthDate" label="Ngày sinh" type="date" value={editForm.birthDate} onChange={changeEdit} error={editErrors.birthDate} />
+                            <label className="block text-sm font-semibold text-clinical-ink">Giới tính
+                              <select name="sex" value={editForm.sex} onChange={changeEdit} className={fieldClass}>
+                                <option value="UNKNOWN">Chưa cập nhật</option>
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                                <option value="OTHER">Khác</option>
+                              </select>
+                            </label>
+                            <FormField name="phone" label="Số điện thoại" value={editForm.phone} onChange={changeEdit} error={editErrors.phone} maxLength={20} type="tel" />
+                            <FormField name="email" label="Email" value={editForm.email} onChange={changeEdit} error={editErrors.email} maxLength={254} type="email" />
+                          </div>
+                          <FormField name="address" label="Địa chỉ" value={editForm.address} onChange={changeEdit} error={editErrors.address} maxLength={500} />
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <FormField name="professionalLicense" label="Giấy phép hành nghề" value={editForm.professionalLicense} onChange={changeEdit} error={editErrors.professionalLicense} maxLength={100} />
+                            <FormField name="qualification" label="Trình độ chuyên môn" value={editForm.qualification} onChange={changeEdit} error={editErrors.qualification} maxLength={150} />
+                          </div>
+                          <div className="flex flex-wrap justify-end gap-2 border-t border-clinical-border pt-4">
+                            <Button disabled={saving} onClick={() => { setEditing(false); setActionError('') }}>Hủy</Button>
+                            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <dl className="grid gap-x-5 sm:grid-cols-2">
+                          <DetailRow label="Tên đăng nhập" value={selectedStaff.loginName} />
+                          <DetailRow label="Mã nhân viên" value={selectedStaff.staffCode} />
+                          <DetailRow label="Ngày sinh" value={selectedStaff.birthDate} />
+                          <DetailRow label="Giới tính" value={{ MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác', UNKNOWN: 'Chưa cập nhật' }[selectedStaff.sex]} />
+                          <DetailRow label="Số điện thoại" value={selectedStaff.phone} />
+                          <DetailRow label="Email" value={selectedStaff.email} />
+                          <DetailRow label="Địa chỉ" value={selectedStaff.address} />
+                          <DetailRow label="Giấy phép hành nghề" value={selectedStaff.professionalLicense} />
+                          <DetailRow label="Trình độ chuyên môn" value={selectedStaff.qualification} />
+                        </dl>
+                      )}
                     </div>
 
                     {isProtected(selectedStaff) && (
@@ -808,7 +891,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                       <p className="mt-1 text-xs text-clinical-muted">Vai trò quyết định những chức năng nhân viên được phép sử dụng.</p>
                       <div className="mt-4 space-y-2">
                         {getRoles(selectedStaff).length ? getRoles(selectedStaff).map((role) => (
-                          <div key={role} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-clinical-border bg-[#FFFCF7] px-3 py-2.5">
+                          <div key={role} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-clinical-border bg-suncare-50 px-3 py-2.5">
                             <span className="min-w-0 break-words text-sm font-semibold">{ROLE_LABELS[role] || role}</span>
                             {!isProtected(selectedStaff) && role !== 'SYSTEM_ADMIN' && (
                               <button type="button" onClick={() => setPending({ type: 'revoke', accountId: selectedStaff.accountId, roleCode: role })} className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">Thu hồi</button>
@@ -827,14 +910,13 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                               ))}
                             </select>
                           </label>
-                          <button
-                            type="button"
+                          <Button
+                            variant="primary"
                             disabled={!selectedRole || getRoles(selectedStaff).includes(selectedRole)}
                             onClick={() => setPending({ type: 'grant', accountId: selectedStaff.accountId, roleCode: selectedRole })}
-                            className={primaryButton}
                           >
                             <Icon name="plus" size={17} /> Gán vai trò
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -845,14 +927,14 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                         ? 'Tài khoản đang hoạt động và có thể đăng nhập theo quyền được cấp.'
                         : 'Tài khoản hiện không ở trạng thái hoạt động.'}</p>
                       {!isProtected(selectedStaff) && ['ACTIVE', 'LOCKED'].includes(selectedStaff.status) && (
-                        <button
-                          type="button"
+                        <Button
+                          variant={selectedStaff.status === 'ACTIVE' ? 'danger' : 'outline'}
                           onClick={() => setPending({ type: 'status', accountId: selectedStaff.accountId, status: selectedStaff.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE' })}
-                          className={`${outlineButton} mt-4 ${selectedStaff.status === 'ACTIVE' ? 'border-rose-200 text-rose-700 hover:bg-rose-50' : ''}`}
+                          className="mt-4"
                         >
                           <Icon name={selectedStaff.status === 'ACTIVE' ? 'lock' : 'check'} size={17} />
                           {selectedStaff.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </>
@@ -863,20 +945,8 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
         </div>
       )}
 
-      {/* Confirmation dialog: prevents accidental privilege/status changes */}
       {pending && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/55" aria-hidden="true" />
-          <div ref={confirmRef} role="alertdialog" aria-modal="true" aria-labelledby="staff-confirm-title" aria-describedby="staff-confirm-description" className="relative w-full max-w-md rounded-2xl border border-clinical-border bg-white p-6 shadow-2xl sm:p-7">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-900"><Icon name="shield" size={23} /></div>
-            <h2 id="staff-confirm-title" className="text-xl font-extrabold">Xác nhận thay đổi</h2>
-            <p id="staff-confirm-description" className="mt-2 text-sm leading-6 text-clinical-muted">{confirmDescription}</p>
-            <div className="mt-6 flex flex-wrap justify-end gap-2">
-              <button type="button" disabled={busy} onClick={() => setPending(null)} className={outlineButton}>Hủy</button>
-              <button type="button" disabled={busy} onClick={() => void confirmAction()} className={primaryButton}>{busy ? 'Đang xử lý...' : 'Xác nhận'}</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog dialogRef={confirmRef} title="Xác nhận thay đổi" description={confirmDescription} busy={busy} onCancel={() => setPending(null)} onConfirm={() => void confirmAction()} />
       )}
     </section>
   )

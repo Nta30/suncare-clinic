@@ -5,6 +5,7 @@ import com.suncare.clinic.modules.account.dto.CreateStaffRequest;
 import com.suncare.clinic.modules.account.dto.CreateStaffResponse;
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.account.dto.StaffSummaryResponse;
+import com.suncare.clinic.modules.account.dto.UpdateStaffRequest;
 import com.suncare.clinic.modules.account.repository.StaffManagementRepository;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Base64;
 
 @Service
 public class StaffManagementService {
@@ -56,6 +58,25 @@ public class StaffManagementService {
     public List<StaffSummaryResponse> list(CurrentAccountResponse admin) {
         requireAdmin(admin);
         return repository.listStaff();
+    }
+
+    @Transactional
+    public StaffSummaryResponse update(CurrentAccountResponse admin, long accountId, UpdateStaffRequest request) {
+        requireAdmin(admin);
+        requireTarget(admin, accountId);
+        byte[] version;
+        try {
+            version = Base64.getDecoder().decode(request.version());
+            if (version.length != 8) throw new IllegalArgumentException();
+        } catch (IllegalArgumentException error) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_VERSION", "Phiên bản hồ sơ không hợp lệ.");
+        }
+        if (repository.updateStaff(accountId, request, version) != 1) {
+            throw new ApiException(HttpStatus.CONFLICT, "STAFF_CHANGED", "Thông tin nhân viên đã thay đổi. Hãy tải lại trước khi lưu.");
+        }
+        repository.audit(admin.accountId(), "STAFF_PROFILE_UPDATED", accountId, "profile fields updated");
+        return repository.listStaff().stream().filter(person -> person.accountId() == accountId)
+                .findFirst().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "STAFF_NOT_FOUND", "Không tìm thấy tài khoản nhân viên."));
     }
 
     @Transactional

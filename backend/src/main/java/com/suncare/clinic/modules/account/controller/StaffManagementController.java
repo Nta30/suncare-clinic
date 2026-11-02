@@ -6,6 +6,7 @@ import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.account.dto.StaffRoleRequest;
 import com.suncare.clinic.modules.account.dto.StaffStatusRequest;
 import com.suncare.clinic.modules.account.dto.StaffSummaryResponse;
+import com.suncare.clinic.modules.account.dto.UpdateStaffRequest;
 import com.suncare.clinic.modules.account.service.StaffManagementService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -42,6 +44,12 @@ public class StaffManagementController {
     @GetMapping
     public List<StaffSummaryResponse> list(@AuthenticationPrincipal CurrentAccountResponse admin) {
         return service.list(admin);
+    }
+
+    @PutMapping("/{accountId}")
+    public StaffSummaryResponse update(@AuthenticationPrincipal CurrentAccountResponse admin,
+                                       @PathVariable long accountId, @Valid @RequestBody UpdateStaffRequest request) {
+        return service.update(admin, accountId, request);
     }
 
     @PostMapping("/{accountId}/roles")
