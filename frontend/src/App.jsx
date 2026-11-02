@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHeartPulse, faCalendarCheck, faClipboard, faMoneyBill, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import AccountForm from './features/account/AccountForm'
@@ -6,11 +6,13 @@ import PersonalProfile from './features/account/PersonalProfile'
 import StaffManagement from './features/account/StaffManagement'
 import OrganizationManagement from './features/organization/OrganizationManagement'
 import RoomManagement from './features/organization/RoomManagement'
-import StaffAssignments from './features/organization/StaffAssignments'
 import ClinicalServiceManagement from './features/clinical/ClinicalServiceManagement'
 import SchedulingCatalogManagement from './features/scheduling/SchedulingCatalogManagement'
 import clinicReception from './assets/clinic-reception-illustration.jpg'
 import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient, saveToken } from './services/accountApi'
+
+const DepartmentScheduleManagement = lazy(() => import('./features/scheduling/DepartmentScheduleManagement'))
+const StaffAssignments = lazy(() => import('./features/organization/StaffAssignments'))
 
 const roleLabels = {
   PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
@@ -49,7 +51,12 @@ function App() {
       if (active) { setAccount(current); setAuthState('signedIn') }
     }).catch((error) => {
       if (!active) return
-      if (error.status === 401) { clearToken(); setAuthState('guest') }
+      if (error.status === 401) {
+        clearToken()
+        setMode('login')
+        setAuthError('Phiên đăng nhập đã hết hạn hoặc backend vừa được khởi động lại. Hãy đăng nhập lại để tiếp tục.')
+        setAuthState('guest')
+      }
       else { setAuthState('error'); setAuthError(error.message) }
     })
     return () => { active = false }
@@ -127,11 +134,12 @@ function App() {
     }
   }
 
-  const handleSessionExpired = useCallback(() => {
+  const handleSessionExpired = useCallback((message = 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để tiếp tục.') => {
     clearToken()
     setAccount(null)
     setAuthState('guest')
     setMode('login')
+    setAuthError(message)
   }, [])
 
   const availableLinks = plannedLinks.filter((link) => account?.roles.some((role) => link.roles.includes(role)))
@@ -160,6 +168,8 @@ function App() {
                 <button onClick={() => setMode('scheduling-catalog')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Ca & giá khám</button>}
               {account?.permissions.includes('ACCOUNT_MANAGE') &&
                 <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
+              {account?.permissions.includes('SCHEDULE_PUBLISH_DEPARTMENT') &&
+                <button onClick={() => setMode('department-schedule')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch khoa</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -169,7 +179,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
@@ -221,7 +231,7 @@ function App() {
             </section>
           </div>
         </>}
-        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog'].includes(mode) && <>
+        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule'].includes(mode) && <>
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -250,11 +260,17 @@ function App() {
         {authState === 'signedIn' && mode === 'rooms' && account?.permissions.includes('CATALOG_MANAGE') &&
           <RoomManagement onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'assignments' && account?.permissions.includes('ACCOUNT_MANAGE') &&
-          <StaffAssignments onSessionExpired={handleSessionExpired} />}
+          <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải phân công...</p>}>
+            <StaffAssignments onSessionExpired={handleSessionExpired} />
+          </Suspense>}
         {authState === 'signedIn' && mode === 'services' && account?.permissions.includes('CATALOG_MANAGE') &&
           <ClinicalServiceManagement onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'scheduling-catalog' && account?.permissions.includes('CATALOG_MANAGE') &&
           <SchedulingCatalogManagement onSessionExpired={handleSessionExpired} />}
+        {authState === 'signedIn' && mode === 'department-schedule' && account?.permissions.includes('SCHEDULE_PUBLISH_DEPARTMENT') &&
+          <Suspense fallback={<p role="status" className="rounded-xl border border-clinical-border bg-white p-6">Đang tải màn hình phân lịch...</p>}>
+            <DepartmentScheduleManagement account={account} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
         onCancel={(event) => { event.preventDefault(); if (!logoutBusy) closeLogoutDialog() }}

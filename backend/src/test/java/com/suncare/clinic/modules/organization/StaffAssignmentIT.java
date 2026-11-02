@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -87,7 +88,13 @@ class StaffAssignmentIT {
             assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.StaffSpecialty WHERE staff_id = ? AND is_active = 1", Integer.class, staffId));
             long departmentAssignmentId = jdbc.queryForObject("SELECT id FROM dbo.StaffDepartment WHERE staff_id = ?", Long.class, staffId);
             long headAssignmentId = jdbc.queryForObject("SELECT id FROM dbo.DepartmentHeadAssignment WHERE staff_id = ?", Long.class, staffId);
-            assertThrows(ApiException.class, () -> service.endDepartment(admin, departmentAssignmentId, from.plusDays(10)));
+            ApiException departmentEndBlocked = assertThrows(ApiException.class,
+                    () -> service.endDepartment(admin, departmentAssignmentId, from.plusDays(10)));
+            assertTrue(departmentEndBlocked.getMessage().contains("01/11/2026 07:00"));
+            assertTrue(departmentEndBlocked.getMessage().contains("01/12/2026 07:00"));
+            ApiException headEndBeforeStart = assertThrows(ApiException.class,
+                    () -> service.endHead(admin, headAssignmentId, from));
+            assertTrue(headEndBeforeStart.getMessage().contains("01/11/2026 07:00"));
             service.endHead(admin, headAssignmentId, from.plusDays(10));
             jdbc.update("UPDATE dbo.Staff SET is_active = 0 WHERE id = ?", staffId);
             service.endDepartment(admin, departmentAssignmentId, from.plusDays(10));

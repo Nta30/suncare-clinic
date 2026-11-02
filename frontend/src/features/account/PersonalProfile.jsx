@@ -9,6 +9,7 @@ const labels = {
   identityNumber: 'Số giấy tờ tùy thân', emergencyName: 'Người liên hệ khẩn cấp',
   emergencyPhone: 'Số điện thoại khẩn cấp',
   professionalLicense: 'Số giấy phép hành nghề', qualification: 'Trình độ chuyên môn',
+  departments: 'Khoa công tác', specialties: 'Chuyên khoa',
 }
 const sexLabels = { UNKNOWN: 'Chưa xác định', MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' }
 const limits = {
@@ -176,6 +177,8 @@ export default function PersonalProfile({ account, onSessionExpired }) {
             <h2 className="text-lg font-bold">Thông tin chuyên môn</h2>
             <p className="mt-1 text-sm text-clinical-muted">Thông tin chuyên môn do quản trị viên quản lý.</p>
             <dl className="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+              {detail('departments', profile.departments?.join(' · ') || 'Chưa phân khoa')}
+              {detail('specialties', profile.specialties?.join(' · ') || 'Chưa gán chuyên khoa')}
               {detail('professionalLicense', profile.professionalLicense)}
               {detail('qualification', profile.qualification)}
             </dl>

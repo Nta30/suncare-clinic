@@ -170,6 +170,43 @@ class StaffManagementIT {
     }
 
     @Test
+    void staffListIncludesCurrentDepartmentsAndSpecialties() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long accountId = json.readTree(created).get("accountId").asLong();
+        long staffId = jdbc.queryForObject("SELECT staff_id FROM dbo.[Account] WHERE id = ?", Long.class, accountId);
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        long departmentId = jdbc.queryForObject("""
+                INSERT INTO dbo.Department (code, name, department_type, is_active)
+                OUTPUT INSERTED.id VALUES (?, 'P07 Test Department', 'CLINICAL', 1)
+                """, Long.class, "P07D" + suffix);
+        long specialtyId = jdbc.queryForObject("""
+                INSERT INTO dbo.Specialty (code, name, is_active)
+                OUTPUT INSERTED.id VALUES (?, 'P07 Test Specialty', 1)
+                """, Long.class, "P07S" + suffix);
+        try {
+            jdbc.update("INSERT INTO dbo.DepartmentSpecialty (department_id, specialty_id, is_active) VALUES (?, ?, 1)", departmentId, specialtyId);
+            jdbc.update("INSERT INTO dbo.StaffDepartment (staff_id, department_id, valid_from, is_primary) VALUES (?, ?, DATEADD(day, -1, SYSUTCDATETIME()), 1)", staffId, departmentId);
+            jdbc.update("INSERT INTO dbo.StaffSpecialty (staff_id, specialty_id, is_active) VALUES (?, ?, 1)", staffId, specialtyId);
+
+            String listed = mvc.perform(get("/api/admin/staff").header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            var rows = json.readTree(listed);
+            var staff = java.util.stream.StreamSupport.stream(rows.spliterator(), false)
+                    .filter(row -> row.get("accountId").asLong() == accountId).findFirst().orElseThrow();
+            assertEquals("P07 Test Department", staff.get("departments").get(0).asText());
+            assertEquals("P07 Test Specialty", staff.get("specialties").get(0).asText());
+        } finally {
+            jdbc.update("DELETE FROM dbo.StaffSpecialty WHERE staff_id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.DepartmentSpecialty WHERE department_id = ?", departmentId);
+            jdbc.update("DELETE FROM dbo.Specialty WHERE id = ?", specialtyId);
+            jdbc.update("DELETE FROM dbo.Department WHERE id = ?", departmentId);
+        }
+    }
+
+    @Test
     void protectsAdminAccountAndRejectsUnknownRole() throws Exception {
         mvc.perform(patch("/api/admin/staff/" + adminAccountId + "/status")
                 .header("Authorization", "Bearer " + token).contentType(MediaType.APPLICATION_JSON)

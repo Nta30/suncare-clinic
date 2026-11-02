@@ -7,4 +7,4 @@ public record StaffSummaryResponse(long accountId, long staffId, String staffCod
                                    String loginName, String status, List<String> roles,
                                    LocalDate birthDate, String sex, String phone, String email,
                                    String address, String professionalLicense, String qualification,
-                                   String version) { }
+                                   List<String> departments, List<String> specialties, String version) { }
