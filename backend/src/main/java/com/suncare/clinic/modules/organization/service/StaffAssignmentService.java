@@ -80,6 +80,7 @@ public class StaffAssignmentService {
                 || !"CLINICAL".equals(repository.lockDepartment(request.departmentId()))) {
             throw bad("Trưởng khoa cần là nhân viên đang hoạt động của khoa khám.");
         }
+        if (!repository.hasRole(request.staffId(), "DOCTOR")) throw bad("Trưởng khoa phải đồng thời có vai trò bác sĩ.");
         if (!repository.hasRole(request.staffId(), "DEPARTMENT_HEAD")) throw bad("Nhân viên chưa có vai trò trưởng khoa.");
         if (!repository.coversMembership(request.staffId(), request.departmentId(), request.validFrom(), request.validTo())) {
             throw bad("Nhiệm kỳ phải nằm trọn trong khoảng phân khoa của nhân viên.");
@@ -97,6 +98,7 @@ public class StaffAssignmentService {
         requireManager(actor);
         Map<String, Object> period = repository.period("DepartmentHeadAssignment", id);
         if (period == null) throw missing();
+        if (!repository.lockStaff(((Number) period.get("staff_id")).longValue())) throw bad("Không tìm thấy nhân viên.");
         repository.lockDepartment(((Number) period.get("department_id")).longValue());
         validateEnd(period, end);
         if (repository.end("DepartmentHeadAssignment", id, end) != 1) throw bad("Thời điểm kết thúc không hợp lệ.");

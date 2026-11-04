@@ -38,18 +38,18 @@ ClinicalOrder hết hạn không có nghĩa kết quả bệnh lý hết giá tr
 
 ## Quyền và phạm vi dữ liệu
 
-Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff của tài khoản; với bệnh nhân là patient_id. Head cần DepartmentHeadAssignment còn hiệu lực và Role tương ứng. Admin quản trị cấu hình không mặc nhiên được sửa hồ sơ y tế.
+Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff của tài khoản; với bệnh nhân là patient_id. Trưởng khoa luôn có cả role `DOCTOR` và `DEPARTMENT_HEAD`. Hai role mở quyền hành động; `DepartmentHeadAssignment` còn hiệu lực giới hạn quyền theo khoa và nhiệm kỳ. Admin quản trị cấu hình không mặc nhiên được sửa hồ sơ y tế.
 
 | Hành động | Patient | Doctor | Lab | Head | Cashier | Admin |
 |---|---|---|---|---|---|---|
 | Tự đăng ký/đổi thông tin cá nhân | Bản thân | Thông tin cho phép | Thông tin cho phép | Thông tin cho phép | Thông tin cho phép | Cấp/khóa tài khoản staff |
 | Đặt/hủy online hợp lệ | Của mình | — | — | — | — | Không thay bệnh nhân |
 | Đặt trực tiếp | Của mình | — | — | — | — | — |
-| Xem hồ sơ y tế | Của mình, đã công bố | Lịch sử Patient có Encounter mình phụ trách | Tối thiểu cần cho order thuộc khoa/phòng trực | Tổng hợp thống kê, không mặc nhiên toàn bệnh án | Chỉ định danh và khoản thu | Không mặc nhiên nội dung bệnh án |
-| Khám/chẩn đoán/kê đơn/review | — | Của mình | — | Chỉ nếu kiêm Doctor và được phân | — | — |
-| Tạo/hủy CLS chuyên môn | — | Của mình, trước tiếp nhận | — | — | — | — |
+| Xem hồ sơ y tế | Của mình, đã công bố | Lịch sử Patient có Encounter mình phụ trách | Tối thiểu cần cho order thuộc khoa/phòng trực | Tổng hợp khoa và Encounter mình phụ trách; không mặc nhiên toàn bệnh án | Chỉ định danh và khoản thu | Không mặc nhiên nội dung bệnh án |
+| Khám/chẩn đoán/kê đơn/review | — | Của mình | — | Encounter mình phụ trách theo role DOCTOR | — | — |
+| Tạo/hủy CLS chuyên môn | — | Của mình, trước tiếp nhận | — | Encounter mình phụ trách, trước khi lab tiếp nhận | — | — |
 | Check-in/hoãn/tiếp nhận/kết quả | — | Xem tiến độ | Đúng khoa, phòng, lịch trực | — | — | — |
-| Lập/in hóa đơn | Xem/in của mình | Lượt khám mình phụ trách | — | — | Xem/in phục vụ thu | Xem phục vụ thống kê |
+| Lập/in hóa đơn | Xem/in của mình | Lượt khám mình phụ trách | — | Lượt khám mình phụ trách theo role DOCTOR | Xem/in phục vụ thu | Xem phục vụ thống kê |
 | Xác nhận tiền mặt | — | — | — | — | Có | — |
 | Xác nhận MoMo | Không ai thao tác thủ công; chỉ hệ thống xác minh callback/đối soát | — | — | — | — | — |
 | Xử lý hoàn tiền | Xem tiến độ của mình | — | — | — | Mặc định v1, cần xác nhận vận hành | Audit |
@@ -59,4 +59,4 @@ Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff c
 
 Permission gợi ý: `APPOINTMENT_CREATE_SELF`, `APPOINTMENT_CANCEL_SELF`, `ENCOUNTER_WRITE_ASSIGNED`, `RESULT_WRITE_ASSIGNED`, `INVOICE_ISSUE_ASSIGNED`, `CASH_RECEIVE`, `REFUND_PROCESS`, `SCHEDULE_PUBLISH_DEPARTMENT`, `REPORT_EXPORT_SELF`, `REPORT_EXPORT_DEPARTMENT`, `REPORT_EXPORT_BILLING`, `REPORT_EXPORT_ALL`, `ACCOUNT_MANAGE`, `CATALOG_MANAGE`.
 
-Backend luôn ghép quyền hành động với điều kiện row-level, không chỉ ẩn nút UI. Khóa tài khoản hoặc thu hồi role có hiệu lực ở request tiếp theo. Tài khoản đa role dùng hợp quyền hành động nhưng không mở rộng vượt phạm vi dữ liệu của từng hành động. File và link video cũng kiểm tra chủ sở hữu/phân công; không suy quyền từ biết ID.
+Backend luôn ghép quyền hành động với điều kiện row-level, không chỉ ẩn nút UI. Không cấp `DEPARTMENT_HEAD` nếu thiếu `DOCTOR`; không thu hồi `DOCTOR` trước khi thu hồi `DEPARTMENT_HEAD`. Khóa tài khoản hoặc thu hồi role có hiệu lực ở request tiếp theo. Tài khoản đa role dùng hợp quyền hành động nhưng không mở rộng vượt phạm vi dữ liệu của từng hành động. File và link video cũng kiểm tra chủ sở hữu/phân công; không suy quyền từ biết ID.

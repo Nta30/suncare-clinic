@@ -1,6 +1,6 @@
 ---
 name: suncare-clinical-frontend
-description: Design, implement, redesign, or review Suncare Clinic frontend screens with React JavaScript, Vite, Tailwind CSS v4 and the Sunflower Clinical visual system. Use for patient-facing pages, authentication, scheduling, doctor encounters, clinical orders, lab queues, billing, medical records, staff/admin dashboards, responsive components and frontend UX audits. Keep existing Spring Boot API contracts and Suncare business rules. Do not use for backend-only, SQL-only or database migration tasks.
+description: Build, change, or visually review Suncare Clinic frontend screens with React JavaScript, Vite, Tailwind CSS v4 and the Sunflower Clinical visual system. Keep existing Spring Boot API contracts and Suncare business rules. Use web-design-guidelines for a formal interface-guidelines audit. Do not use for backend-only, SQL-only or database migration tasks.
 ---
 
 # Suncare Clinical Frontend
@@ -9,10 +9,11 @@ Deliver calm, credible, efficient healthcare interfaces. Express the sunflower i
 
 ## Load the project context before editing
 
-1. Read the repo-root `AGENTS.md`, `frontend/AGENTS.md`, and `frontend/AGENTS_SKILL.md` when present. Read `docs/implementation/PROGRESS.md` and the relevant requirements under `docs/01-...` through `docs/06-...`.
+1. Follow the repo-root `AGENTS.md` and `frontend/AGENTS.md`; read `docs/implementation/PROGRESS.md` and the relevant requirements under `docs/01-...` through `docs/06-...`. Consult `frontend/AGENTS_SKILL.md` only when the task needs help choosing an additional specialist skill; it routes skills and does not add another implementation checklist.
 2. Inspect `git status --short`, the target screen, existing layout/components/routes, `frontend/src/index.css`, and the real backend API requests/responses/DTOs. Preserve unrelated user edits.
 3. Identify the task code (`Pxx`), role, user journey, API readiness, states, and files in scope. If an API or business rule is missing, identify the blocker; do not invent a functioning interface or silently change the backend.
-4. Explain the intended layout and the acceptance checks briefly before implementing one scoped task.
+4. The current user request sets scope and preferences. Follow project instructions and requirements for business, security, data and evidence; if a requested change alters an unresolved business decision, explain the impact and ask before implementing that dependent behavior.
+5. Explain the intended layout and acceptance checks briefly before implementing the scoped task.
 
 ## Constraints with priority over generic design skills
 
@@ -22,7 +23,7 @@ Deliver calm, credible, efficient healthcare interfaces. Express the sunflower i
 - Respect local formatting: 2-space indentation, single-quoted JS strings, no semicolons, PascalCase components and camelCase functions.
 - Only a patient self-registers; public requests must never submit `role`, `staffId` or `accountType`. Frontend visibility is not server authorization.
 - Do not add fake working controls, sample real patient information, fabricated payment success, video sessions, or mock API responses represented as production behavior.
-- Keep implementation limited to the requested Pxx or screen. Do not edit SQL migrations or unrelated backend modules during a frontend redesign.
+- For frontend-only requests, keep implementation limited to the requested Pxx or screen; do not edit SQL migrations or unrelated backend modules. If the user explicitly requests a full-stack change, follow that scope and apply the backend rules in the root `AGENTS.md`.
 
 ## Sunflower Clinical design rules
 
@@ -53,9 +54,9 @@ Deliver calm, credible, efficient healthcare interfaces. Express the sunflower i
 
 ## Reference hierarchy when combining skills
 
-1. Suncare `AGENTS.md`, actual API contracts, and business documents govern correctness.
-2. This Suncare skill governs colors, interaction rules and consistent clinical UX.
-3. Other skills (e.g. `frontend-design`, `web-design-guidelines`, `vercel-react-best-practices`) may advise styling, review and performance **only where they do not conflict** with items 1–2.
+1. The current user request defines scope and preferences. Root and frontend `AGENTS.md`, business documents, actual API contracts and live code govern project workflow and correctness.
+2. This skill and its references govern Sunflower Clinical visual language and frontend interaction guidance within that scope.
+3. Other skills (e.g. `frontend-design`, `web-design-guidelines`, `vercel-react-best-practices`) add design, audit or performance advice only for the requested task and only where it fits the current stack and items 1–2.
 
 ## Suggested invocation
 

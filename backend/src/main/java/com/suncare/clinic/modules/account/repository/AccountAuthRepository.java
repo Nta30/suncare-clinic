@@ -45,7 +45,13 @@ public class AccountAuthRepository {
         return jdbc.queryForList("""
                 SELECT r.code FROM dbo.AccountRole ar JOIN dbo.[Role] r ON r.id = ar.role_id
                 JOIN dbo.[Account] a ON a.id = ar.account_id
-                WHERE ar.account_id = ? AND r.account_type = a.account_type ORDER BY r.code
+                WHERE ar.account_id = ? AND r.account_type = a.account_type
+                  AND (r.code <> 'DEPARTMENT_HEAD' OR EXISTS (
+                      SELECT 1 FROM dbo.AccountRole doctor_ar
+                      JOIN dbo.[Role] doctor_role ON doctor_role.id = doctor_ar.role_id
+                      WHERE doctor_ar.account_id = a.id AND doctor_role.code = 'DOCTOR'
+                  ))
+                ORDER BY r.code
                 """, String.class, accountId);
     }
 
@@ -56,7 +62,13 @@ public class AccountAuthRepository {
                 JOIN dbo.[Account] a ON a.id = ar.account_id AND a.account_type = r.account_type
                 JOIN dbo.RolePermission rp ON rp.role_id = r.id
                 JOIN dbo.[Permission] p ON p.id = rp.permission_id
-                WHERE ar.account_id = ? ORDER BY p.code
+                WHERE ar.account_id = ?
+                  AND (r.code <> 'DEPARTMENT_HEAD' OR EXISTS (
+                      SELECT 1 FROM dbo.AccountRole doctor_ar
+                      JOIN dbo.[Role] doctor_role ON doctor_role.id = doctor_ar.role_id
+                      WHERE doctor_ar.account_id = a.id AND doctor_role.code = 'DOCTOR'
+                  ))
+                ORDER BY p.code
                 """, String.class, accountId);
     }
 

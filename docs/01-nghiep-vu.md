@@ -9,7 +9,7 @@ Một cơ sở, khám ngoại trú trực tiếp và online; tài khoản, khoa/
 | ID | Quyết định |
 |---|---|
 | D01 | Patient và Staff riêng; không Person. Một Account chỉ thuộc một loại hồ sơ. |
-| D02 | Chỉ bệnh nhân tự đăng ký. Admin cấp tài khoản nhân viên; nhiều vai trò nội bộ được phép. |
+| D02 | Chỉ bệnh nhân tự đăng ký. Admin cấp tài khoản nhân viên; nhiều vai trò nội bộ được phép. `DEPARTMENT_HEAD` là quyền bổ sung của `DOCTOR`, còn `DepartmentHeadAssignment` xác định khoa và nhiệm kỳ. |
 | D03 | Trực tiếp chỉ chọn chuyên khoa, ngày, sáng/chiều; không chọn bác sĩ, không đổi/hủy lịch. |
 | D04 | Phân trực tiếp theo tỷ lệ lượt đặt/sức chứa thấp nhất; hòa theo mã bác sĩ. |
 | D05 | Online slot 20 phút; được chọn bác sĩ; tự phân theo số lịch online đã đặt trong ngày thấp nhất, hòa theo mã bác sĩ. |

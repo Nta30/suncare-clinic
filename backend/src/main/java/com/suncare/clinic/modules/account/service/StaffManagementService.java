@@ -37,6 +37,7 @@ public class StaffManagementService {
         if (roles.size() != request.roles().size()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "DUPLICATE_ROLE", "Vai trò bị lặp.");
         }
+        requireDoctorForHeadRole(roles);
         var roleRows = repository.findStaffRoles(roles);
         if (roleRows.size() != roles.size()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ROLE", "Vai trò nhân viên không hợp lệ.");
@@ -85,6 +86,9 @@ public class StaffManagementService {
         requireTarget(admin, accountId);
         var role = repository.findStaffRole(roleCode);
         if (role == null || "SYSTEM_ADMIN".equals(roleCode)) throw invalidRole();
+        if ("DEPARTMENT_HEAD".equals(roleCode) && !repository.hasRoleCode(accountId, "DOCTOR")) {
+            throw doctorRequiredForHead();
+        }
         if (repository.hasRole(accountId, role.id())) {
             throw new ApiException(HttpStatus.CONFLICT, "ROLE_EXISTS", "Tài khoản đã có vai trò này.");
         }
@@ -100,6 +104,11 @@ public class StaffManagementService {
         if (role == null || "SYSTEM_ADMIN".equals(roleCode)) throw invalidRole();
         if (!repository.hasRole(accountId, role.id())) {
             throw new ApiException(HttpStatus.NOT_FOUND, "ROLE_NOT_FOUND", "Tài khoản không có vai trò này.");
+        }
+        if ("DOCTOR".equals(roleCode)
+                && (repository.hasRoleCode(accountId, "DEPARTMENT_HEAD") || repository.hasOpenHeadAssignment(accountId))) {
+            throw new ApiException(HttpStatus.CONFLICT, "ROLE_DEPENDENCY",
+                    "Hãy kết thúc phân công trưởng khoa và thu hồi quyền trưởng khoa trước khi thu hồi vai trò bác sĩ.");
         }
         repository.revokeRole(accountId, role.id());
         repository.audit(admin.accountId(), "STAFF_ROLE_REVOKED", accountId, "role=" + roleCode);
@@ -131,6 +140,17 @@ public class StaffManagementService {
 
     private ApiException invalidRole() {
         return new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ROLE", "Vai trò nhân viên không hợp lệ.");
+    }
+
+    private void requireDoctorForHeadRole(List<String> roles) {
+        if (roles.contains("DEPARTMENT_HEAD") && !roles.contains("DOCTOR")) {
+            throw doctorRequiredForHead();
+        }
+    }
+
+    private ApiException doctorRequiredForHead() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "DOCTOR_REQUIRED_FOR_HEAD",
+                "Trưởng khoa phải đồng thời có vai trò bác sĩ.");
     }
 
     private ApiException duplicateLogin() {

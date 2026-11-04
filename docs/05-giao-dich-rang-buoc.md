@@ -28,7 +28,7 @@ Thứ tự logic: **phạm vi lịch/chuyên khoa-ngày → assignment/slot/hold
 
 ### TX01 — Đăng ký và cấp tài khoản
 
-Đăng ký công khai chỉ nhận dữ liệu Patient; server cố định account_type=PATIENT và role PATIENT. Tạo Patient, Account và AccountRole nguyên tử. Admin cấp Staff tương tự với role STAFF; kiểm tra quyền admin trước ghi. Không cho API cập nhật hồ sơ thay account_type hoặc liên kết sang nhóm khác.
+Đăng ký công khai chỉ nhận dữ liệu Patient; server cố định account_type=PATIENT và role PATIENT. Tạo Patient, Account và AccountRole nguyên tử. Admin cấp Staff với account_type=STAFF và các role nội bộ hợp lệ; role `DEPARTMENT_HEAD` bắt buộc đi cùng `DOCTOR`. Kiểm tra quyền admin trước ghi. Không cho API cập nhật hồ sơ thay account_type hoặc liên kết sang nhóm khác.
 
 ### TX02 — Công bố và thay cấu hình lịch
 

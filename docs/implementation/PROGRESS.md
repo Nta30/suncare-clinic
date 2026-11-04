@@ -1,9 +1,17 @@
 ﻿# Tiến độ triển khai Suncare Clinic
 
-Cập nhật: 2026-11-02
+Cập nhật: 2026-11-04
 
 Việc hiện tại: P13 — viết lại luồng phân lịch khoa sau lỗi quyền
-Trạng thái: IN_PROGRESS (P10 DONE; P07 còn thiếu log browser theo mốc cũ)
+Trạng thái: IN_PROGRESS (P07.d DONE; P13 còn thiếu kiểm tra browser responsive)
+
+### P07.d — ràng buộc quyền trưởng khoa với vai trò bác sĩ (2026-11-04)
+
+- `DEPARTMENT_HEAD` là quyền bổ sung của bác sĩ; `DepartmentHeadAssignment` vẫn giữ khoa và nhiệm kỳ. API tạo/gán role từ chối trưởng khoa nếu thiếu `DOCTOR`, API phân công xác nhận cả hai role. Không cho thu hồi `DOCTOR` khi còn role trưởng khoa hoặc nhiệm kỳ chưa kết thúc; các thao tác role/phân công cùng khóa Staff để tránh race.
+- `/api/auth/me` không trả role/quyền trưởng khoa cho dữ liệu cũ thiếu role bác sĩ; tài khoản đó vẫn cần admin sửa bằng cách thêm đúng role bác sĩ hoặc thu hồi quyền trưởng khoa.
+- UI tự thêm role bác sĩ khi chọn quyền trưởng khoa, ngăn gỡ bác sĩ trước quyền trưởng khoa, và giải thích phân công quyết định khoa/thời hạn. Cập nhật `AGENTS.md` cùng docs 01/03/04/05/06; thay TX01 dùng nhầm “role STAFF” bằng account type `STAFF`.
+- Kiểm tra: `StaffManagementIT` 13/13 và `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest` (schema V14, Flyway không chạy migration); `npm run lint`, `npm run build` và `git diff --check` PASS. Kiểm tra SQL sau test còn 0 fixture P07/P10. Không ghi DB chính; chưa kiểm tra trực tiếp UI/responsive trên browser.
+- Việc tiếp theo duy nhất: P13 — kiểm tra responsive 320/375/768/1280 px và tương tác bảng/form phân công trên browser riêng; không lưu phân công lên DB chính.
 
 ### Bổ sung khoa/chuyên khoa vào profile và quản lý nhân viên (2026-11-02)
 

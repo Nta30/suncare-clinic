@@ -19,6 +19,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
@@ -109,6 +110,9 @@ class StaffManagementIT {
                 .contentType(MediaType.APPLICATION_JSON).content(request("[\"PATIENT\"]")))
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DEPARTMENT_HEAD\"]")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\"]")))
                 .andExpect(status().isCreated());
         mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
@@ -157,16 +161,99 @@ class StaffManagementIT {
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + staffToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.roles.length()").value(2));
         mvc.perform(delete("/api/admin/staff/" + id + "/roles/DOCTOR")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isConflict());
+        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + staffToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.roles.length()").value(2));
+        mvc.perform(delete("/api/admin/staff/" + id + "/roles/DEPARTMENT_HEAD")
                 .header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + staffToken))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.roles[0]").value("DEPARTMENT_HEAD"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.roles.length()").value(1));
+        mvc.perform(delete("/api/admin/staff/" + id + "/roles/DOCTOR")
+                .header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
         mvc.perform(patch("/api/admin/staff/" + id + "/status").header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"LOCKED\"}"))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + staffToken))
                 .andExpect(status().isUnauthorized());
-        assertEquals(4, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE actor_id = ?",
+        assertEquals(5, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE actor_id = ?",
                 Integer.class, adminAccountId));
+    }
+
+    @Test
+    void requiresDoctorBeforeGrantingDepartmentHead() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"CASHIER\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long id = json.readTree(created).get("accountId").asLong();
+
+        mvc.perform(post("/api/admin/staff/" + id + "/roles").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"roleCode\":\"DEPARTMENT_HEAD\"}"))
+                .andExpect(status().isBadRequest());
+        assertEquals(0, jdbc.queryForObject("""
+                SELECT COUNT(*) FROM dbo.AccountRole ar JOIN dbo.[Role] r ON r.id = ar.role_id
+                WHERE ar.account_id = ? AND r.code = 'DEPARTMENT_HEAD'
+                """, Integer.class, id));
+
+        mvc.perform(post("/api/admin/staff/" + id + "/roles").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"roleCode\":\"DOCTOR\"}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/admin/staff/" + id + "/roles").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"roleCode\":\"DEPARTMENT_HEAD\"}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void openHeadAssignmentKeepsDoctorRoleRequired() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\",\"DEPARTMENT_HEAD\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long accountId = json.readTree(created).get("accountId").asLong();
+        long staffId = jdbc.queryForObject("SELECT staff_id FROM dbo.[Account] WHERE id = ?", Long.class, accountId);
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        long departmentId = jdbc.queryForObject("""
+                INSERT INTO dbo.Department (code, name, department_type, is_active)
+                OUTPUT INSERTED.id VALUES (?, 'Head Role Test', 'CLINICAL', 1)
+                """, Long.class, "P07H" + suffix);
+        jdbc.update("""
+                INSERT INTO dbo.DepartmentHeadAssignment (staff_id, department_id, valid_from, assigned_by)
+                VALUES (?, ?, DATEADD(day, -1, SYSUTCDATETIME()), ?)
+                """, staffId, departmentId, adminAccountId);
+
+        try {
+            mvc.perform(delete("/api/admin/staff/" + accountId + "/roles/DEPARTMENT_HEAD")
+                    .header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
+            mvc.perform(delete("/api/admin/staff/" + accountId + "/roles/DOCTOR")
+                    .header("Authorization", "Bearer " + token)).andExpect(status().isConflict());
+            jdbc.update("UPDATE dbo.DepartmentHeadAssignment SET valid_to = DATEADD(second, -1, SYSUTCDATETIME()) WHERE staff_id = ?", staffId);
+            mvc.perform(delete("/api/admin/staff/" + accountId + "/roles/DOCTOR")
+                    .header("Authorization", "Bearer " + token)).andExpect(status().isNoContent());
+        } finally {
+            jdbc.update("DELETE FROM dbo.DepartmentHeadAssignment WHERE staff_id = ?", staffId);
+            jdbc.update("DELETE FROM dbo.Department WHERE id = ?", departmentId);
+        }
+    }
+
+    @Test
+    void legacyHeadRoleWithoutDoctorDoesNotGrantHeadAccess() throws Exception {
+        String created = mvc.perform(post("/api/admin/staff").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(request("[\"DOCTOR\",\"DEPARTMENT_HEAD\"]")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long accountId = json.readTree(created).get("accountId").asLong();
+        jdbc.update("""
+                DELETE ar FROM dbo.AccountRole ar JOIN dbo.[Role] r ON r.id = ar.role_id
+                WHERE ar.account_id = ? AND r.code = 'DOCTOR'
+                """, accountId);
+
+        String loginBody = "{\"loginName\":\"" + staffLogin + "\",\"password\":\"test-staff-password-123\"}";
+        String staffToken = json.readTree(mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
+                .get("accessToken").asText();
+        var current = json.readTree(mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + staffToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+        assertEquals(0, current.get("roles").size());
+        assertEquals(0, current.get("permissions").size());
+        assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AccountRole WHERE account_id = ?", Integer.class, accountId) > 0);
     }
 
     @Test

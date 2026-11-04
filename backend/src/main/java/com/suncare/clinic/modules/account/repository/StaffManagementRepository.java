@@ -124,11 +124,15 @@ public class StaffManagementRepository {
     }
 
     public StaffAccount lockStaff(long accountId) {
-        List<StaffAccount> rows = jdbc.query("""
-                SELECT id, status FROM dbo.[Account] WITH (UPDLOCK, HOLDLOCK)
+        List<StaffTarget> rows = jdbc.query("""
+                SELECT id, status, staff_id FROM dbo.[Account] WITH (UPDLOCK, HOLDLOCK)
                 WHERE id = ? AND account_type = 'STAFF'
-                """, (rs, row) -> new StaffAccount(rs.getLong("id"), rs.getString("status")), accountId);
-        return rows.isEmpty() ? null : rows.getFirst();
+                """, (rs, row) -> new StaffTarget(rs.getLong("id"), rs.getString("status"), rs.getLong("staff_id")), accountId);
+        if (rows.isEmpty()) return null;
+        StaffTarget target = rows.getFirst();
+        jdbc.query("SELECT id FROM dbo.Staff WITH (UPDLOCK, HOLDLOCK) WHERE id = ?",
+                (rs, row) -> rs.getLong("id"), target.staffId());
+        return new StaffAccount(target.id(), target.status());
     }
 
     public boolean hasAdminRole(long accountId) {
@@ -150,6 +154,23 @@ public class StaffManagementRepository {
         return count != null && count > 0;
     }
 
+    public boolean hasRoleCode(long accountId, String roleCode) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM dbo.AccountRole ar JOIN dbo.[Role] r ON r.id = ar.role_id
+                WHERE ar.account_id = ? AND r.code = ? AND r.account_type = 'STAFF'
+                """, Integer.class, accountId, roleCode);
+        return count != null && count > 0;
+    }
+
+    public boolean hasOpenHeadAssignment(long accountId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM dbo.DepartmentHeadAssignment h
+                JOIN dbo.[Account] a ON a.staff_id = h.staff_id
+                WHERE a.id = ? AND (h.valid_to IS NULL OR h.valid_to > SYSUTCDATETIME())
+                """, Integer.class, accountId);
+        return count != null && count > 0;
+    }
+
     public void revokeRole(long accountId, long roleId) {
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ? AND role_id = ?", accountId, roleId);
     }
@@ -167,6 +188,7 @@ public class StaffManagementRepository {
     }
 
     public record StaffAccount(long id, String status) { }
+    private record StaffTarget(long id, String status, long staffId) { }
 
     private static class StaffRow {
         final long id;

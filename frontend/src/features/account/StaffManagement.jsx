@@ -21,7 +21,7 @@ import {
 const ROLE_OPTIONS = [
   { code: 'DOCTOR', label: 'Bác sĩ', description: 'Khám và điều trị' },
   { code: 'LAB_STAFF', label: 'Nhân viên CLS', description: 'Thực hiện cận lâm sàng' },
-  { code: 'DEPARTMENT_HEAD', label: 'Trưởng khoa', description: 'Điều phối khoa và lịch làm việc' },
+  { code: 'DEPARTMENT_HEAD', label: 'Quyền trưởng khoa', description: 'Bác sĩ được giao quản lý lịch và báo cáo theo khoa; cần phân công nhiệm kỳ' },
   { code: 'CASHIER', label: 'Thu ngân', description: 'Thu phí và quản lý thanh toán' },
 ]
 const ROLE_LABELS = {
@@ -282,6 +282,11 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   const pendingStaff = pending
     ? staff.find((person) => String(person.accountId) === String(pending.accountId))
     : null
+  const selectedStaffRoles = getRoles(selectedStaff)
+  const selectedStaffHasDoctorRole = selectedStaffRoles.includes('DOCTOR')
+  const selectedStaffHasHeadRole = selectedStaffRoles.includes('DEPARTMENT_HEAD')
+  const availableStaffRoles = ROLE_OPTIONS.filter((role) => !selectedStaffRoles.includes(role.code)
+    && (role.code !== 'DEPARTMENT_HEAD' || selectedStaffHasDoctorRole))
   const panelIsOpen = Boolean(panel)
   const confirmIsOpen = Boolean(pending)
 
@@ -427,12 +432,26 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
   }
 
   function toggleRole(code) {
-    setForm((current) => ({
-      ...current,
-      roles: current.roles.includes(code)
-        ? current.roles.filter((role) => role !== code)
-        : [...current.roles, code],
-    }))
+    setForm((current) => {
+      const hasRole = current.roles.includes(code)
+      let roles
+
+      if (code === 'DOCTOR') {
+        roles = hasRole
+          ? current.roles.filter((role) => role !== 'DOCTOR' && role !== 'DEPARTMENT_HEAD')
+          : [...current.roles, 'DOCTOR']
+      } else if (code === 'DEPARTMENT_HEAD') {
+        roles = hasRole
+          ? current.roles.filter((role) => role !== 'DEPARTMENT_HEAD')
+          : [...current.roles, ...(current.roles.includes('DOCTOR') ? [] : ['DOCTOR']), 'DEPARTMENT_HEAD']
+      } else {
+        roles = hasRole
+          ? current.roles.filter((role) => role !== code)
+          : [...current.roles, code]
+      }
+
+      return { ...current, roles }
+    })
     setFormErrors((current) => ({ ...current, roles: undefined }))
   }
 
@@ -448,6 +467,9 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
       errors.fullName = 'Nhập họ và tên, tối đa 150 ký tự.'
     }
     if (!form.roles.length) errors.roles = 'Chọn ít nhất một vai trò.'
+    if (form.roles.includes('DEPARTMENT_HEAD') && !form.roles.includes('DOCTOR')) {
+      errors.roles = 'Quyền trưởng khoa cần đi cùng vai trò bác sĩ.'
+    }
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       errors.email = 'Email không đúng định dạng.'
     }
@@ -799,6 +821,7 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
                   <fieldset className="space-y-4 border-t border-clinical-border pt-6">
                     <legend className="pt-6 font-extrabold">04. Vai trò trong hệ thống <span className="text-rose-600">*</span></legend>
                     <p className="text-xs text-clinical-muted">Có thể chọn nhiều vai trò cho cùng một nhân viên.</p>
+                    <p className="text-xs text-clinical-muted">Chọn quyền trưởng khoa sẽ tự thêm vai trò bác sĩ. Phân công trưởng khoa bên dưới vẫn xác định khoa và nhiệm kỳ.</p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {ROLE_OPTIONS.map((role) => {
                         const checked = form.roles.includes(role.code)
@@ -900,36 +923,56 @@ export default function StaffManagement({ currentAccountId, onSessionExpired }) 
 
                     <div className="rounded-2xl border border-clinical-border bg-white p-5">
                       <h3 className="font-extrabold">Phân quyền</h3>
-                      <p className="mt-1 text-xs text-clinical-muted">Vai trò quyết định những chức năng nhân viên được phép sử dụng.</p>
+                      <p className="mt-1 text-xs text-clinical-muted">Vai trò quyết định quyền hệ thống; phân công trưởng khoa xác định khoa và thời hạn.</p>
                       <div className="mt-4 space-y-2">
-                        {getRoles(selectedStaff).length ? getRoles(selectedStaff).map((role) => (
-                          <div key={role} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-clinical-border bg-suncare-50 px-3 py-2.5">
-                            <span className="min-w-0 break-words text-sm font-semibold">{ROLE_LABELS[role] || role}</span>
-                            {!isProtected(selectedStaff) && role !== 'SYSTEM_ADMIN' && (
-                              <button type="button" onClick={() => setPending({ type: 'revoke', accountId: selectedStaff.accountId, roleCode: role })} className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">Thu hồi</button>
-                            )}
-                          </div>
-                        )) : <p className="text-sm text-clinical-muted">Tài khoản chưa được cấp vai trò nào.</p>}
+                        {selectedStaffRoles.length ? selectedStaffRoles.map((role) => {
+                          const doctorRequired = role === 'DOCTOR' && selectedStaffHasHeadRole
+                          return (
+                            <div key={role} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-clinical-border bg-suncare-50 px-3 py-2.5">
+                              <span className="min-w-0 break-words text-sm font-semibold">{ROLE_LABELS[role] || role}</span>
+                              {!isProtected(selectedStaff) && role !== 'SYSTEM_ADMIN' && (
+                                <button
+                                  type="button"
+                                  disabled={doctorRequired}
+                                  title={doctorRequired ? 'Thu hồi quyền trưởng khoa trước khi thu hồi vai trò bác sĩ.' : undefined}
+                                  onClick={() => setPending({ type: 'revoke', accountId: selectedStaff.accountId, roleCode: role })}
+                                  className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Thu hồi
+                                </button>
+                              )}
+                            </div>
+                          )
+                        }) : <p className="text-sm text-clinical-muted">Tài khoản chưa được cấp vai trò nào.</p>}
                       </div>
-                      {!isProtected(selectedStaff) && ROLE_OPTIONS.some((role) => !getRoles(selectedStaff).includes(role.code)) && (
+                      {selectedStaffHasHeadRole && !selectedStaffHasDoctorRole && (
+                        <p role="alert" className="mt-3 rounded-xl border border-clinical-warning bg-amber-50 p-3 text-xs text-clinical-warning">
+                          Quyền trưởng khoa chưa có hiệu lực vì thiếu vai trò bác sĩ. Hãy cấp vai trò bác sĩ cho đúng nhân sự hoặc thu hồi quyền trưởng khoa.
+                        </p>
+                      )}
+                      {!isProtected(selectedStaff) && availableStaffRoles.length > 0 && (
                         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                           <label className="min-w-0 flex-1">
                             <span className="sr-only">Chọn vai trò cần gán</span>
                             <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)} className="min-h-11 w-full rounded-xl border border-clinical-border-strong bg-white px-3 text-sm outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100">
                               <option value="">Chọn vai trò muốn thêm</option>
-                              {ROLE_OPTIONS.filter((role) => !getRoles(selectedStaff).includes(role.code)).map((role) => (
+                              {availableStaffRoles.map((role) => (
                                 <option key={role.code} value={role.code}>{role.label}</option>
                               ))}
                             </select>
                           </label>
                           <Button
                             variant="primary"
-                            disabled={!selectedRole || getRoles(selectedStaff).includes(selectedRole)}
+                            disabled={!selectedRole || selectedStaffRoles.includes(selectedRole)
+                              || (selectedRole === 'DEPARTMENT_HEAD' && !selectedStaffHasDoctorRole)}
                             onClick={() => setPending({ type: 'grant', accountId: selectedStaff.accountId, roleCode: selectedRole })}
                           >
                             <Icon name="plus" size={17} /> Gán vai trò
                           </Button>
                         </div>
+                      )}
+                      {!isProtected(selectedStaff) && !selectedStaffHasDoctorRole && !selectedStaffHasHeadRole && (
+                        <p className="mt-3 text-xs text-clinical-muted">Cấp vai trò bác sĩ trước khi thêm quyền trưởng khoa.</p>
                       )}
                     </div>
 

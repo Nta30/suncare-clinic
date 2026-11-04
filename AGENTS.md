@@ -1,10 +1,17 @@
 # Repository Guidelines
 
+## Phạm vi và thứ tự áp dụng chỉ dẫn
+
+- Yêu cầu hiện tại của người dùng quyết định phạm vi và ưu tiên. Quy tắc nghiệp vụ, bảo mật và dữ liệu của dự án vẫn theo hướng dẫn repo, tài liệu nghiệp vụ và API; nếu yêu cầu mới thay đổi một quyết định nghiệp vụ, làm rõ ảnh hưởng trước khi sửa phần phụ thuộc.
+- `AGENTS.md` ở root quản lý quy trình chung, roadmap, nghiệp vụ, dữ liệu và kiểm chứng. `AGENTS.md` trong thư mục con chỉ bổ sung quy tắc cho thư mục đó, không thay đổi hợp đồng hoặc quy trình chung.
+- Skill chỉ hướng dẫn phần chuyên môn của skill. Chỉ dùng phần phù hợp với yêu cầu và stack hiện tại; skill không mở rộng phạm vi công việc hoặc ghi đè quy tắc repo.
+- Nếu tài liệu nghiệp vụ, schema, code hoặc API mâu thuẫn về một quyết định ảnh hưởng nghiệp vụ, nêu rõ nguồn và điểm khác nhau; dừng phần phụ thuộc cho tới khi có quyết định.
+
 ## Project Structure & Module Organization
 - `frontend/src/` contains the React JavaScript UI; keep API calls in `services/`, imported images in `assets/`, and global styles in `index.css`. Static public assets belong in `frontend/public/`.
 - `backend/src/main/java/com/suncare/clinic/` contains Spring Boot code, including `common/controller/HealthController.java`. Organize new business functionality by module.
 - `backend/src/main/resources/` holds configuration and Flyway SQL migrations in `db/migration/`; backend tests live in `backend/src/test/java/`.
-- `docs/` contains project handoffs and `database/SCHEMA_PLAN.md`. Check implementation against these documents and update project-state notes after significant milestones.
+- `docs/` contains project handoffs, the single implementation ledger at `docs/implementation/PROGRESS.md`, and `database/SCHEMA_PLAN.md`. Check implementation against the relevant documents and update `PROGRESS.md` after significant milestones; do not create additional project-state ledgers.
 
 ## Build, Test, and Development Commands
 Run commands from the indicated directory, not the repository root.
@@ -88,7 +95,7 @@ Service giá CLS và giá khám cần thống nhất kiểm tra hiệu lực, kh
 ### Những quy tắc không được đơn giản hóa sai
 
 - Giữ phạm vi một cơ sở ngoại trú; không thêm nội trú, BHYT, tồn kho/bán thuốc, giảm giá, kế toán hay hóa đơn thuế.
-- Một Account thuộc Patient **hoặc** Staff; chỉ bệnh nhân tự đăng ký. Role thực tế là `PATIENT`, `DOCTOR`, `LAB_STAFF`, `DEPARTMENT_HEAD`, `CASHIER`, `SYSTEM_ADMIN`; `STAFF` là account type, không phải role trong SQL.
+- Một Account thuộc Patient **hoặc** Staff; chỉ bệnh nhân tự đăng ký. Role thực tế là `PATIENT`, `DOCTOR`, `LAB_STAFF`, `DEPARTMENT_HEAD`, `CASHIER`, `SYSTEM_ADMIN`; `STAFF` là account type, không phải role trong SQL. `DEPARTMENT_HEAD` là quyền bổ sung cho `DOCTOR`; phân công trưởng khoa mới xác định khoa và thời hạn.
 - Phân quyền ở backend theo hành động **và** chủ sở hữu/bác sĩ phụ trách/khoa/phòng trực. Ẩn nút frontend không thay kiểm tra quyền; admin không tự có quyền sửa bệnh án. Khóa tài khoản/thu hồi role phải có hiệu lực ở request tiếp theo.
 - Trực tiếp chỉ chọn chuyên khoa/ngày/ca; phân bác sĩ theo tỷ lệ lượt đặt/sức chứa, hòa theo mã. Không cho bệnh nhân chọn bác sĩ, hủy hoặc đổi lịch trực tiếp.
 - Online có slot 20 phút, giữ chỗ 5 phút. Chỉ tạo Appointment + Encounter sau khi xác minh MoMo hợp lệ trong hạn. Hủy online khi cách giờ hẹn ít nhất 24 giờ và chưa khám; không đổi lịch, không tự hồi sinh booking khi tiền đến muộn.

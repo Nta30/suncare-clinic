@@ -81,6 +81,10 @@ class StaffAssignmentIT {
             assertThrows(ApiException.class, () -> service.assignHead(admin,
                     new HeadAssignmentRequest(staffId, departmentId, from, end)));
             jdbc.update("INSERT INTO dbo.AccountRole(account_id, role_id, granted_by, granted_at) SELECT ?, id, ?, SYSUTCDATETIME() FROM dbo.[Role] WHERE code = 'DEPARTMENT_HEAD'", accountId, accountId);
+            ApiException headWithoutDoctor = assertThrows(ApiException.class, () -> service.assignHead(admin,
+                    new HeadAssignmentRequest(staffId, departmentId, from, end)));
+            assertTrue(headWithoutDoctor.getMessage().contains("bác sĩ"));
+            assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.DepartmentHeadAssignment WHERE staff_id = ?", Integer.class, staffId));
             jdbc.update("INSERT INTO dbo.AccountRole(account_id, role_id, granted_by, granted_at) SELECT ?, id, ?, SYSUTCDATETIME() FROM dbo.[Role] WHERE code = 'DOCTOR'", accountId, accountId);
             service.assignHead(admin, new HeadAssignmentRequest(staffId, departmentId, from, end));
             service.specialty(admin, new StaffSpecialtyRequest(staffId, specialtyId, true));

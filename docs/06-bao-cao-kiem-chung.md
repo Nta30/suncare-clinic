@@ -48,7 +48,7 @@ Khoa trong báo cáo lượt khám là Appointment.department_id; khoa CLS là C
 |---|---|---|
 | AT01 | Đăng ký gửi role DOCTOR hoặc staff_id | Server từ chối/không nhận field, chỉ tạo Patient + PATIENT role. |
 | AT02 | Gán cả patient_id và staff_id vào Account | CHECK chặn; tài khoản không có hồ sơ cũng bị chặn. |
-| AT03 | Staff kiêm Doctor/Head | Dùng được hai nhóm hành động trong đúng phạm vi, không xem khoa khác. |
+| AT03 | Staff có role `DOCTOR` và `DEPARTMENT_HEAD`, được phân công trưởng khoa ở một khoa | Dùng được nhóm hành động bác sĩ và trưởng khoa trong đúng phạm vi; không xem khoa khác. |
 | AT04 | Hai request giành chỗ cuối ca trực tiếp | Một thành công, một báo hết chỗ; đúng một Appointment+Encounter mới. |
 | AT05 | Hai bác sĩ có tỷ lệ 1/2 và 2/4 | Hòa tỷ lệ, chọn mã nhỏ hơn; nhiều request đồng thời không phá capacity. |
 | AT06 | Trực tiếp gửi doctor_id hoặc giờ tùy chọn | Server không cho chọn; tự phân đúng ca/chuyên khoa. |

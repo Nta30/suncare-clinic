@@ -14,6 +14,12 @@ const tabs = [
   { key: 'heads', label: 'Trưởng khoa' },
   { key: 'specialties', label: 'Chuyên khoa' },
 ]
+const roleLabels = {
+  DOCTOR: 'Bác sĩ',
+  LAB_STAFF: 'Nhân viên CLS',
+  DEPARTMENT_HEAD: 'Quyền trưởng khoa',
+  CASHIER: 'Thu ngân',
+}
 const localToUtc = (value) => value ? new Date(`${value}+07:00`).toISOString().slice(0, 23) : null
 const utcTime = (value) => value ? new Date(`${value}Z`).getTime() : null
 const displayDate = (value) => value
@@ -54,7 +60,7 @@ function AssignmentForm({ form, kind, staff, departments, specialties, assignmen
   const disabled = busy || !form.staffId
     || (kind !== 'specialty' && (!form.departmentId || !form.validFrom))
     || (kind === 'specialty' && (!form.specialtyId || !hasDoctorRole))
-    || (kind === 'head' && (!hasHeadRole || !coversMembership))
+    || (kind === 'head' && (!hasDoctorRole || !hasHeadRole || !coversMembership))
     || (kind !== 'specialty' && form.validTo && new Date(`${localToUtc(form.validTo)}Z`) <= new Date(`${localToUtc(form.validFrom)}Z`))
 
   return (
@@ -104,9 +110,10 @@ function AssignmentForm({ form, kind, staff, departments, specialties, assignmen
         </>}
       </div>
 
-      {selected && <p className='mt-3 text-xs text-clinical-muted'>Vai trò trên tài khoản: {selected.roles.join(', ') || 'Chưa có'}</p>}
-      {kind === 'head' && form.staffId && !hasHeadRole && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Nhân viên chưa được cấp role Trưởng khoa.</p>}
-      {kind === 'head' && form.staffId && hasHeadRole && form.departmentId && !coversMembership && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Nhiệm kỳ trưởng khoa phải nằm trọn trong phân khoa của nhân viên. Hãy tạo hoặc kiểm tra phân khoa trước.</p>}
+      {selected && <p className='mt-3 text-xs text-clinical-muted'>Vai trò tài khoản: {selected.roles.map((role) => roleLabels[role] || role).join(', ') || 'Chưa có'}</p>}
+      {kind === 'head' && form.staffId && !hasDoctorRole && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Trưởng khoa phải có vai trò bác sĩ. Hãy cấp role DOCTOR trước.</p>}
+      {kind === 'head' && form.staffId && hasDoctorRole && !hasHeadRole && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Bác sĩ cần có quyền trưởng khoa trước khi tạo phân công nhiệm kỳ.</p>}
+      {kind === 'head' && form.staffId && hasDoctorRole && hasHeadRole && form.departmentId && !coversMembership && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Nhiệm kỳ trưởng khoa phải nằm trọn trong phân khoa của nhân viên. Hãy tạo hoặc kiểm tra phân khoa trước.</p>}
       {kind === 'specialty' && form.staffId && !hasDoctorRole && <p role='alert' className='mt-2 text-sm text-clinical-danger'>Chỉ bác sĩ có role DOCTOR mới được gán chuyên khoa.</p>}
 
       <div className='mt-4 flex justify-end border-t border-clinical-border pt-4'>
