@@ -2,8 +2,27 @@
 
 Cập nhật: 2026-11-04
 
-Việc hiện tại: P13 — viết lại luồng phân lịch khoa sau lỗi quyền
-Trạng thái: IN_PROGRESS (P07.d DONE; P13 còn thiếu kiểm tra browser responsive)
+Việc hiện tại: P14 — xác minh giao diện lịch và thao tác công bố trên browser
+Trạng thái: IN_PROGRESS (integration test publish chưa chạy lại sau khi API nhận workSlots; lint/build/diff-check đạt; browser host chưa khả dụng)
+
+### P14 — công bố lịch và tạo slot ONLINE (2026-11-04)
+
+- V15 mở loại phòng ONLINE; V16 yêu cầu WorkAssignment ONLINE gắn ca sáng/chiều cấu hình và giữ V1–V15 bất biến. API `POST /api/head/schedules/{scheduleId}/publish` công bố trong transaction, kiểm tra phạm vi/nhiệm kỳ, role/chuyên khoa/khoa/phòng/ca/giá, giao lịch bác sĩ/phòng; sinh slot 20 phút chỉ trong từng ca và ghi audit. Retry publish trả lịch hiện hành; lịch đã công bố không cho sửa/gỡ phân công.
+- Theo D25–D27, UI nhóm hàng sáng/chiều theo ONSITE và ONLINE; bấm chọn một ô, Ctrl/⌘-bấm thêm/bỏ, kéo chọn vùng, Ctrl/⌘-kéo cộng vùng. Selection giữ nguyên khi chuyển tuần; mỗi request gửi đúng từng cặp ngày/ca trong cùng một mode, không tạo tích chéo. API lưu danh sách ô cùng transaction. Chọn cả ngày ONLINE vẫn sinh slot theo từng ca, không có slot giờ nghỉ trưa. Danh sách bác sĩ và phòng lọc các phân công chồng giờ của đợt đang mở trong những ô đã chọn; backend tiếp tục chặn xung đột với lịch đã công bố. Cùng bác sĩ/phòng chỉ nhận một phân công tại một thời điểm, bất kể ONSITE/ONLINE.
+- Kiểm tra trước khi đổi request sang `workSlots`: `$env:JAVA_TOOL_OPTIONS='-Djava.library.path=D:\TaiLieu\Nam4Ky1\Project_1\jdbc-auth\13.4.0'; .\mvnw.cmd '-Dtest=WorkSchedulePublishIT,WorkScheduleIT' test -q` PASS 7/7 trên `SuncareClinicMigrationTest` (publish/idempotency, slot theo đủ ca, xung đột, giá sai chuyên khoa, nhiều ngày rollback). Sau thay đổi `workSlots`, backend `mvnw -DskipTests compile` PASS; frontend sau lọc bác sĩ/phòng: `npm run lint`, `npm run build`, `git diff --check` PASS. Chưa chạy lại integration test. Flyway V15/V16 đã áp dụng trên DB thử; CHECK constraint đang bật/được tin cậy; sau test còn 0 fixture P14. Không ghi DB chính.
+- Browser validation chưa chạy được: CUA báo `The browser access host is unavailable`; còn kiểm tra responsive 320/375/768/1280 px, chọn nhiều ngày, bật cả ngày và xác nhận publish. P14 giữ IN_PROGRESS.
+- Việc tiếp theo duy nhất: P13/P14 — kiểm thử API `workSlots`, rồi kiểm tra chọn ô qua 2–3 tuần, phân công và công bố trên browser khi host khả dụng.
+
+### P13 — kiểm chứng tiếp (2026-11-04)
+
+- Sửa fixture `WorkScheduleIT` theo quy tắc P07.d: trưởng khoa có cả role `DOCTOR`; thêm tài khoản `LAB_STAFF` riêng để giữ ca kiểm tra từ chối phân công người không phải bác sĩ.
+- Danh sách đợt phân lịch được phân trang 5 đợt/trang, có nút trang nhanh và Trước/Sau; tìm kiếm/lọc đưa về trang đầu. Bảng không còn render toàn bộ lịch trong một vùng cuộn dọc, và sau khi tạo đợt mới màn hình mở đợt đó ở trang đầu.
+- Cột `Hình thức · ca` được cố định 12rem trong bảng bố cục cố định để nội dung bác sĩ không ép hẹp cột nhãn; bảng vẫn cuộn ngang riêng khi màn hình nhỏ.
+- Thời khóa biểu đặt hai hàng ONSITE cạnh nhau rồi hai hàng ONLINE. Bấm thường chọn một ô; Ctrl/⌘-bấm thêm/bỏ; giữ-kéo chọn khối ngày/ca; Ctrl/⌘-kéo cộng khối. Selection qua 2–3 tuần được giữ khi chuyển tuần; API nhận `workSlots` chính xác để không mở rộng ô rời rạc thành tích ngày × ca. Không có nút bật chọn nhiều; form liệt kê các ô đã chọn.
+- Sau bổ sung click/Ctrl-click/drag và API `workSlots`, trong `frontend/`, `npm run lint` và `npm run build` PASS; backend `mvnw -DskipTests compile` PASS; `git diff --check` PASS. Chưa chạy integration tests cho `workSlots`/multi-shift ONSITE và chưa thử trực quan responsive vì browser host unavailable.
+- Kiểm tra: trong `backend/`, `.\mvnw.cmd '-Dtest=WorkScheduleIT' test -q` PASS 1/1 trên `SuncareClinicMigrationTest`, schema V14; sau test, SELECT xác nhận còn 0 fixture `Staff`, `Account`, `Department` mã P13. Trong `frontend/`, `npm run lint` và `npm run build` PASS; `git diff --check` PASS. Không ghi DB chính.
+- Kiểm tra browser bị chặn bởi `The browser access host is unavailable` khi lấy inventory và mở tab in-app. Vite đã khởi động riêng rồi dừng; chưa xác minh 320/375/768/1280 px, chọn ô ca, mở form và Hủy.
+- P13 vẫn IN_PROGRESS cho tới khi kiểm tra responsive/tương tác trên browser. P14 đã được bắt đầu riêng theo yêu cầu ngày 2026-11-04; không xem đây là bằng chứng hoàn tất P13.
 
 ### P07.d — ràng buộc quyền trưởng khoa với vai trò bác sĩ (2026-11-04)
 
@@ -230,8 +249,8 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. Hộp thoại kết thúc, lịch sử phân công thành bảng có tìm/lọc; `StaffAssignmentIT` 1/1, lint/build PASS; lượt UI mới chưa chạy browser. |
 | P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
 | P12 | IN_PROGRESS | Backend API + DTO + Repository + Service + Controller; 2/2 SchedulingCatalogIT PASS trên migrationtest, ClinicalServiceIT 5/5 PASS; UI SchedulingCatalogManagement.jsx, lint/build PASS; còn kiểm tra browser trực tiếp. |
-| P13 | IN_PROGRESS | API P13 và quyền demo_head trả 200; WorkScheduleIT 1/1 trước đó PASS trên DB thử. Thời khóa biểu 2 hàng sáng/chiều, ô bấm mở bảng bác sĩ, form có Hủy; lint/build/diff-check PASS. Desktop 1536×864 đã xem; còn kiểm tra 320/375/768/1280 px và tương tác bảng/form trên browser riêng. Không ghi DB chính; chưa bật ONLINE hoặc publish. |
-| P14 | TODO | Theo lộ trình trong AGENTS.md. |
+| P13 | IN_PROGRESS | API và `WorkScheduleIT` 2/2 PASS trên DB thử sau cập nhật fixture theo P07.d; danh sách đợt phân trang 5 mục/trang; calendar nhóm ONSITE/ONLINE, cột nhãn cố định 12rem, click/Ctrl-click/drag và giữ lựa chọn qua tuần; frontend lint/build và backend compile PASS. Chưa chạy integration test cho `workSlots` và browser sau thay đổi. Còn 320/375/768/1280 px, kiểm tra multiweek và form. Không ghi DB chính. |
+| P14 | IN_PROGRESS | V15/V16, publish transaction, ONLINE theo ca và UI đã triển khai; danh sách bác sĩ/phòng lọc phân công chồng giờ của đợt đang mở trong các ô đã chọn. `WorkSchedulePublishIT` 5/5 + `WorkScheduleIT` 2/2 PASS trước thay đổi API nhận `workSlots`; backend compile và lint/build hiện PASS, nhưng chưa rerun integration tests. Flyway V15/V16 đã áp dụng trên DB thử, fixture được dọn. Còn xác minh UI responsive/luồng publish trên browser; không ghi DB chính. |
 | P15 | TODO | Theo lộ trình trong AGENTS.md. |
 | P16 | TODO | Theo lộ trình trong AGENTS.md. |
 | P17 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -268,9 +287,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 
 ## Bàn giao phiên sau
 
-- Việc tiếp theo: P13 — kiểm tra responsive và tương tác chọn ô ca/thêm rồi Hủy trên browser riêng, không tạo phân công DB chính.
-- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `frontend/src/App.jsx`, mục P13 trong tài liệu này.
-- Điều kiện cần: xác minh 320/375/768/1280 px; bảng chỉ cuộn ngang trong vùng lịch, chọn ca mở bảng bác sĩ, Hủy đóng form không lưu. Sau đó ghi kết quả thật rồi mới chuyển P13 sang DONE.
+- Việc tiếp theo: P13/P14 — kiểm thử API `workSlots`, rồi kiểm tra click/Ctrl-click/drag chọn ô qua 2–3 tuần, lưu phân công và publish trên browser khi host khả dụng.
+- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `backend/src/main/java/com/suncare/clinic/modules/scheduling/service/WorkScheduleService.java`, các mục P13/P14 trong tài liệu này.
+- Điều kiện cần: chạy integration test cho danh sách ô chính xác, rollback và chặn trộn ONSITE/ONLINE; browser host khả dụng để kiểm tra 320/375/768/1280 px, selection còn sau khi đổi tuần, form đúng các ngày/ca, giữ nháp và công bố.
 
 ### Kiểm tra lỗi import IDE ngày 2026-11-02
 

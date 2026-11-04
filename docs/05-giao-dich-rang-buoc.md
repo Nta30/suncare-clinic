@@ -34,7 +34,7 @@ Thứ tự logic: **phạm vi lịch/chuyên khoa-ngày → assignment/slot/hold
 
 Khóa staff/ngày và room/ngày liên quan; kiểm tra lịch giao nhau bằng `a.start < b.end AND b.start < a.end`. Room CONSULTATION không hai bác sĩ đồng thời; LAB cho nhiều nhân viên cùng phòng nhưng không một người hai nơi. Không giao assignment ONLINE/ONSITE/LAB của cùng staff. ONLINE chỉ sinh các slot 20 phút trọn vẹn trong khoảng làm; dư cuối khoảng không mở. Assignment ONSITE chiếm toàn ca và sức chứa >0. Kiểm tra vai trò/chuyên khoa/khoa/phòng và giá hiệu lực trước PUBLISHED.
 
-Theo D24, phòng ONLINE cũng là tài nguyên có `room_id`: kiểm tra không có hai assignment giao nhau trên cùng phòng ONLINE khi công bố. Quy tắc này cần migration mới vì CHECK hiện tại trong V3 yêu cầu `room_id IS NULL` cho ONLINE; giữ V3 bất biến.
+Theo D24, phòng ONLINE cũng là tài nguyên có `room_id`: kiểm tra không có hai assignment giao nhau trên cùng phòng ONLINE khi công bố. Migration V15 giữ V1–V14 bất biến, bổ sung loại phòng ONLINE và cập nhật CHECK để assignment ONLINE bắt buộc có `room_id`; V16 yêu cầu assignment ONLINE gắn ca sáng hoặc chiều từ ShiftDefinition. Mỗi ca là một assignment và chỉ sinh slot 20 phút trọn vẹn trong giờ ca; chọn cả ngày ONLINE tạo hai assignment, không sinh slot giờ nghỉ trưa. Theo D26/D27, trưởng khoa có thể chọn chính xác các cặp ngày/ca trong cùng một mode, kể cả qua nhiều tuần; danh sách `workSlots` được lưu trong cùng transaction, không mở rộng thành mọi tổ hợp ngày × ca. Nếu một ô lỗi thì rollback toàn bộ.
 
 Nếu đã có Appointment hoặc hold ACTIVE, chặn sửa khoảng giờ, mode, staff, specialty hoặc giảm capacity dưới lượt đã đặt. Không tự điều chuyển người bệnh. Thay danh mục chỉ ảnh hưởng lần tạo mới; bản cũ giữ ID/snapshot.
 

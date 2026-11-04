@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -16,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Repository
@@ -142,10 +144,11 @@ public class WorkScheduleRepository {
 
     public List<ScheduleOptionsResponse.RoomOption> roomOptions(long departmentId) {
         return jdbc.query("""
-                SELECT id, code, name FROM dbo.Room
-                WHERE department_id = ? AND room_type = 'CONSULTATION' AND is_active = 1
-                ORDER BY code
-                """, (rs, rowNum) -> new ScheduleOptionsResponse.RoomOption(rs.getLong("id"), rs.getString("code"), rs.getString("name")), departmentId);
+                SELECT id, code, name, room_type FROM dbo.Room
+                WHERE department_id = ? AND room_type IN ('CONSULTATION', 'ONLINE') AND is_active = 1
+                ORDER BY room_type, code
+                """, (rs, rowNum) -> new ScheduleOptionsResponse.RoomOption(rs.getLong("id"), rs.getString("code"),
+                rs.getString("name"), rs.getString("room_type")), departmentId);
     }
 
     public List<ScheduleOptionsResponse.SpecialtyOption> specialtyOptions(long departmentId) {
@@ -240,7 +243,7 @@ public class WorkScheduleRepository {
         Integer count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM dbo.WorkAssignment wa WITH (UPDLOCK, HOLDLOCK)
                 JOIN dbo.WorkSchedule ws ON ws.id = wa.schedule_id
-                WHERE wa.room_id = ? AND wa.mode = 'ONSITE'
+                WHERE wa.room_id = ? AND wa.mode IN ('ONSITE', 'ONLINE')
                   AND wa.starts_at < ? AND wa.ends_at > ?
                   AND (wa.schedule_id = ? OR ws.status = 'PUBLISHED')
                 """, Integer.class, roomId, endsAt, startsAt, scheduleId);
@@ -257,11 +260,104 @@ public class WorkScheduleRepository {
         return count != null && count > 0;
     }
 
-    public long insertAssignment(long scheduleId, WorkAssignmentCreateRequest request, LocalDateTime startsAt, LocalDateTime endsAt) {
+    public List<AssignmentIdentity> lockAssignments(long scheduleId) {
+        return jdbc.query("""
+                SELECT id, staff_id, room_id, specialty_id, work_date, shift_id, mode, starts_at, ends_at, capacity
+                FROM dbo.WorkAssignment WITH (UPDLOCK, HOLDLOCK)
+                WHERE schedule_id = ?
+                ORDER BY starts_at, staff_id, id
+                """, (rs, rowNum) -> new AssignmentIdentity(rs.getLong("id"), rs.getLong("staff_id"),
+                rs.getObject("room_id", Long.class), rs.getObject("specialty_id", Long.class),
+                rs.getDate("work_date").toLocalDate(), rs.getObject("shift_id", Long.class), rs.getString("mode"),
+                rs.getTimestamp("starts_at").toLocalDateTime(), rs.getTimestamp("ends_at").toLocalDateTime(),
+                rs.getObject("capacity", Integer.class)), scheduleId);
+    }
+
+    public void lockAssignmentResources(List<AssignmentIdentity> assignments) {
+        assignments.stream().map(AssignmentIdentity::staffId).distinct().sorted().forEach(this::staff);
+        assignments.stream().map(AssignmentIdentity::roomId).filter(Objects::nonNull).distinct().sorted().forEach(this::lockRoom);
+    }
+
+    public boolean scheduleHasOverlappingAssignments(long scheduleId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM dbo.WorkAssignment left_assignment WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.WorkAssignment right_assignment WITH (UPDLOCK, HOLDLOCK)
+                  ON right_assignment.schedule_id = left_assignment.schedule_id
+                 AND right_assignment.id > left_assignment.id
+                 AND left_assignment.starts_at < right_assignment.ends_at
+                 AND right_assignment.starts_at < left_assignment.ends_at
+                WHERE left_assignment.schedule_id = ?
+                  AND (left_assignment.staff_id = right_assignment.staff_id
+                    OR (left_assignment.room_id = right_assignment.room_id
+                      AND left_assignment.mode IN ('ONSITE', 'ONLINE')
+                      AND right_assignment.mode IN ('ONSITE', 'ONLINE')))
+                """, Integer.class, scheduleId);
+        return count != null && count > 0;
+    }
+
+    public boolean overlapsPublishedSchedule(long scheduleId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM dbo.WorkAssignment candidate WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.WorkAssignment published_assignment WITH (UPDLOCK, HOLDLOCK)
+                  ON published_assignment.starts_at < candidate.ends_at
+                 AND candidate.starts_at < published_assignment.ends_at
+                 AND (published_assignment.staff_id = candidate.staff_id
+                   OR (published_assignment.room_id = candidate.room_id
+                     AND published_assignment.mode IN ('ONSITE', 'ONLINE')
+                     AND candidate.mode IN ('ONSITE', 'ONLINE')))
+                JOIN dbo.WorkSchedule published_schedule WITH (UPDLOCK, HOLDLOCK)
+                  ON published_schedule.id = published_assignment.schedule_id
+                WHERE candidate.schedule_id = ?
+                  AND published_assignment.schedule_id <> candidate.schedule_id
+                  AND published_schedule.status = 'PUBLISHED'
+                """, Integer.class, scheduleId);
+        return count != null && count > 0;
+    }
+
+    public boolean hasExaminationPrice(long staffId, long specialtyId, String mode,
+                                       LocalDateTime startsAt, LocalDateTime endsAt) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM dbo.ServicePrice price WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.[Service] service WITH (UPDLOCK, HOLDLOCK) ON service.id = price.service_id
+                WHERE service.service_type = 'EXAMINATION' AND service.is_active = 1
+                  AND (service.specialty_id IS NULL OR service.specialty_id = ?)
+                  AND price.doctor_id = ? AND price.visit_mode = ?
+                  AND price.valid_from <= ? AND (price.valid_to IS NULL OR price.valid_to >= ?)
+                """, Integer.class, specialtyId, staffId, mode, startsAt, endsAt);
+        return count != null && count > 0;
+    }
+
+    public int publishSchedule(long scheduleId, long accountId) {
+        return jdbc.update("""
+                UPDATE dbo.WorkSchedule
+                SET status = 'PUBLISHED', published_at = SYSUTCDATETIME(), published_by = ?, updated_at = SYSUTCDATETIME()
+                WHERE id = ? AND status = 'DRAFT'
+                """, accountId, scheduleId);
+    }
+
+    public void insertOnlineSlots(List<OnlineSlotData> slots) {
+        if (slots.isEmpty()) return;
+        jdbc.batchUpdate("""
+                INSERT INTO dbo.OnlineSlot (assignment_id, starts_at, ends_at, is_open)
+                VALUES (?, ?, ?, 1)
+                """, slots, 500, (statement, slot) -> {
+            statement.setLong(1, slot.assignmentId());
+            statement.setTimestamp(2, Timestamp.valueOf(slot.startsAt()));
+            statement.setTimestamp(3, Timestamp.valueOf(slot.endsAt()));
+        });
+    }
+
+    public long insertAssignment(long scheduleId, WorkAssignmentCreateRequest request, String mode,
+                                 long shiftId, Integer capacity, LocalDate workDate,
+                                 LocalDateTime startsAt, LocalDateTime endsAt) {
         return jdbc.queryForObject("""
                 INSERT INTO dbo.WorkAssignment (schedule_id, staff_id, room_id, specialty_id, work_date, shift_id, mode, starts_at, ends_at, capacity)
-                OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, 'ONSITE', ?, ?, ?)
-                """, Long.class, scheduleId, request.staffId(), request.roomId(), request.specialtyId(), request.workDate(), request.shiftId(), startsAt, endsAt, request.capacity());
+                OUTPUT INSERTED.id VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, Long.class, scheduleId, request.staffId(), request.roomId(), request.specialtyId(), workDate,
+                shiftId, mode, startsAt, endsAt, capacity);
     }
 
     public int deleteAssignment(long scheduleId, long assignmentId) {
@@ -270,11 +366,11 @@ public class WorkScheduleRepository {
 
     public List<WorkAssignmentResponse> listAssignments(long scheduleId) {
         return jdbc.query("""
-                SELECT wa.id, wa.schedule_id, wa.staff_id, st.code AS staff_code, st.full_name AS staff_name,
+                SELECT wa.id, wa.schedule_id, wa.mode, wa.staff_id, st.code AS staff_code, st.full_name AS staff_name,
                        wa.room_id, r.code AS room_code, r.name AS room_name,
                        wa.specialty_id, sp.name AS specialty_name, wa.shift_id, sh.code AS shift_code, sh.name AS shift_name,
-                       CONVERT(varchar(8), sh.local_start, 108) AS local_start,
-                       CONVERT(varchar(8), sh.local_end, 108) AS local_end,
+                       COALESCE(CONVERT(varchar(8), sh.local_start, 108), CONVERT(varchar(8), DATEADD(HOUR, 7, wa.starts_at), 108)) AS local_start,
+                       COALESCE(CONVERT(varchar(8), sh.local_end, 108), CONVERT(varchar(8), DATEADD(HOUR, 7, wa.ends_at), 108)) AS local_end,
                        CONVERT(varchar(10), wa.work_date, 23) AS work_date,
                        CONVERT(varchar(23), wa.starts_at, 126) + 'Z' AS starts_at,
                        CONVERT(varchar(23), wa.ends_at, 126) + 'Z' AS ends_at,
@@ -283,15 +379,15 @@ public class WorkScheduleRepository {
                 JOIN dbo.Staff st ON st.id = wa.staff_id
                 JOIN dbo.Room r ON r.id = wa.room_id
                 JOIN dbo.Specialty sp ON sp.id = wa.specialty_id
-                JOIN dbo.ShiftDefinition sh ON sh.id = wa.shift_id
+                LEFT JOIN dbo.ShiftDefinition sh ON sh.id = wa.shift_id
                 WHERE wa.schedule_id = ?
-                ORDER BY wa.work_date, sh.local_start, st.code
+                ORDER BY wa.work_date, wa.starts_at, st.code
                 """, (rs, rowNum) -> new WorkAssignmentResponse(rs.getLong("id"), rs.getLong("schedule_id"),
-                rs.getLong("staff_id"), rs.getString("staff_code"), rs.getString("staff_name"),
+                rs.getString("mode"), rs.getLong("staff_id"), rs.getString("staff_code"), rs.getString("staff_name"),
                 rs.getLong("room_id"), rs.getString("room_code"), rs.getString("room_name"),
-                rs.getLong("specialty_id"), rs.getString("specialty_name"), rs.getLong("shift_id"),
+                rs.getLong("specialty_id"), rs.getString("specialty_name"), rs.getObject("shift_id", Long.class),
                 rs.getString("shift_code"), rs.getString("shift_name"), rs.getString("local_start"), rs.getString("local_end"),
-                rs.getString("work_date"), rs.getString("starts_at"), rs.getString("ends_at"), rs.getInt("capacity"),
+                rs.getString("work_date"), rs.getString("starts_at"), rs.getString("ends_at"), rs.getObject("capacity", Integer.class),
                 Base64.getEncoder().encodeToString(rs.getBytes("version"))), scheduleId);
     }
 
@@ -335,4 +431,8 @@ public class WorkScheduleRepository {
     public record RoomIdentity(long id, long departmentId, String type, boolean active) { }
     public record ShiftIdentity(long id, String code, String name, String localStart, String localEnd, boolean active) { }
     public record HeadTerm(String validFrom, String validTo) { }
+    public record AssignmentIdentity(long id, long staffId, Long roomId, Long specialtyId, LocalDate workDate,
+                                     Long shiftId, String mode, LocalDateTime startsAt, LocalDateTime endsAt,
+                                     Integer capacity) { }
+    public record OnlineSlotData(long assignmentId, LocalDateTime startsAt, LocalDateTime endsAt) { }
 }

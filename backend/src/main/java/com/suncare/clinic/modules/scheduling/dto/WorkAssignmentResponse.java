@@ -3,6 +3,7 @@ package com.suncare.clinic.modules.scheduling.dto;
 public record WorkAssignmentResponse(
         long id,
         long scheduleId,
+        String mode,
         long staffId,
         String staffCode,
         String staffName,
@@ -11,7 +12,7 @@ public record WorkAssignmentResponse(
         String roomName,
         long specialtyId,
         String specialtyName,
-        long shiftId,
+        Long shiftId,
         String shiftCode,
         String shiftName,
         String localStart,
@@ -19,6 +20,6 @@ public record WorkAssignmentResponse(
         String workDate,
         String startsAt,
         String endsAt,
-        int capacity,
+        Integer capacity,
         String version
 ) { }
