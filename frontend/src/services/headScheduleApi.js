@@ -72,3 +72,4 @@ export const addHeadScheduleAssignment = (scheduleId, data) =>
   request(`/${scheduleId}/assignments`, 'POST', data)
 export const removeHeadScheduleAssignment = (scheduleId, assignmentId) =>
   request(`/${scheduleId}/assignments/${assignmentId}`, 'DELETE')
+export const publishHeadSchedule = (scheduleId) => request(`/${scheduleId}/publish`, 'POST')

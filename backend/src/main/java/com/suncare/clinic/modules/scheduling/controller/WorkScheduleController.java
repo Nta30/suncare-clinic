@@ -49,6 +49,12 @@ public class WorkScheduleController {
         return service.createDraft(account, request);
     }
 
+    @PostMapping("/{scheduleId}/publish")
+    public WorkScheduleResponse publish(@AuthenticationPrincipal CurrentAccountResponse account,
+                                       @PathVariable long scheduleId) {
+        return service.publish(account, scheduleId);
+    }
+
     @GetMapping("/{scheduleId}/assignments")
     public List<WorkAssignmentResponse> assignments(@AuthenticationPrincipal CurrentAccountResponse account,
                                                     @PathVariable long scheduleId) {

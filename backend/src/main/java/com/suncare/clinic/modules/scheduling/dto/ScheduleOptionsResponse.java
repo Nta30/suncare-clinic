@@ -12,7 +12,7 @@ public record ScheduleOptionsResponse(
     public record DepartmentOption(long id, String code, String name, String validFrom, String validTo) { }
     public record StaffOption(long id, String code, String name, List<String> roles,
                               List<SpecialtyOption> specialties) { }
-    public record RoomOption(long id, String code, String name) { }
+    public record RoomOption(long id, String code, String name, String roomType) { }
     public record SpecialtyOption(long id, String code, String name) { }
     public record ShiftOption(long id, String code, String name, String localStart, String localEnd) { }
 }

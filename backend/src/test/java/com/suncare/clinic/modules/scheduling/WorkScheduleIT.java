@@ -43,6 +43,8 @@ class WorkScheduleIT {
     private long doctorAccountId;
     private long outsideDoctorStaffId;
     private long outsideDoctorAccountId;
+    private long labStaffId;
+    private long labAccountId;
     private long departmentId;
     private long otherDepartmentId;
     private long specialtyId;
@@ -67,7 +69,7 @@ class WorkScheduleIT {
                 """, Long.class, "p13." + prefix.toLowerCase(), new BCryptPasswordEncoder().encode("p13-test-password-123"), headStaffId);
         jdbc.update("""
                 INSERT INTO dbo.AccountRole (account_id, role_id, granted_by, granted_at)
-                SELECT ?, id, NULL, SYSUTCDATETIME() FROM dbo.[Role] WHERE code = 'DEPARTMENT_HEAD'
+                SELECT ?, id, NULL, SYSUTCDATETIME() FROM dbo.[Role] WHERE code IN ('DEPARTMENT_HEAD', 'DOCTOR')
                 """, headAccountId);
         doctorStaffId = insertStaff(prefix + "D", "P13 Doctor");
         doctorAccountId = jdbc.queryForObject("""
@@ -79,6 +81,15 @@ class WorkScheduleIT {
                 INSERT INTO dbo.[Account] (login_name, password_hash, account_type, staff_id, status)
                 OUTPUT INSERTED.id VALUES (?, ?, 'STAFF', ?, 'ACTIVE')
                 """, Long.class, "p13.outside." + prefix.toLowerCase(), new BCryptPasswordEncoder().encode("p13-test-password-123"), outsideDoctorStaffId);
+        labStaffId = insertStaff(prefix + "L", "P13 Lab staff");
+        labAccountId = jdbc.queryForObject("""
+                INSERT INTO dbo.[Account] (login_name, password_hash, account_type, staff_id, status)
+                OUTPUT INSERTED.id VALUES (?, ?, 'STAFF', ?, 'ACTIVE')
+                """, Long.class, "p13.lab." + prefix.toLowerCase(), new BCryptPasswordEncoder().encode("p13-test-password-123"), labStaffId);
+        jdbc.update("""
+                INSERT INTO dbo.AccountRole (account_id, role_id, granted_by, granted_at)
+                SELECT ?, id, NULL, SYSUTCDATETIME() FROM dbo.[Role] WHERE code = 'LAB_STAFF'
+                """, labAccountId);
         departmentId = jdbc.queryForObject("""
                 INSERT INTO dbo.Department (code, name, department_type, is_active)
                 OUTPUT INSERTED.id VALUES (?, 'P13 Khoa test', 'CLINICAL', 1)
@@ -104,6 +115,7 @@ class WorkScheduleIT {
         LocalDateTime startUtc = membershipStart.atStartOfDay().minusHours(7);
         jdbc.update("INSERT INTO dbo.StaffDepartment (staff_id, department_id, valid_from, is_primary) VALUES (?, ?, ?, 1)", doctorStaffId, departmentId, startUtc);
         jdbc.update("INSERT INTO dbo.StaffDepartment (staff_id, department_id, valid_from, is_primary) VALUES (?, ?, ?, 1)", headStaffId, departmentId, startUtc);
+        jdbc.update("INSERT INTO dbo.StaffDepartment (staff_id, department_id, valid_from, is_primary) VALUES (?, ?, ?, 1)", labStaffId, departmentId, startUtc);
         jdbc.update("INSERT INTO dbo.DepartmentHeadAssignment (staff_id, department_id, valid_from, assigned_by) VALUES (?, ?, ?, ?)", headStaffId, departmentId, startUtc, headAccountId);
         jdbc.update("INSERT INTO dbo.AccountRole (account_id, role_id, granted_by, granted_at) SELECT a.id, r.id, NULL, SYSUTCDATETIME() FROM dbo.[Account] a CROSS JOIN dbo.[Role] r WHERE a.staff_id = ? AND r.code = 'DOCTOR'", doctorStaffId);
         jdbc.update("INSERT INTO dbo.AccountRole (account_id, role_id, granted_by, granted_at) SELECT a.id, r.id, NULL, SYSUTCDATETIME() FROM dbo.[Account] a CROSS JOIN dbo.[Role] r WHERE a.staff_id = ? AND r.code = 'DOCTOR'", outsideDoctorStaffId);
@@ -139,6 +151,7 @@ class WorkScheduleIT {
         jdbc.update("DELETE FROM dbo.StaffSpecialty WHERE staff_id = ?", doctorStaffId);
         jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id IN (?, ?)", headStaffId, doctorStaffId);
         jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id = ?", outsideDoctorStaffId);
+        jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id = ?", labStaffId);
         jdbc.update("DELETE FROM dbo.DepartmentSpecialty WHERE department_id = ?", departmentId);
         jdbc.update("DELETE FROM dbo.Room WHERE id = ?", roomId);
         jdbc.update("DELETE FROM dbo.Room WHERE id = ?", otherRoomId);
@@ -151,12 +164,39 @@ class WorkScheduleIT {
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", headAccountId);
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", doctorAccountId);
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", outsideDoctorAccountId);
+        jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", labAccountId);
         jdbc.update("DELETE FROM dbo.[Account] WHERE id = ?", headAccountId);
         jdbc.update("DELETE FROM dbo.[Account] WHERE id = ?", doctorAccountId);
         jdbc.update("DELETE FROM dbo.[Account] WHERE id = ?", outsideDoctorAccountId);
+        jdbc.update("DELETE FROM dbo.[Account] WHERE id = ?", labAccountId);
         jdbc.update("DELETE FROM dbo.[Account] WHERE staff_id = ?", doctorStaffId);
-        jdbc.update("DELETE FROM dbo.Staff WHERE id IN (?, ?, ?)", headStaffId, doctorStaffId, outsideDoctorStaffId);
+        jdbc.update("DELETE FROM dbo.[Account] WHERE staff_id = ?", labStaffId);
+        jdbc.update("DELETE FROM dbo.Staff WHERE id IN (?, ?, ?, ?)", headStaffId, doctorStaffId, outsideDoctorStaffId, labStaffId);
         if (createdShift) jdbc.update("DELETE FROM dbo.ShiftDefinition WHERE id = ?", shiftId);
+    }
+
+    @Test
+    void bulkAssignmentRollsBackWhenAnySelectedDateIsInvalid() throws Exception {
+        String draft = mvc.perform(post("/api/head/schedules")
+                        .header("Authorization", "Bearer " + headToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"departmentId\":" + departmentId + ",\"periodStart\":\"" + periodStart + "\",\"periodEnd\":\"" + periodEnd + "\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        scheduleId = json.readTree(draft).get("id").asLong();
+
+        String assignment = "{\"staffId\":" + doctorStaffId + ",\"roomId\":" + roomId
+                + ",\"specialtyId\":" + specialtyId + ",\"shiftId\":" + shiftId
+                + ",\"workDates\":[\"" + periodStart + "\",\"" + periodEnd + "\"],\"capacity\":4}";
+        mvc.perform(post("/api/head/schedules/" + scheduleId + "/assignments")
+                        .header("Authorization", "Bearer " + headToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(assignment))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_WORK_DAY"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(0,
+                jdbc.queryForObject("SELECT COUNT(*) FROM dbo.WorkAssignment WHERE schedule_id = ?", Integer.class, scheduleId));
+        org.junit.jupiter.api.Assertions.assertEquals("DRAFT",
+                jdbc.queryForObject("SELECT status FROM dbo.WorkSchedule WHERE id = ?", String.class, scheduleId));
     }
 
     @Test
@@ -205,7 +245,7 @@ class WorkScheduleIT {
         String assignmentPath = "/api/head/schedules/" + scheduleId + "/assignments";
         mvc.perform(post(assignmentPath).header("Authorization", "Bearer " + headToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(assignment.replace("\"staffId\":" + doctorStaffId, "\"staffId\":" + headStaffId)))
+                        .content(assignment.replace("\"staffId\":" + doctorStaffId, "\"staffId\":" + labStaffId)))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_STAFF_ROLE"));
         mvc.perform(post(assignmentPath).header("Authorization", "Bearer " + headToken)
                         .contentType(MediaType.APPLICATION_JSON)
