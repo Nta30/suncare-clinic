@@ -66,8 +66,8 @@ public class RoomService {
 
     private void validateDepartment(RoomRequest request) {
         String type = rooms.activeDepartmentType(request.departmentId());
-        if (type == null || !("CONSULTATION".equals(request.roomType()) && "CLINICAL".equals(type)
-                || "LAB".equals(request.roomType()) && "LAB".equals(type))) {
+        String expectedDepartmentType = "LAB".equals(request.roomType()) ? "LAB" : "CLINICAL";
+        if (!expectedDepartmentType.equals(type)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "ROOM_DEPARTMENT_MISMATCH",
                     "Loại phòng phải phù hợp với khoa đang hoạt động.");
         }

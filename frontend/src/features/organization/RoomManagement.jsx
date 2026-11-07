@@ -8,11 +8,11 @@ import { createRoom, getRooms, updateRoom } from '../../services/roomApi'
 
 const emptyForm = { code: '', name: '', roomType: 'CONSULTATION', departmentId: '', isActive: true }
 const inputClass = 'mt-1.5 min-h-11 w-full rounded-xl border border-clinical-border-strong bg-white px-3 py-2 text-sm text-clinical-ink focus-visible:outline-suncare-700 disabled:bg-suncare-50 disabled:text-clinical-muted'
-const roomTypes = { CONSULTATION: 'Phòng khám', LAB: 'Phòng cận lâm sàng' }
+const roomTypes = { CONSULTATION: 'Phòng khám', LAB: 'Phòng cận lâm sàng', ONLINE: 'Phòng trực tuyến' }
 
 function RoomForm({ item, departments, busy, error, fieldErrors, onCancel, onSubmit }) {
   const [form, setForm] = useState(() => item ? { ...item } : { ...emptyForm })
-  const expectedType = form.roomType === 'CONSULTATION' ? 'CLINICAL' : 'LAB'
+  const expectedType = form.roomType === 'LAB' ? 'LAB' : 'CLINICAL'
   const choices = departments.filter((department) => department.isActive && department.departmentType === expectedType)
 
   function change(event) {
@@ -39,6 +39,7 @@ function RoomForm({ item, departments, busy, error, fieldErrors, onCancel, onSub
           <select name='roomType' value={form.roomType} onChange={change} disabled={Boolean(item)} className={inputClass}>
             <option value='CONSULTATION'>Phòng khám</option>
             <option value='LAB'>Phòng cận lâm sàng</option>
+            <option value='ONLINE'>Phòng trực tuyến</option>
           </select>
         </label>
         <label className='block text-sm font-semibold'>Khoa phụ trách <span className='text-clinical-danger'>*</span>
@@ -144,7 +145,7 @@ export default function RoomManagement({ onSessionExpired }) {
       <header className='flex flex-wrap items-start justify-between gap-3'>
         <div><p className='text-xs font-bold uppercase tracking-widest text-suncare-700'>Quản trị hệ thống / Danh mục</p>
           <h1 id='room-title' className='mt-2 text-2xl font-bold sm:text-3xl'>Quản lý phòng</h1>
-          <p className='mt-2 text-sm text-clinical-muted'>Phòng khám thuộc khoa khám; phòng CLS thuộc khoa cận lâm sàng.</p></div>
+          <p className='mt-2 text-sm text-clinical-muted'>Phòng khám và phòng trực tuyến thuộc khoa khám; phòng CLS thuộc khoa cận lâm sàng.</p></div>
         <Button onClick={() => void load()} disabled={loading || busy}><FontAwesomeIcon icon={faArrowRotateRight} aria-hidden='true' /> Tải lại</Button>
       </header>
       {message && <p role='status' className='rounded-xl border border-clinical-leaf bg-clinical-leaf-soft p-3 text-sm text-clinical-success'>{message}</p>}
@@ -161,7 +162,7 @@ export default function RoomManagement({ onSessionExpired }) {
         </label>
         <label className='text-sm font-semibold'>Loại phòng
           <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className={inputClass}>
-            <option value='ALL'>Mọi loại phòng</option><option value='CONSULTATION'>Phòng khám</option><option value='LAB'>Phòng CLS</option>
+            <option value='ALL'>Mọi loại phòng</option><option value='CONSULTATION'>Phòng khám</option><option value='LAB'>Phòng CLS</option><option value='ONLINE'>Phòng trực tuyến</option>
           </select>
         </label>
         <label className='text-sm font-semibold'>Trạng thái

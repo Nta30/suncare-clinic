@@ -109,6 +109,13 @@ class RoomManagementIT {
         String updated = mvc.perform(put("/api/admin/organization/rooms/" + id).header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
+        String onlineRoom = mvc.perform(post("/api/admin/organization/rooms").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content(roomBody(code + "O", clinicalId, "ONLINE", true, null)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        assertEquals("ONLINE", roomTypeFor(json.readTree(onlineRoom), code + "O"));
+        mvc.perform(post("/api/admin/organization/rooms").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content(roomBody(code + "O2", labId, "ONLINE", true, null)))
+                .andExpect(status().isBadRequest());
         mvc.perform(put("/api/admin/organization/rooms/" + id).header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isConflict());
         assertEquals(0, jdbc.queryForObject("SELECT CAST(is_active AS INT) FROM dbo.Room WHERE id = ?", Integer.class, id));
@@ -140,6 +147,11 @@ class RoomManagementIT {
 
     private String versionFor(tools.jackson.databind.JsonNode rows, String targetCode) {
         for (var row : rows) if (targetCode.equals(row.get("code").asText())) return row.get("version").asText();
+        throw new IllegalStateException("Missing test room");
+    }
+
+    private String roomTypeFor(tools.jackson.databind.JsonNode rows, String targetCode) {
+        for (var row : rows) if (targetCode.equals(row.get("code").asText())) return row.get("roomType").asText();
         throw new IllegalStateException("Missing test room");
     }
 

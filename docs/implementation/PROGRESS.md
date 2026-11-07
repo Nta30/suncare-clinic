@@ -1,9 +1,24 @@
 ﻿# Tiến độ triển khai Suncare Clinic
 
-Cập nhật: 2026-11-04
+Cập nhật: 2026-11-07
 
-Việc hiện tại: P13 — viết lại luồng phân lịch khoa sau lỗi quyền
-Trạng thái: IN_PROGRESS (P07.d DONE; P13 còn thiếu kiểm tra browser responsive)
+Việc hiện tại: P14 — công bố lịch và sinh slot trực tuyến
+Trạng thái: IN_PROGRESS (P13 còn thiếu kiểm tra browser responsive; P14 còn thiếu xác minh giao diện thực tế)
+
+### P14 — công bố lịch và hỗ trợ phòng trực tuyến (2026-11-07)
+
+- Hoàn thiện API công bố lịch DRAFT bằng transaction: kiểm tra lại nhân sự, khoa/phòng/chuyên khoa/ca/giá và xung đột; chuyển trạng thái PUBLISHED, khóa chỉnh sửa và sinh slot trực tuyến 20 phút. API/UI phân công nhận nhiều ô ngày/ca trong một lần; ONSITE và ONLINE được phân biệt rõ.
+- Thêm V15 cho phòng ONLINE và V16 cho ràng buộc phân công ONLINE theo ca. Mở rộng API/UI quản lý phòng để tạo/lọc phòng ONLINE thuộc khoa CLINICAL; phòng CONSULTATION vẫn thuộc CLINICAL và LAB thuộc LAB.
+- Kiểm tra trên `SuncareClinicMigrationTest`: Flyway xác nhận schema V16; `WorkScheduleIT` 2/2, `WorkSchedulePublishIT` 5/5 và `RoomManagementIT` 2/2 PASS. Các test gồm công bố/sinh slot, từ chối xung đột và dữ liệu không hợp lệ, phòng ONLINE đúng/sai loại khoa. Query sau test còn 0 fixture P09. `npm run lint`, `npm run build`, `git diff --check` PASS. Không ghi DB chính.
+- Chưa xác minh thao tác giao diện và responsive vì CUA báo `The browser access host is unavailable`; chưa kiểm tra trực quan chọn nhiều ca, publish, hay phòng ONLINE. P14 tiếp tục `IN_PROGRESS` cho tới khi có kiểm tra browser.
+- Việc tiếp theo duy nhất: khi browser host hoạt động, kiểm tra P14 trên DB thử: chọn nhiều ca, tạo phân công ONSITE/ONLINE, công bố và xác nhận slot; đồng thời kiểm tra form phòng ONLINE. Giữ P13 chưa DONE cho tới khi đo 320/375/768/1280 px và thử mở form rồi Hủy.
+
+### P13 — thử tiếp browser responsive (2026-11-07)
+
+- Xác nhận giao diện Vite tại `http://localhost:5173` trả 200, API `http://localhost:8080/api/health` trả `UP`, và health qua proxy Vite cũng trả 200. Không khởi động/dừng dịch vụ.
+- CUA không liệt kê browser nào và báo `The browser access host is unavailable`; thử tạo tab riêng đến giao diện local cũng trả cùng lỗi. Vì vậy chưa quan sát viewport 320/375/768/1280 px, chưa bấm ô lịch, mở form hoặc Hủy.
+- Không sửa code, không đăng nhập/ghi dữ liệu, không chạy kiểm thử tự động. P13 vẫn `IN_PROGRESS`; không dùng health/API và kiểm tra tĩnh thay cho bằng chứng responsive.
+- Việc tiếp theo duy nhất: khi browser host hoạt động, mở tab riêng tới `http://localhost:5173`, đăng nhập tài khoản trưởng khoa thử nghiệm, kiểm tra 320/375/768/1280 px và thao tác mở ô → mở form → Hủy; không gửi form phân công.
 
 ### P07.d — ràng buộc quyền trưởng khoa với vai trò bác sĩ (2026-11-04)
 
@@ -230,8 +245,8 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. Hộp thoại kết thúc, lịch sử phân công thành bảng có tìm/lọc; `StaffAssignmentIT` 1/1, lint/build PASS; lượt UI mới chưa chạy browser. |
 | P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
 | P12 | IN_PROGRESS | Backend API + DTO + Repository + Service + Controller; 2/2 SchedulingCatalogIT PASS trên migrationtest, ClinicalServiceIT 5/5 PASS; UI SchedulingCatalogManagement.jsx, lint/build PASS; còn kiểm tra browser trực tiếp. |
-| P13 | IN_PROGRESS | API P13 và quyền demo_head trả 200; WorkScheduleIT 1/1 trước đó PASS trên DB thử. Thời khóa biểu 2 hàng sáng/chiều, ô bấm mở bảng bác sĩ, form có Hủy; lint/build/diff-check PASS. Desktop 1536×864 đã xem; còn kiểm tra 320/375/768/1280 px và tương tác bảng/form trên browser riêng. Không ghi DB chính; chưa bật ONLINE hoặc publish. |
-| P14 | TODO | Theo lộ trình trong AGENTS.md. |
+| P13 | IN_PROGRESS | API P13 và quyền demo_head trả 200; `WorkScheduleIT` 2/2 PASS trên DB thử. Thời khóa biểu 2 hàng sáng/chiều, ô bấm mở bảng bác sĩ, form có Hủy; lint/build/diff-check PASS. Desktop 1536×864 đã xem; còn kiểm tra 320/375/768/1280 px và tương tác bảng/form trên browser riêng. P14 publish/ONLINE đã được triển khai riêng; không ghi DB chính. |
+| P14 | IN_PROGRESS | API publish transaction và sinh slot 20 phút; V15/V16; UI chọn nhiều ca, phân biệt ONSITE/ONLINE. WorkScheduleIT 2/2, WorkSchedulePublishIT 5/5, RoomManagementIT 2/2 PASS trên DB thử V16; lint/build/diff-check PASS, fixture P09 đã dọn. Còn browser kiểm tra luồng chọn ca/publish/phòng ONLINE. |
 | P15 | TODO | Theo lộ trình trong AGENTS.md. |
 | P16 | TODO | Theo lộ trình trong AGENTS.md. |
 | P17 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -268,9 +283,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 
 ## Bàn giao phiên sau
 
-- Việc tiếp theo: P13 — kiểm tra responsive và tương tác chọn ô ca/thêm rồi Hủy trên browser riêng, không tạo phân công DB chính.
-- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `frontend/src/App.jsx`, mục P13 trong tài liệu này.
-- Điều kiện cần: xác minh 320/375/768/1280 px; bảng chỉ cuộn ngang trong vùng lịch, chọn ca mở bảng bác sĩ, Hủy đóng form không lưu. Sau đó ghi kết quả thật rồi mới chuyển P13 sang DONE.
+- Việc tiếp theo: P14 — kiểm tra giao diện thực tế trên DB thử: chọn nhiều ô, tạo ONSITE/ONLINE, công bố và xác nhận slot, rồi tạo/lọc phòng ONLINE.
+- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `frontend/src/features/organization/RoomManagement.jsx`, mục P14 trong tài liệu này.
+- Điều kiện cần: browser host hoạt động; không dùng DB chính. Sau đó kiểm tra P13 ở 320/375/768/1280 px và thao tác mở form rồi Hủy trước khi đánh dấu P13 hoàn tất.
 
 ### Kiểm tra lỗi import IDE ngày 2026-11-02
 
