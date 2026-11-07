@@ -97,7 +97,7 @@ Service giá CLS và giá khám cần thống nhất kiểm tra hiệu lực, kh
 - Giữ phạm vi một cơ sở ngoại trú; không thêm nội trú, BHYT, tồn kho/bán thuốc, giảm giá, kế toán hay hóa đơn thuế.
 - Một Account thuộc Patient **hoặc** Staff; chỉ bệnh nhân tự đăng ký. Role thực tế là `PATIENT`, `DOCTOR`, `LAB_STAFF`, `DEPARTMENT_HEAD`, `CASHIER`, `SYSTEM_ADMIN`; `STAFF` là account type, không phải role trong SQL. `DEPARTMENT_HEAD` là quyền bổ sung cho `DOCTOR`; phân công trưởng khoa mới xác định khoa và thời hạn.
 - Phân quyền ở backend theo hành động **và** chủ sở hữu/bác sĩ phụ trách/khoa/phòng trực. Ẩn nút frontend không thay kiểm tra quyền; admin không tự có quyền sửa bệnh án. Khóa tài khoản/thu hồi role phải có hiệu lực ở request tiếp theo.
-- Trực tiếp chỉ chọn chuyên khoa/ngày/ca; phân bác sĩ theo tỷ lệ lượt đặt/sức chứa, hòa theo mã. Không cho bệnh nhân chọn bác sĩ, hủy hoặc đổi lịch trực tiếp.
+- Trực tiếp chọn chuyên khoa/ngày/ca và có thể chọn bác sĩ. Nếu không chọn, hệ thống phân theo tỷ lệ lượt đặt/sức chứa, hòa theo mã; bác sĩ được chọn phải thuộc lịch công bố đúng chuyên khoa/ngày/ca, còn chỗ và có giá hiệu lực. Không cho bệnh nhân hủy hoặc đổi lịch trực tiếp.
 - Online có slot 20 phút, giữ chỗ 5 phút. Chỉ tạo Appointment + Encounter sau khi xác minh MoMo hợp lệ trong hạn. Hủy online khi cách giờ hẹn ít nhất 24 giờ và chưa khám; không đổi lịch, không tự hồi sinh booking khi tiền đến muộn.
 - Phí khám chỉ thu một lần; CLS phát sinh sau hóa đơn đã phát hành có hóa đơn bổ sung. Phân bổ tiền theo dòng; thu một phần chưa đồng nghĩa mọi chỉ định đã trả đủ. Chỉ CASHIER xác nhận tiền mặt, MoMo do hệ thống xác minh.
 - CLS đủ tiền mới READY; lab xác nhận có mặt mới vào queue. Hạn mặc định 10 ngày chốt lúc trả đủ; hoãn giữ Order/Encounter/tiền/hạn. Hết hạn khi chưa bắt đầu thì hủy dòng thu và yêu cầu hoàn đúng phần tiền. Đã bắt đầu trong hạn được tiếp tục.
@@ -135,8 +135,8 @@ Thực hiện theo thứ tự phụ thuộc dưới đây. Mỗi hàng là một
 | P12 | Giá khám theo bác sĩ/hình thức và ShiftDefinition; có UI cấu hình, không tự coi giờ ca/giá mẫu là chính sách thật. |
 | P13 | Lịch DRAFT và WorkAssignment; UI phân công tối thiểu, kiểm tra vai trò/khoa/phòng/thời gian/sức chứa. |
 | P14 | Công bố lịch bằng transaction, chống giao lịch và sinh slot online 20 phút; chặn sửa phân công đã có booking/hold (TX02, AT08). |
-| P15 | API + UI tra cứu chuyên khoa/ngày/ca còn chỗ trực tiếp; dùng lịch công bố và giá còn hiệu lực. |
-| P16 | Đặt trực tiếp tạo Appointment + Encounter/event nguyên tử; kiểm tra cân bằng, retry, hai request giành chỗ cuối (TX03, AT04–06, AT17, AT45). |
+| P15 | API + UI tra cứu bác sĩ/lịch trực tiếp còn chỗ; tìm theo bác sĩ/chuyên khoa/ngày/ca, mở lịch ca theo từng bác sĩ; dùng lịch công bố và giá còn hiệu lực. |
+| P16 | Đặt trực tiếp tạo Appointment + Encounter/event nguyên tử; nếu có doctorId thì kiểm tra bác sĩ/phân công/sức chứa/giá, nếu không thì tự phân cân bằng; kiểm tra retry và hai request giành chỗ cuối (TX03, AT04–06, AT17, AT45). |
 | P17 | UI bệnh nhân xem lịch của mình, bác sĩ xem lịch được giao; không lộ lịch người khác, không có thao tác đổi/hủy trực tiếp. |
 
 ### Giai đoạn C — Khám trực tiếp và thu tiền cơ bản

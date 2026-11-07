@@ -2,8 +2,65 @@
 
 Cập nhật: 2026-11-07
 
-Việc hiện tại: P14 — công bố lịch và sinh slot trực tuyến
-Trạng thái: IN_PROGRESS (P13 còn thiếu kiểm tra browser responsive; P14 còn thiếu xác minh giao diện thực tế)
+Việc hiện tại: P15.c — kiểm tra khoảng ngày và luồng P15/P16 trên browser
+Trạng thái: IN_PROGRESS (lọc khoảng ngày trên DB thử đạt; browser host không khả dụng)
+
+### P15 — tra cứu lịch khám trực tiếp (2026-11-07)
+
+- Thêm `GET /api/appointments/onsite/options` và `/availability`, chỉ cho tài khoản PATIENT. Bộ lọc trả chuyên khoa đang hoạt động/liên kết với khoa khám và ca sáng/chiều đang hoạt động; truy vấn tra cứu chỉ lấy WorkAssignment ONSITE thuộc lịch PUBLISHED, còn sức chứa, bác sĩ và phòng đang hoạt động, đủ phân khoa/chuyên khoa, và có giá EXAMINATION hiệu lực phủ trọn ca.
+- API nhận tùy chọn chuyên khoa/ngày đơn hoặc khoảng ngày/ca/tên bác sĩ; chỉ các tiêu chí gửi lên mới lọc. Kết quả là lịch tương lai theo từng bác sĩ, chuyên khoa và ca, kèm sức chứa còn lại và khoảng giá hiệu lực. Đếm Appointment BOOKED/COMPLETED/NO_SHOW vào sức chứa; chỉ lịch PUBLISHED, giá hiệu lực, ngày từ hôm nay trở đi và ngày Thứ Hai–Thứ Bảy được hiển thị. Đây chỉ là tra cứu, chưa tạo Appointment.
+- Màn hình PATIENT theo flow: chọn hình thức khám rồi tới chuyên khoa, ngày, ca và danh sách bác sĩ. Mỗi thẻ bác sĩ có thể mở rộng lịch riêng; bên trong chọn thứ/ngày rồi xem ca sáng/chiều. Có ô tìm tên bác sĩ; chọn một buổi sẽ gắn đúng bác sĩ, hoặc có thể chuyển sang tự phân khi đặt. P16 nối lựa chọn vào giao dịch tạo Appointment. P15 chỉ mở nhánh trực tiếp; online đang khóa vì thuộc P31–P34. Bố cục toàn chiều ngang, căn trái: bộ lọc bên trái, danh sách bác sĩ ở vùng chính và tóm tắt bên phải; màn nhỏ xếp dọc. Trường trống không giới hạn kết quả; tra cứu bắt đầu khi có ít nhất một tiêu chí.
+- Kiểm tra trên `SuncareClinicMigrationTest` schema V16: `OnsiteAppointmentSearchIT` 4/4 PASS, gồm bộ lọc khoảng ngày hai biên, khoảng đi qua Chủ Nhật, khoảng ngược/ngày quá khứ, quyền PATIENT, sức chứa/giá; fixture được dọn trong test. `OnsiteAppointmentBookingIT` 6/6 PASS. `npm run lint`, `npm run build`, `git diff --check` PASS theo lượt P16.d. Không ghi DB chính.
+- CUA inventory phiên này không có browser, báo `The browser access host is unavailable` và `Computer Use native pipe is unavailable`; local Vite trả 200 và `/api/health` trả `UP`. Chưa xác minh trực quan responsive hoặc luồng tìm lịch trên browser. P15 giữ `IN_PROGRESS` tới khi có bằng chứng UI thực tế.
+- Việc tiếp theo duy nhất: P15.c — kiểm tra preset/khoảng ngày và luồng P15/P16 trên browser khi host kết nối lại; không gửi booking lên DB chính.
+
+### P15.b — bộ lọc khoảng ngày khám (2026-11-07)
+
+- Thay bộ lọc một ngày bằng trường ngày bắt đầu/kết thúc mở popover. Có lối tắt `Ngày mai`, `7 ngày tới`, `30 ngày tới`, chọn ngày bằng lịch native của trình duyệt, áp dụng hoặc xóa khoảng; UI kiểm tra thứ tự và không cho chọn ngày quá khứ.
+- Mở rộng API tra cứu với `dateFrom`/`dateTo`; truy vấn SQL lọc hai biên bao gồm cả ngày đầu/cuối và vẫn giữ tham số `date` đơn cũ cho tương thích. Khoảng ngày có thể đi qua Chủ Nhật; kết quả vẫn chỉ có lịch ONSITE đã công bố còn chỗ.
+- Kiểm tra: `mvnw.cmd -DskipTests compile`, `npm run lint`, `npm run build`, `git diff --check` PASS. Chưa chạy `OnsiteAppointmentSearchIT` cho nhánh khoảng ngày và chưa kiểm tra browser; CUA báo browser host/native pipe không khả dụng. Không ghi DB.
+- Việc tiếp theo duy nhất: P15.c — kiểm tra date range và responsive trên browser khi host khả dụng; API đã được kiểm tra trên DB thử.
+
+### P16.a — API đặt lịch khám trực tiếp (2026-11-07)
+
+- Thêm `POST /api/appointments/onsite/bookings`; request lấy Patient từ token, nhận chuyên khoa/ngày/ca và `doctorId` tùy chọn, không nhận giá hoặc `patientId`. Bác sĩ được gửi phải có lịch ONSITE đã công bố đúng ca, còn chỗ, đủ phân khoa/chuyên khoa và có giá khám hiệu lực phủ trọn ca. Khi bỏ `doctorId`, API chọn tỷ lệ lượt đặt/sức chứa thấp nhất, hòa theo `Staff.code`.
+- Dùng khóa SQL Server theo khóa idempotency và chuyên khoa/ngày/ca; đọc lại sức chứa sau khóa. `CommandReceipt` giữ hash của payload và tài khoản thực hiện; retry cùng yêu cầu trả lại kết quả, dùng lại khóa với payload/tài khoản khác nhận 409. Appointment, Encounter PLANNED, hai event, audit và receipt ghi trong cùng transaction.
+- `OnsiteAppointmentBookingIT`: 6/6 PASS trên `SuncareClinicMigrationTest`, schema V16. Bao gồm chọn bác sĩ/giá, tự phân và hòa theo mã, ngày không hợp lệ/sai quyền, retry/xung đột khóa, rollback khi bước Encounter lỗi, hai request giành chỗ cuối chỉ tạo một Appointment + Encounter. Truy vấn sau test xác nhận còn 0 tài khoản, bệnh nhân, khoa, chuyên khoa và Appointment fixture P16. Không ghi DB chính.
+- P16.a backend hoàn tất; P15 vẫn IN_PROGRESS do chưa có bằng chứng browser.
+
+### P16.b — UI đặt lịch khám trực tiếp (2026-11-07)
+
+- Nối màn hình tìm lịch với `POST /api/appointments/onsite/bookings`. Người bệnh phải chọn một ca cụ thể; có thể giữ bác sĩ của ca đó hoặc chuyển sang hệ thống tự phân trong cùng chuyên khoa/ngày/ca. Tự phân bị khóa khi đang lọc theo tên bác sĩ để lựa chọn và ước tính không lệch khỏi tập lịch API sẽ dùng.
+- Bố cục lịch trong từng bác sĩ: danh sách ban đầu chỉ có thẻ bác sĩ gọn; bấm `Xem lịch` mới mở ngày của bác sĩ đó. Chọn thứ/ngày trong thẻ mở rộng để xem riêng ca sáng/chiều, giờ, sức chứa và giá. Bấm lại buổi đang chọn hoặc nút `Bỏ chọn ca` để gỡ lựa chọn; đổi ngày trong cùng bác sĩ cũng bỏ ca cũ. API chỉ có ca sáng/chiều, không tự tạo giờ khám nhỏ hơn.
+- Nới cột lịch ở giữa trên desktop và cho ngày tự xuống hàng ở breakpoint XL để tránh thanh cuộn ngang; màn hình hẹp vẫn vuốt ngang qua các ngày.
+- Thêm bước xác nhận tóm tắt ca/bác sĩ/phí dự kiến, trạng thái đang gửi/lỗi/thành công và hiển thị mã Appointment, Encounter, bác sĩ được phân cùng phí đã chốt. Mỗi payload giữ `Idempotency-Key` ổn định khi thử lại; đổi ca/bác sĩ/bộ lọc tạo request mới. Có thể tìm lịch khác sau lỗi hoặc sau đặt thành công.
+- Kiểm tra trong `frontend/`: `npm run lint`, `npm run build` và `git diff --check` PASS. Chưa gửi booking thật và không ghi DB chính.
+- CUA inventory báo `The browser access host is unavailable` và `Computer Use native pipe is unavailable`; chưa quan sát responsive hoặc xác minh luồng với backend/DB thử. P16 giữ `IN_PROGRESS` tới khi kiểm tra UI thực tế.
+- Việc tiếp theo duy nhất: kiểm tra P15/P16 trên browser với backend/DB thử: tìm lịch, chọn ca, đặt với bác sĩ cụ thể và tự phân, lỗi/thành công, cùng viewport 320/375/768/1280 px; không đặt lịch lên DB chính.
+
+### P16.c — tóm tắt lịch đặt và triệu chứng tự khai (2026-11-07)
+
+- Thay nội dung bên phải từ tóm tắt bộ lọc thành tóm tắt buổi đặt: phòng, khoa, chuyên khoa, bác sĩ, ngày/ca và phí. Sau khi đặt, API trả thông tin thực tế của bác sĩ/phòng/khoa được phân, nên chế độ tự phân không hiện nhầm phòng của bác sĩ ban đầu.
+- Trả thêm tên khoa và phòng trong availability/booking response từ dữ liệu WorkAssignment hiện có; không thêm migration.
+- Làm lựa chọn bác sĩ rõ hơn bằng hai thẻ lớn có trạng thái chọn: ưu tiên bác sĩ của ca hoặc để hệ thống cân bằng lượt/sức chứa trong cùng chuyên khoa/ngày/ca. Tự phân vẫn khóa khi đang lọc theo tên bác sĩ.
+- Thêm ô triệu chứng/lý do khám tối đa 2.000 ký tự. Backend chuẩn hóa chuỗi, đưa nội dung vào hash idempotency và ghi `PrevisitResponse.symptoms` trong transaction đặt lịch cùng Appointment/Encounter/event; bỏ qua nếu để trống. Không dùng `Encounter.chief_complaint` vốn là nội dung lâm sàng của bác sĩ và không cần đổi schema.
+- Kiểm tra sau sửa: `mvnw.cmd -DskipTests compile`, `npm run lint`, `npm run build`, `git diff --check` PASS. Không chạy test suite hoặc tạo booking; chưa kiểm tra trực quan trên browser trong lượt này.
+- Điểm kiểm tra browser/DB thử còn lại được bàn giao ở P16.e sau điều chỉnh bố cục.
+
+### P16.d — bỏ tiêu đề thừa và cuộn riêng cột lịch (2026-11-07)
+
+- Bỏ khối đầu trang gồm “Lịch khám / Trực tiếp”, “Tìm lịch khám” và câu mô tả; giữ tiêu đề danh sách lịch trong cột giữa.
+- Ở màn hình rộng, giới hạn màn tìm lịch trong chiều cao cửa sổ và tạo vùng cuộn dọc độc lập cho các cột. Cột giữa cuộn danh sách lịch; cột phải cuộn tóm tắt và nhập triệu chứng. Cột bộ lọc cũng có cuộn riêng để không bị cắt nếu nội dung cao. Màn hình hẹp tiếp tục cuộn trang theo chiều dọc.
+- Đưa bảng chọn khoảng ngày ra portal cố định theo nút mở để menu không bị cắt bởi vùng cuộn của cột bộ lọc; vị trí cập nhật khi cuộn hoặc đổi kích thước cửa sổ.
+- Kiểm tra: `npm run lint`, `npm run build`, `git diff --check` PASS. Chưa xác minh cuộn thực tế hoặc responsive trên browser; không chạy test suite.
+- Việc tiếp theo duy nhất: P16.e — kiểm tra giao diện và cuộn từng cột trên browser ở 320/375/768/1280 px, đồng thời xác minh luồng đặt trên DB thử; không ghi DB chính.
+
+### P15.c — kiểm tra lọc khoảng ngày trên DB thử (2026-11-07)
+
+- Bổ sung kiểm tra tích hợp cho `dateFrom`/`dateTo`: hai biên đều bao gồm, khoảng bắt đầu Chủ Nhật đi qua ngày Chủ Nhật tới Thứ Tư chỉ trả các ca Thứ Hai/Thứ Tư có lịch, khoảng ngược trả `INVALID_DATE_RANGE`, ngày bắt đầu quá khứ trả `INVALID_WORK_DATE`.
+- Trên `SuncareClinicMigrationTest` schema V16, `OnsiteAppointmentSearchIT` 4/4 PASS. `OnsiteAppointmentBookingIT` 6/6 PASS trong cùng phiên; truy vấn sau kiểm tra xác nhận 0 fixture P15/P16 ở WorkSchedule, WorkAssignment, ServicePrice và các bảng Patient/Department/Specialty/Staff/Account/Service/Room/Appointment; riêng P16 CommandReceipt cũng còn 0 dòng. Không ghi DB chính.
+- Vite local trả 200 và `/api/health` trả `UP`. CUA không liệt kê browser; mở tab tới `http://localhost:5173` trả `The browser access host is unavailable`. Chưa kiểm tra preset/date picker, cuộn cột hoặc responsive 320/375/768/1280 px; chưa gửi booking qua UI.
+- P15/P16 tiếp tục `IN_PROGRESS` đến khi xác minh trực quan. Việc tiếp theo duy nhất: kiểm tra UI P15/P16 trên browser với backend/DB thử và viewport 320/375/768/1280 px; tuyệt đối không tạo booking trên DB chính.
 
 ### P14 — công bố lịch và hỗ trợ phòng trực tuyến (2026-11-07)
 
@@ -20,13 +77,32 @@ Trạng thái: IN_PROGRESS (P13 còn thiếu kiểm tra browser responsive; P14 
 - Không sửa code, không đăng nhập/ghi dữ liệu, không chạy kiểm thử tự động. P13 vẫn `IN_PROGRESS`; không dùng health/API và kiểm tra tĩnh thay cho bằng chứng responsive.
 - Việc tiếp theo duy nhất: khi browser host hoạt động, mở tab riêng tới `http://localhost:5173`, đăng nhập tài khoản trưởng khoa thử nghiệm, kiểm tra 320/375/768/1280 px và thao tác mở ô → mở form → Hủy; không gửi form phân công.
 
+### P14 — công bố lịch và tạo slot ONLINE (2026-11-04)
+
+- V15 mở loại phòng ONLINE; V16 yêu cầu WorkAssignment ONLINE gắn ca sáng/chiều cấu hình và giữ V1–V15 bất biến. API `POST /api/head/schedules/{scheduleId}/publish` công bố trong transaction, kiểm tra phạm vi/nhiệm kỳ, role/chuyên khoa/khoa/phòng/ca/giá, giao lịch bác sĩ/phòng; sinh slot 20 phút chỉ trong từng ca và ghi audit. Retry publish trả lịch hiện hành; lịch đã công bố không cho sửa/gỡ phân công.
+- Theo D25–D27, UI nhóm hàng sáng/chiều theo ONSITE và ONLINE; bấm chọn một ô, Ctrl/⌘-bấm thêm/bỏ, kéo chọn vùng, Ctrl/⌘-kéo cộng vùng. Selection giữ nguyên khi chuyển tuần; mỗi request gửi đúng từng cặp ngày/ca trong cùng một mode, không tạo tích chéo. API lưu danh sách ô cùng transaction. Chọn cả ngày ONLINE vẫn sinh slot theo từng ca, không có slot giờ nghỉ trưa. Danh sách bác sĩ và phòng lọc các phân công chồng giờ của đợt đang mở trong những ô đã chọn; backend tiếp tục chặn xung đột với lịch đã công bố. Cùng bác sĩ/phòng chỉ nhận một phân công tại một thời điểm, bất kể ONSITE/ONLINE.
+- Kiểm tra trước khi đổi request sang `workSlots`: `$env:JAVA_TOOL_OPTIONS='-Djava.library.path=D:\TaiLieu\Nam4Ky1\Project_1\jdbc-auth\13.4.0'; .\mvnw.cmd '-Dtest=WorkSchedulePublishIT,WorkScheduleIT' test -q` PASS 7/7 trên `SuncareClinicMigrationTest` (publish/idempotency, slot theo đủ ca, xung đột, giá sai chuyên khoa, nhiều ngày rollback). Sau thay đổi `workSlots`, backend `mvnw -DskipTests compile` PASS; frontend sau lọc bác sĩ/phòng: `npm run lint`, `npm run build`, `git diff --check` PASS. Chưa chạy lại integration test. Flyway V15/V16 đã áp dụng trên DB thử; CHECK constraint đang bật/được tin cậy; sau test còn 0 fixture P14. Không ghi DB chính.
+- Browser validation chưa chạy được: CUA báo `The browser access host is unavailable`; còn kiểm tra responsive 320/375/768/1280 px, chọn nhiều ngày, bật cả ngày và xác nhận publish. P14 giữ IN_PROGRESS.
+- Bàn giao tại thời điểm 2026-11-04: kiểm thử API `workSlots`, rồi kiểm tra chọn ô qua 2–3 tuần, phân công và công bố trên browser khi host khả dụng.
+
+### P13 — kiểm chứng tiếp (2026-11-04)
+
+- Sửa fixture `WorkScheduleIT` theo quy tắc P07.d: trưởng khoa có cả role `DOCTOR`; thêm tài khoản `LAB_STAFF` riêng để giữ ca kiểm tra từ chối phân công người không phải bác sĩ.
+- Danh sách đợt phân lịch được phân trang 5 đợt/trang, có nút trang nhanh và Trước/Sau; tìm kiếm/lọc đưa về trang đầu. Bảng không còn render toàn bộ lịch trong một vùng cuộn dọc, và sau khi tạo đợt mới màn hình mở đợt đó ở trang đầu.
+- Cột `Hình thức · ca` được cố định 12rem trong bảng bố cục cố định để nội dung bác sĩ không ép hẹp cột nhãn; bảng vẫn cuộn ngang riêng khi màn hình nhỏ.
+- Thời khóa biểu đặt hai hàng ONSITE cạnh nhau rồi hai hàng ONLINE. Bấm thường chọn một ô; Ctrl/⌘-bấm thêm/bỏ; giữ-kéo chọn khối ngày/ca; Ctrl/⌘-kéo cộng khối. Selection qua 2–3 tuần được giữ khi chuyển tuần; API nhận `workSlots` chính xác để không mở rộng ô rời rạc thành tích ngày × ca. Không có nút bật chọn nhiều; form liệt kê các ô đã chọn.
+- Sau bổ sung click/Ctrl-click/drag và API `workSlots`, trong `frontend/`, `npm run lint` và `npm run build` PASS; backend `mvnw -DskipTests compile` PASS; `git diff --check` PASS. Chưa chạy integration tests cho `workSlots`/multi-shift ONSITE và chưa thử trực quan responsive vì browser host unavailable.
+- Kiểm tra: trong `backend/`, `.\mvnw.cmd '-Dtest=WorkScheduleIT' test -q` PASS 1/1 trên `SuncareClinicMigrationTest`, schema V14; sau test, SELECT xác nhận còn 0 fixture `Staff`, `Account`, `Department` mã P13. Trong `frontend/`, `npm run lint` và `npm run build` PASS; `git diff --check` PASS. Không ghi DB chính.
+- Kiểm tra browser bị chặn bởi `The browser access host is unavailable` khi lấy inventory và mở tab in-app. Vite đã khởi động riêng rồi dừng; chưa xác minh 320/375/768/1280 px, chọn ô ca, mở form và Hủy.
+- P13 vẫn IN_PROGRESS cho tới khi kiểm tra responsive/tương tác trên browser. P14 đã được bắt đầu riêng theo yêu cầu ngày 2026-11-04; không xem đây là bằng chứng hoàn tất P13.
+
 ### P07.d — ràng buộc quyền trưởng khoa với vai trò bác sĩ (2026-11-04)
 
 - `DEPARTMENT_HEAD` là quyền bổ sung của bác sĩ; `DepartmentHeadAssignment` vẫn giữ khoa và nhiệm kỳ. API tạo/gán role từ chối trưởng khoa nếu thiếu `DOCTOR`, API phân công xác nhận cả hai role. Không cho thu hồi `DOCTOR` khi còn role trưởng khoa hoặc nhiệm kỳ chưa kết thúc; các thao tác role/phân công cùng khóa Staff để tránh race.
 - `/api/auth/me` không trả role/quyền trưởng khoa cho dữ liệu cũ thiếu role bác sĩ; tài khoản đó vẫn cần admin sửa bằng cách thêm đúng role bác sĩ hoặc thu hồi quyền trưởng khoa.
 - UI tự thêm role bác sĩ khi chọn quyền trưởng khoa, ngăn gỡ bác sĩ trước quyền trưởng khoa, và giải thích phân công quyết định khoa/thời hạn. Cập nhật `AGENTS.md` cùng docs 01/03/04/05/06; thay TX01 dùng nhầm “role STAFF” bằng account type `STAFF`.
 - Kiểm tra: `StaffManagementIT` 13/13 và `StaffAssignmentIT` 1/1 PASS trên `SuncareClinicMigrationTest` (schema V14, Flyway không chạy migration); `npm run lint`, `npm run build` và `git diff --check` PASS. Kiểm tra SQL sau test còn 0 fixture P07/P10. Không ghi DB chính; chưa kiểm tra trực tiếp UI/responsive trên browser.
-- Việc tiếp theo duy nhất: P13 — kiểm tra responsive 320/375/768/1280 px và tương tác bảng/form phân công trên browser riêng; không lưu phân công lên DB chính.
+- Bàn giao tại thời điểm 2026-11-04: P13 — kiểm tra responsive 320/375/768/1280 px và tương tác bảng/form phân công trên browser riêng; không lưu phân công lên DB chính.
 
 ### Bổ sung khoa/chuyên khoa vào profile và quản lý nhân viên (2026-11-02)
 
@@ -245,10 +321,10 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P10 | DONE | API/UI, DB thử 1/1, browser Edge headless qua luồng thật, responsive 320/375/768/1280, lint/build PASS; fixture đã dọn. Hộp thoại kết thúc, lịch sử phân công thành bảng có tìm/lọc; `StaffAssignmentIT` 1/1, lint/build PASS; lượt UI mới chưa chạy browser. |
 | P11 | IN_PROGRESS | API/UI đã có; sửa quy tắc giá, test đích danh và lint/build PASS. Còn kiểm tra UI tương tác/responsive trước khi DONE. |
 | P12 | IN_PROGRESS | Backend API + DTO + Repository + Service + Controller; 2/2 SchedulingCatalogIT PASS trên migrationtest, ClinicalServiceIT 5/5 PASS; UI SchedulingCatalogManagement.jsx, lint/build PASS; còn kiểm tra browser trực tiếp. |
-| P13 | IN_PROGRESS | API P13 và quyền demo_head trả 200; `WorkScheduleIT` 2/2 PASS trên DB thử. Thời khóa biểu 2 hàng sáng/chiều, ô bấm mở bảng bác sĩ, form có Hủy; lint/build/diff-check PASS. Desktop 1536×864 đã xem; còn kiểm tra 320/375/768/1280 px và tương tác bảng/form trên browser riêng. P14 publish/ONLINE đã được triển khai riêng; không ghi DB chính. |
-| P14 | IN_PROGRESS | API publish transaction và sinh slot 20 phút; V15/V16; UI chọn nhiều ca, phân biệt ONSITE/ONLINE. WorkScheduleIT 2/2, WorkSchedulePublishIT 5/5, RoomManagementIT 2/2 PASS trên DB thử V16; lint/build/diff-check PASS, fixture P09 đã dọn. Còn browser kiểm tra luồng chọn ca/publish/phòng ONLINE. |
-| P15 | TODO | Theo lộ trình trong AGENTS.md. |
-| P16 | TODO | Theo lộ trình trong AGENTS.md. |
+| P13 | IN_PROGRESS | API và quyền demo_head trả 200; `WorkScheduleIT` 2/2 PASS trên DB thử. Danh sách đợt phân trang 5 mục/trang; calendar nhóm ONSITE/ONLINE với cột nhãn cố định 12rem; click/Ctrl-click/drag giữ lựa chọn qua tuần; form có Hủy. Lint/build PASS; desktop 1536×864 đã xem. Còn 320/375/768/1280 px và tương tác browser. Không ghi DB chính. |
+| P14 | IN_PROGRESS | V15/V16, publish transaction, phân công nhiều ô, lọc bác sĩ/phòng theo xung đột và sinh slot ONLINE 20 phút. `WorkScheduleIT` 2/2, `WorkSchedulePublishIT` 5/5, `RoomManagementIT` 2/2 PASS trên DB thử V16 sau cập nhật `workSlots`; lint/build/diff-check PASS, fixture đã dọn. Còn browser kiểm tra luồng chọn ca/publish/phòng ONLINE. Không ghi DB chính. |
+| P15 | IN_PROGRESS | API/UI tìm lịch theo bác sĩ/ca, khoảng ngày với preset, thẻ bác sĩ mở lịch theo ngày và ca sáng/chiều. `OnsiteAppointmentSearchIT` 4/4 PASS trên DB thử V16, gồm biên ngày, qua Chủ Nhật, khoảng ngược/ngày quá khứ. Còn browser/date picker/responsive. |
+| P16 | IN_PROGRESS | API P16.a và UI P16.b đã có; `OnsiteAppointmentBookingIT` 6/6 PASS trên DB thử V16, lint/build/diff-check PASS. Còn browser toàn luồng tìm/đặt và responsive; chưa gửi booking lên DB chính. |
 | P17 | TODO | Theo lộ trình trong AGENTS.md. |
 | P18 | TODO | Theo lộ trình trong AGENTS.md. |
 | P19 | TODO | Theo lộ trình trong AGENTS.md. |
@@ -283,9 +359,9 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 
 ## Bàn giao phiên sau
 
-- Việc tiếp theo: P14 — kiểm tra giao diện thực tế trên DB thử: chọn nhiều ô, tạo ONSITE/ONLINE, công bố và xác nhận slot, rồi tạo/lọc phòng ONLINE.
-- Đọc trước: `frontend/src/features/scheduling/DepartmentScheduleManagement.jsx`, `frontend/src/features/organization/RoomManagement.jsx`, mục P14 trong tài liệu này.
-- Điều kiện cần: browser host hoạt động; không dùng DB chính. Sau đó kiểm tra P13 ở 320/375/768/1280 px và thao tác mở form rồi Hủy trước khi đánh dấu P13 hoàn tất.
+- Việc tiếp theo: P15.c — kiểm tra khoảng ngày tra cứu và UI P15/P16.
+- Đọc trước: `frontend/src/features/appointment/OnsiteDateRangePicker.jsx`, `frontend/src/features/appointment/OnsiteAppointmentSearch.jsx`, `frontend/src/services/onsiteAppointmentApi.js`, module appointment backend và mục P15/P16 trong tài liệu này.
+- Điều kiện cần: browser host hoạt động và UI dùng backend profile `migrationtest`; kiểm tra preset, ngày đầu/cuối, lỗi khoảng ngược, tìm lịch/chọn ca/đặt thử và responsive 320/375/768/1280 px. Không dùng backend mặc định trỏ DB chính để gửi booking.
 
 ### Kiểm tra lỗi import IDE ngày 2026-11-02
 

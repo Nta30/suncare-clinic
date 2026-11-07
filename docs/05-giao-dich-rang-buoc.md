@@ -21,7 +21,7 @@ Thứ tự logic: **phạm vi lịch/chuyên khoa-ngày → assignment/slot/hold
 
 - Retry deadlock hữu hạn với cùng idempotency key, không tạo nghiệp vụ lần hai.
 - Lỗi giữa các bước rollback toàn bộ dữ liệu cục bộ. External API không rollback cùng DB; cần retry/đối soát dựa trên PaymentRequest/Event đã lưu.
-- Không tin số tiền, doctor_id phân tự động, patient_id hoặc status do client gửi.
+- Không tin số tiền, patient_id hoặc status do client gửi. doctor_id trực tiếp là tùy chọn: nếu có, server xác nhận đúng assignment công bố, chuyên khoa/ngày/ca, sức chứa và giá; nếu không có thì server tự phân theo D04.
 - Trước mỗi thao tác cần hạn, so sánh UTC hiện tại từ cùng nguồn DB; không dựa vào job đã kịp cập nhật status hay chưa.
 
 ## Transaction theo use case
@@ -40,7 +40,7 @@ Nếu đã có Appointment hoặc hold ACTIVE, chặn sửa khoảng giờ, mode
 
 ### TX03 — Đặt trực tiếp và phân bác sĩ
 
-Khóa chuyên khoa/ngày/ca để serialize việc cân bằng; đọc assignment đã công bố thuộc ca, bác sĩ active/có giá và còn capacity. Khóa thêm assignment được chọn để bảo vệ sức chứa khi một assignment phục vụ nhiều chuyên khoa. Chỉ tính Appointment BOOKED/COMPLETED/NO_SHOW vào số lượt, không Encounter hoặc Invoice join. So sánh tỷ lệ bằng nhân chéo decimal tránh chia nguyên; hòa theo Staff.code. Tạo Appointment và Encounter PLANNED, event và audit cùng transaction. Retry request dùng CommandReceipt, không dùng Audit correlation thay khóa idempotency và không dựa vào double-click UI.
+Khóa chuyên khoa/ngày/ca để serialize việc cân bằng và giành chỗ. Nếu request có doctor_id, tìm assignment đã công bố của bác sĩ đó đúng chuyên khoa/ngày/ca, với bác sĩ active/có giá và còn capacity; từ chối nếu không khớp. Nếu doctor_id không có, chọn assignment theo tỷ lệ lượt đặt/sức chứa thấp nhất; hòa theo Staff.code. Khóa assignment được dùng để bảo vệ sức chứa khi một assignment phục vụ nhiều chuyên khoa. Chỉ tính Appointment BOOKED/COMPLETED/NO_SHOW vào số lượt, không Encounter hoặc Invoice join. Tạo Appointment và Encounter PLANNED, event và audit cùng transaction. Retry request dùng CommandReceipt, không dùng Audit correlation thay khóa idempotency và không dựa vào double-click UI.
 
 ### TX04 — Giữ slot online
 

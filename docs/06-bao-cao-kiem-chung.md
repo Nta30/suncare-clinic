@@ -51,7 +51,7 @@ Khoa trong báo cáo lượt khám là Appointment.department_id; khoa CLS là C
 | AT03 | Staff có role `DOCTOR` và `DEPARTMENT_HEAD`, được phân công trưởng khoa ở một khoa | Dùng được nhóm hành động bác sĩ và trưởng khoa trong đúng phạm vi; không xem khoa khác. |
 | AT04 | Hai request giành chỗ cuối ca trực tiếp | Một thành công, một báo hết chỗ; đúng một Appointment+Encounter mới. |
 | AT05 | Hai bác sĩ có tỷ lệ 1/2 và 2/4 | Hòa tỷ lệ, chọn mã nhỏ hơn; nhiều request đồng thời không phá capacity. |
-| AT06 | Trực tiếp gửi doctor_id hoặc giờ tùy chọn | Server không cho chọn; tự phân đúng ca/chuyên khoa. |
+| AT06 | Trực tiếp gửi doctor_id hợp lệ, doctor_id sai chuyên khoa/ngày/ca/hết sức chứa, hoặc bỏ doctor_id | Bác sĩ hợp lệ được giữ nếu còn capacity; dữ liệu không khớp bị từ chối; khi bỏ doctor_id server tự phân theo tỷ lệ lượt đặt/sức chứa và hòa theo mã. |
 | AT07 | Online tự phân hai bác sĩ có lịch khác nhau | Chọn người rảnh ít lịch nhất ngày; không chọn người hết slot dù ít lịch hơn. |
 | AT08 | Cùng staff phân ONSITE và ONLINE giao thời gian | Công bố bị chặn; hai khoảng liền kề được phép. |
 | AT09 | Hai bệnh nhân giữ cùng slot | Chỉ một SlotReservation; người còn lại nhận hết chỗ. |

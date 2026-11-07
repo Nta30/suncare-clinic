@@ -10,8 +10,8 @@ Một cơ sở, khám ngoại trú trực tiếp và online; tài khoản, khoa/
 |---|---|
 | D01 | Patient và Staff riêng; không Person. Một Account chỉ thuộc một loại hồ sơ. |
 | D02 | Chỉ bệnh nhân tự đăng ký. Admin cấp tài khoản nhân viên; nhiều vai trò nội bộ được phép. `DEPARTMENT_HEAD` là quyền bổ sung của `DOCTOR`, còn `DepartmentHeadAssignment` xác định khoa và nhiệm kỳ. |
-| D03 | Trực tiếp chỉ chọn chuyên khoa, ngày, sáng/chiều; không chọn bác sĩ, không đổi/hủy lịch. |
-| D04 | Phân trực tiếp theo tỷ lệ lượt đặt/sức chứa thấp nhất; hòa theo mã bác sĩ. |
+| D03 | Cập nhật 2026-11-07: Trực tiếp chọn chuyên khoa, ngày, sáng/chiều; có thể chọn bác sĩ cụ thể. Nếu chọn, bác sĩ phải có lịch công bố đúng chuyên khoa/ngày/ca, còn sức chứa và giá khám hiệu lực. Nếu không chọn, áp dụng D04. Không đổi/hủy lịch trực tiếp. |
+| D04 | Khi bệnh nhân không chọn bác sĩ, hệ thống phân trực tiếp theo tỷ lệ lượt đặt/sức chứa thấp nhất; hòa theo mã bác sĩ. |
 | D05 | Online slot 20 phút; được chọn bác sĩ; tự phân theo số lịch online đã đặt trong ngày thấp nhất, hòa theo mã bác sĩ. |
 | D06 | Online giữ chỗ 5 phút, thanh toán MoMo thành công mới tạo Appointment và Encounter. |
 | D07 | Online chỉ hủy khi cách giờ hẹn ít nhất 24 giờ, hoàn toàn bộ phí khám; không đổi lịch. |
@@ -38,7 +38,7 @@ Một cơ sở, khám ngoại trú trực tiếp và online; tài khoản, khoa/
 
 ## Luồng chuẩn
 
-**Trực tiếp:** lịch công bố → chọn chuyên khoa/ngày/ca → phân bác sĩ, giữ giá và tạo Appointment + Encounter nguyên tử → bác sĩ bắt đầu → chẩn đoán/chỉ định → bác sĩ lập hóa đơn → MoMo hoặc tiền mặt → lab xác nhận có mặt → xếp hàng → thực hiện → phát hành → bác sĩ đánh giá → kê đơn nếu cần → hoàn tất.
+**Trực tiếp:** lịch công bố → chọn chuyên khoa/ngày/ca, tùy chọn chọn bác sĩ → nếu đã chọn thì xác nhận bác sĩ còn lịch phù hợp; nếu bỏ qua thì hệ thống tự phân theo D04 → giữ giá và tạo Appointment + Encounter nguyên tử → bác sĩ bắt đầu → chẩn đoán/chỉ định → bác sĩ lập hóa đơn → MoMo hoặc tiền mặt → lab xác nhận có mặt → xếp hàng → thực hiện → phát hành → bác sĩ đánh giá → kê đơn nếu cần → hoàn tất.
 
 **Online:** chọn chuyên khoa/giờ, có thể chọn bác sĩ → xác định bác sĩ và báo giá → giữ chỗ 5 phút + hóa đơn phí khám → yêu cầu MoMo → giao dịch hợp lệ trong hạn → Appointment + Encounter → video → khám; CLS nếu có theo luồng thu bổ sung. Mất kết nối không tự kết thúc Encounter.
 

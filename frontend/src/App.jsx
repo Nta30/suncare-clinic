@@ -13,6 +13,7 @@ import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient
 
 const DepartmentScheduleManagement = lazy(() => import('./features/scheduling/DepartmentScheduleManagement'))
 const StaffAssignments = lazy(() => import('./features/organization/StaffAssignments'))
+const OnsiteAppointmentSearch = lazy(() => import('./features/appointment/OnsiteAppointmentSearch'))
 
 const roleLabels = {
   PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
@@ -20,7 +21,7 @@ const roleLabels = {
 }
 
 const plannedLinks = [
-  { title: 'Lịch khám', icon: faCalendarCheck, roles: ['PATIENT', 'DOCTOR', 'DEPARTMENT_HEAD'] },
+  { title: 'Lịch khám', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'] },
   { title: 'Khám và kết quả', icon: faClipboard, roles: ['DOCTOR', 'LAB_STAFF'] },
   { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'] },
   { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
@@ -145,7 +146,7 @@ function App() {
   const availableLinks = plannedLinks.filter((link) => account?.roles.some((role) => link.roles.includes(role)))
 
   return (
-    <div className="flex min-h-svh flex-col bg-clinical-canvas text-clinical-ink">
+      <div className={`flex flex-col bg-clinical-canvas text-clinical-ink ${authState === 'signedIn' && mode === 'onsite-search' ? 'min-h-svh xl:h-svh xl:overflow-hidden' : 'min-h-svh'}`}>
       <header className="shrink-0 border-b border-suncare-200 bg-suncare-50">
         <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8 lg:px-14">
           <div className="flex items-center gap-3 text-suncare-900">
@@ -170,6 +171,8 @@ function App() {
                 <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
               {account?.permissions.includes('SCHEDULE_PUBLISH_DEPARTMENT') &&
                 <button onClick={() => setMode('department-schedule')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch khoa</button>}
+              {account?.roles.includes('PATIENT') &&
+                <button onClick={() => setMode('onsite-search')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Tìm lịch khám</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -179,7 +182,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
@@ -231,7 +234,7 @@ function App() {
             </section>
           </div>
         </>}
-        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule'].includes(mode) && <>
+        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule', 'onsite-search'].includes(mode) && <>
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -270,6 +273,10 @@ function App() {
         {authState === 'signedIn' && mode === 'department-schedule' && account?.permissions.includes('SCHEDULE_PUBLISH_DEPARTMENT') &&
           <Suspense fallback={<p role="status" className="rounded-xl border border-clinical-border bg-white p-6">Đang tải màn hình phân lịch...</p>}>
             <DepartmentScheduleManagement account={account} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'onsite-search' && account?.roles.includes('PATIENT') &&
+          <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải tìm lịch...</p>}>
+            <OnsiteAppointmentSearch onSessionExpired={handleSessionExpired} />
           </Suspense>}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"
