@@ -38,6 +38,9 @@ Một cơ sở, khám ngoại trú trực tiếp và online; tài khoản, khoa/
 
 ## Luồng chuẩn
 
+Yêu cầu bổ sung ngày 2026-11-25 về dị ứng: một bệnh nhân có thể có nhiều chất gây dị ứng. Dùng danh mục Allergen có mã/tên thống nhất do người có quyền CATALOG_MANAGE quản lý; bác sĩ chọn chất thay vì nhập lại tên tùy ý. Mỗi chất có phản ứng/mức độ riêng, không ghi trùng cùng chất đang áp dụng cho một bệnh nhân. Nếu chưa có chất trong danh mục, bắt buộc ghi chú rõ chất nghi gây dị ứng; không tự thêm vào danh mục chung. Tên tự do cũ giữ nguyên và chờ bác sĩ đối chiếu, không tự gộp. Snapshot khi bắt đầu khám là bất biến, kể cả khi tên danh mục thay đổi.
+
+
 **Trực tiếp:** lịch công bố → chọn chuyên khoa/ngày/ca, tùy chọn chọn bác sĩ → nếu đã chọn thì xác nhận bác sĩ còn lịch phù hợp; nếu bỏ qua thì hệ thống tự phân theo D04 → giữ giá và tạo Appointment + Encounter nguyên tử → bác sĩ bắt đầu → chẩn đoán/chỉ định → bác sĩ lập hóa đơn → MoMo hoặc tiền mặt → lab xác nhận có mặt → xếp hàng → thực hiện → phát hành → bác sĩ đánh giá → kê đơn nếu cần → hoàn tất.
 
 **Online:** chọn chuyên khoa/giờ, có thể chọn bác sĩ → xác định bác sĩ và báo giá → giữ chỗ 5 phút + hóa đơn phí khám → yêu cầu MoMo → giao dịch hợp lệ trong hạn → Appointment + Encounter → video → khám; CLS nếu có theo luồng thu bổ sung. Mất kết nối không tự kết thúc Encounter.

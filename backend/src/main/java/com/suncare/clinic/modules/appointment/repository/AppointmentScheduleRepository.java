@@ -13,6 +13,10 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
+import com.suncare.clinic.modules.appointment.dto.DoctorWorkShiftResponse;
+import com.suncare.clinic.modules.appointment.dto.DoctorOnlineSlotResponse;
+import com.suncare.clinic.modules.appointment.dto.DoctorSlotPatientResponse;
 
 @Repository
 public class AppointmentScheduleRepository {
@@ -70,6 +74,69 @@ public class AppointmentScheduleRepository {
 
     public List<AppointmentScheduleListItemResponse> findForPatient(long patientId) {
         return queryList("appointment.patient_id", patientId);
+    }
+
+    public List<DoctorWorkShiftResponse> findDoctorShifts(long staffId, LocalDate from, LocalDate to) {
+        return jdbc.query("""
+                SELECT wa.id, wa.work_date, sh.code AS shift_code, sh.name AS shift_name,
+                       wa.mode, wa.starts_at, wa.ends_at, d.name AS department_name,
+                       sp.name AS specialty_name, r.code AS room_code, r.name AS room_name
+                FROM dbo.WorkAssignment wa
+                JOIN dbo.WorkSchedule ws ON ws.id = wa.schedule_id
+                JOIN dbo.Department d ON d.id = ws.department_id
+                LEFT JOIN dbo.ShiftDefinition sh ON sh.id = wa.shift_id
+                LEFT JOIN dbo.Specialty sp ON sp.id = wa.specialty_id
+                LEFT JOIN dbo.Room r ON r.id = wa.room_id
+                WHERE wa.staff_id = ? AND ws.status = 'PUBLISHED'
+                  AND wa.work_date BETWEEN ? AND ? AND wa.mode IN ('ONSITE', 'ONLINE')
+                ORDER BY wa.starts_at, wa.id
+                """, (rs, n) -> new DoctorWorkShiftResponse(rs.getLong("id"),
+                rs.getDate("work_date").toLocalDate(), rs.getString("shift_code"), rs.getString("shift_name"),
+                rs.getString("mode"), toBusinessTime(rs.getTimestamp("starts_at")),
+                toBusinessTime(rs.getTimestamp("ends_at")), rs.getString("department_name"),
+                rs.getString("specialty_name"), rs.getString("room_code"), rs.getString("room_name")),
+                staffId, from, to);
+    }
+
+    public boolean ownsPublishedOnlineShift(long staffId, long assignmentId) {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM dbo.WorkAssignment wa
+                JOIN dbo.WorkSchedule ws ON ws.id = wa.schedule_id
+                WHERE wa.id = ? AND wa.staff_id = ? AND wa.mode = 'ONLINE' AND ws.status = 'PUBLISHED'
+                """, Integer.class, assignmentId, staffId) == 1;
+    }
+
+    public List<DoctorOnlineSlotResponse> findDoctorSlots(long staffId, long assignmentId) {
+        return jdbc.query("""
+                SELECT s.id, s.starts_at, s.ends_at, s.is_open, a.id AS appointment_id,
+                       a.status, p.full_name
+                FROM dbo.OnlineSlot s
+                JOIN dbo.WorkAssignment wa ON wa.id = s.assignment_id
+                JOIN dbo.WorkSchedule ws ON ws.id = wa.schedule_id
+                LEFT JOIN dbo.Appointment a ON a.online_slot_id = s.id AND a.doctor_id = wa.staff_id
+                    AND a.status <> 'CANCELLED' AND a.visit_mode = 'ONLINE'
+                LEFT JOIN dbo.Patient p ON p.id = a.patient_id
+                WHERE wa.id = ? AND wa.staff_id = ? AND wa.mode = 'ONLINE' AND ws.status = 'PUBLISHED'
+                ORDER BY s.starts_at, s.id
+                """, (rs, n) -> new DoctorOnlineSlotResponse(rs.getLong("id"),
+                toBusinessTime(rs.getTimestamp("starts_at")), toBusinessTime(rs.getTimestamp("ends_at")),
+                rs.getBoolean("is_open"), rs.getObject("appointment_id", Long.class),
+                rs.getString("status"), rs.getString("full_name")), assignmentId, staffId);
+    }
+
+    public Optional<DoctorSlotPatientResponse> findSlotPatient(long staffId, long slotId) {
+        return jdbc.query("""
+                SELECT p.code, p.full_name, p.birth_date, p.sex, p.phone
+                FROM dbo.OnlineSlot s
+                JOIN dbo.WorkAssignment wa ON wa.id = s.assignment_id
+                JOIN dbo.WorkSchedule ws ON ws.id = wa.schedule_id
+                JOIN dbo.Appointment a ON a.online_slot_id = s.id AND a.doctor_id = wa.staff_id
+                JOIN dbo.Patient p ON p.id = a.patient_id
+                WHERE s.id = ? AND wa.staff_id = ? AND wa.mode = 'ONLINE'
+                  AND ws.status = 'PUBLISHED' AND a.visit_mode = 'ONLINE' AND a.status <> 'CANCELLED'
+                """, (rs, n) -> new DoctorSlotPatientResponse(rs.getString("code"), rs.getString("full_name"),
+                rs.getDate("birth_date") == null ? null : rs.getDate("birth_date").toLocalDate(),
+                rs.getString("sex"), rs.getString("phone")), slotId, staffId).stream().findFirst();
     }
 
     public List<AppointmentScheduleListItemResponse> findAssignedToDoctor(long staffId) {

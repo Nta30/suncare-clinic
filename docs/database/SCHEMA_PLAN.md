@@ -104,7 +104,7 @@ ngoài thiết kế đã được chốt.
 - CommandReceipt
 - AuditEvent
 
-Tổng cộng: 58 bảng nghiệp vụ.
+Tổng cộng thiết kế V1–V11: 58 bảng nghiệp vụ. V13 thêm AuthToken; V17 thêm Allergen và liên kết PatientAllergy → Allergen: hiện 60 bảng nghiệp vụ (không tính flyway_schema_history và sysdiagrams của SSMS). Allergen có mã/tên duy nhất, ngừng áp dụng thay xóa; PatientAllergy giữ tên lúc ghi nhận, hỗ trợ nhiều chất và ghi chú bắt buộc khi chưa có trong danh mục. Migration không tự đối chiếu tên tự do cũ hoặc sửa snapshot Encounter đã chốt.
 
 Không tạo bảng EMR riêng để sao chép
 dữ liệu Encounter.

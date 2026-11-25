@@ -45,6 +45,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +61,8 @@ class OnsiteAppointmentBookingIT {
     @Autowired private ObjectMapper json;
     @Autowired private OnsiteAppointmentBookingService bookingService;
     @MockitoSpyBean private OnsiteAppointmentBookingRepository bookingRepository;
+    @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.EncounterRepository encounterRepository;
+    @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.EncounterHistoryRepository historyRepository;
 
     private MockMvc mvc;
     private String prefix;
@@ -87,6 +90,8 @@ class OnsiteAppointmentBookingIT {
     @BeforeEach
     void setUp() throws Exception {
         reset(bookingRepository);
+        reset(encounterRepository);
+        reset(historyRepository);
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         prefix = "P16" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
 
@@ -157,7 +162,21 @@ class OnsiteAppointmentBookingIT {
     @AfterEach
     void cleanUp() {
         reset(bookingRepository);
+        reset(encounterRepository);
+        reset(historyRepository);
         if (prefix == null) return;
+
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE (action = 'ENCOUNTER_STARTED' OR action LIKE 'PATIENT_HISTORY_%' OR action LIKE 'PATIENT_ALLERGY_%') AND actor_id IN (?, ?)",
+                accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("""
+                DELETE FROM dbo.EncounterHistorySnapshot WHERE encounter_id IN (
+                    SELECT e.id FROM dbo.Encounter e JOIN dbo.Appointment a ON a.id = e.appointment_id
+                    WHERE a.patient_id IN (?, ?))
+                """, patientOneId, patientTwoId);
+        jdbc.update("DELETE FROM dbo.PatientHistory WHERE patient_id IN (?, ?)", patientOneId, patientTwoId);
+        jdbc.update("DELETE FROM dbo.PatientAllergy WHERE patient_id IN (?, ?)", patientOneId, patientTwoId);
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type = 'Allergen' AND entity_id IN (SELECT id FROM dbo.Allergen WHERE code LIKE ?)", prefix + "%");
+        jdbc.update("DELETE FROM dbo.Allergen WHERE code LIKE ?", prefix + "%");
 
         jdbc.update("""
                 DELETE FROM dbo.CommandReceipt
@@ -213,6 +232,413 @@ class OnsiteAppointmentBookingIT {
         jdbc.update("DELETE FROM dbo.Specialty WHERE id = ?", specialtyId);
         jdbc.update("DELETE FROM dbo.Patient WHERE id IN (?, ?)", patientOneId, patientTwoId);
         if (createdShift) jdbc.update("DELETE FROM dbo.ShiftDefinition WHERE id = ?", shiftId);
+    }
+
+    @Test
+    void usesCatalogForMultipleAllergiesAndRequiresNoteForUnlistedSubstance() throws Exception {
+        long encounterId = bookEncounterForStart("allergen-catalog");
+        String path = "/api/doctor/encounters/" + encounterId + "/allergies";
+        long first = jdbc.queryForObject("INSERT INTO dbo.Allergen (code, name, is_active) OUTPUT INSERTED.id VALUES (?, ?, 1)", Long.class, prefix + "ALG1", prefix + " Test allergen one");
+        long second = jdbc.queryForObject("INSERT INTO dbo.Allergen (code, name, is_active) OUTPUT INSERTED.id VALUES (?, ?, 1)", Long.class, prefix + "ALG2", prefix + " Test allergen two");
+        for (long id : java.util.List.of(first, second)) {
+            mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(java.util.Map.of("allergenId", id, "severity", "MILD", "isActive", true))))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("allergenId", first, "severity", "SEVERE", "isActive", true))))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PATIENT_ALLERGEN_EXISTS"));
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\":\"UNKNOWN\",\"isActive\":true}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("ALLERGEN_NOTE_REQUIRED"));
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"otherNote\":\"P18 unlisted substance\",\"severity\":\"UNKNOWN\",\"isActive\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allergies.length()").value(3));
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("allergenId", second, "otherNote", "P18 mixed source", "severity", "MILD", "isActive", true))))
+                .andExpect(status().isBadRequest());
+        String started = mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertTrue(json.readTree(started).get("allergyText").asText().contains(prefix + "ALG1"));
+        jdbc.update("UPDATE dbo.Allergen SET name = ?, is_active = 0 WHERE id = ?", prefix + " Renamed catalog entry", first);
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allergyText").value(json.readTree(started).get("allergyText").asText()));
+        long inactive = jdbc.queryForObject("INSERT INTO dbo.Allergen (code, name, is_active) OUTPUT INSERTED.id VALUES (?, ?, 0)", Long.class, prefix + "ALG3", prefix + " Inactive test allergen");
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("allergenId", inactive, "severity", "MILD", "isActive", true))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void managesUniqueAllergenCodesAndNamesWithPermissionAndVersionChecks() throws Exception {
+        String path = "/api/admin/allergens";
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isForbidden());
+        grantRole(accountIdForStaff(doctorOneId), "SYSTEM_ADMIN");
+        String code = prefix + "CAT";
+        String name = prefix + " Controlled test substance";
+        String response = mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("code", code, "name", name, "isActive", true))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var saved = java.util.stream.StreamSupport.stream(json.readTree(response).spliterator(), false)
+                .filter(item -> code.equals(item.get("code").asText())).findFirst().orElseThrow();
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("code", prefix + "OTHER", "name", name.toLowerCase(), "isActive", true))))
+                .andExpect(status().isConflict());
+        String update = json.writeValueAsString(java.util.Map.of("code", code, "name", name, "isActive", false, "version", saved.get("version").asText()));
+        mvc.perform(put(path + "/" + saved.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isOk());
+        mvc.perform(put(path + "/" + saved.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isConflict());
+        mvc.perform(post(path).header("Authorization", "Bearer " + patientOneToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void paginatesAndFiltersEncounterWorklistOnServerWithoutLeakingOtherDoctors() throws Exception {
+        jdbc.update("UPDATE dbo.WorkAssignment SET capacity = 20 WHERE id = ?", assignmentOneId);
+        for (int i = 0; i < 12; i++) {
+            String suffix = "PAGE" + i;
+            insertExistingAppointment(assignmentOneId, doctorOneId, patientOneId, suffix);
+            jdbc.update("""
+                    INSERT INTO dbo.Encounter (code, appointment_id, status)
+                    SELECT ?, id, ? FROM dbo.Appointment WHERE code = ?
+                    """, prefix + "ENC" + i, i % 2 == 0 ? "PLANNED" : "IN_PROGRESS", prefix + suffix);
+        }
+        insertExistingAppointment(assignmentTwoId, doctorTwoId, patientTwoId, "OTHERDOC");
+        jdbc.update("INSERT INTO dbo.Encounter (code, appointment_id, status) SELECT ?, id, 'PLANNED' FROM dbo.Appointment WHERE code = ?",
+                prefix + "OTHERENC", prefix + "OTHERDOC");
+        String path = "/api/doctor/encounters?date=" + workDate;
+        String first = mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(12))
+                .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalPages").value(2))
+                .andReturn().getResponse().getContentAsString();
+        String second = mvc.perform(get(path + "&page=2").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.page").value(2)).andReturn().getResponse().getContentAsString();
+        var firstIds = new java.util.HashSet<Long>();
+        for (var item : json.readTree(first).get("items")) firstIds.add(item.get("encounterId").asLong());
+        for (var item : json.readTree(second).get("items")) assertFalse(firstIds.contains(item.get("encounterId").asLong()));
+        mvc.perform(get(path + "&page=99").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.page").value(2));
+        mvc.perform(get(path + "&status=IN_PROGRESS&pageSize=20").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(6))
+                .andExpect(jsonPath("$.items.length()").value(6)).andExpect(jsonPath("$.items[0].status").value("IN_PROGRESS"));
+        mvc.perform(get("/api/doctor/encounters?date=" + workDate.plusDays(1)).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0)).andExpect(jsonPath("$.page").value(1));
+    }
+
+    @Test
+    void searchesEncounterWorklistByVietnameseNameAndIdentifiersWithLiteralWildcards() throws Exception {
+        long encounterId = bookEncounterForStart("search");
+        jdbc.update("UPDATE dbo.Patient SET full_name = N'Đặng Thị Ánh' WHERE id = ?", patientOneId);
+        String path = "/api/doctor/encounters";
+        for (String term : java.util.List.of("anh DANG", "Đặng Ánh", prefix + "PATOne",
+                jdbc.queryForObject("SELECT code FROM dbo.Encounter WHERE id = ?", String.class, encounterId),
+                jdbc.queryForObject("SELECT a.code FROM dbo.Appointment a JOIN dbo.Encounter e ON e.appointment_id = a.id WHERE e.id = ?", String.class, encounterId))) {
+            mvc.perform(get(path).param("date", workDate.toString()).param("search", term)
+                    .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].encounterId").value(encounterId));
+        }
+        for (String term : java.util.List.of("%", "_", "[", "' OR 1=1--")) {
+            mvc.perform(get(path).param("date", workDate.toString()).param("search", term)
+                    .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(0));
+        }
+        mvc.perform(get(path).param("date", workDate.toString()).param("search", "anh")
+                .param("status", "COMPLETED").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void validatesWorklistPagingStatusAndSearchParameters() throws Exception {
+        String path = "/api/doctor/encounters?date=" + workDate;
+        for (String query : java.util.List.of("&page=0", "&page=-1", "&pageSize=500", "&status=CHECKED_IN", "&search=" + "a".repeat(101))) {
+            mvc.perform(get(path + query).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(get(path).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void managesHistoryAndAllergyThroughEncounterAndKeepsStartedSnapshotImmutable() throws Exception {
+        long encounterId = bookEncounterForStart("history-ui");
+        String base = "/api/doctor/encounters/" + encounterId;
+        mvc.perform(get("/api/doctor/encounters?date=" + workDate).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].encounterId").value(encounterId));
+        mvc.perform(get("/api/doctor/encounters?date=" + workDate).header("Authorization", "Bearer " + doctorTwoToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(base).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.editable").value(true)).andExpect(jsonPath("$.snapshot").isEmpty());
+        String created = mvc.perform(post(base + "/histories").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"historyType\":\"FAMILY\",\"description\":\" P18 test history \",\"isActive\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.histories[0].description").value("P18 test history"))
+                .andReturn().getResponse().getContentAsString();
+        var history = json.readTree(created).get("histories").get(0);
+        long historyId = history.get("id").asLong();
+        String version = history.get("version").asText();
+        String allergyBody = mvc.perform(post(base + "/allergies").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"otherNote\":\"P18 test allergen\",\"reaction\":\"Test rash\",\"severity\":\"SEVERE\",\"isActive\":true}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var allergy = json.readTree(allergyBody).get("allergies").get(0);
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk());
+        String update = json.writeValueAsString(java.util.Map.of("historyType", "PERSONAL", "description", "P18 changed history", "isActive", false, "version", version));
+        mvc.perform(put(base + "/histories/" + historyId).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(update))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.histories[0].isActive").value(false))
+                .andExpect(jsonPath("$.snapshot.historyText").value("FAMILY: P18 test history"));
+        mvc.perform(put(base + "/histories/" + historyId).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isConflict());
+        mvc.perform(put(base + "/allergies/" + allergy.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of(
+                        "otherNote", "P18 changed allergen", "reaction", "", "severity", "MILD", "isActive", false,
+                        "version", allergy.get("version").asText()))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allergies[0].isActive").value(false))
+                .andExpect(jsonPath("$.snapshot.allergyText").value("P18 test allergen [SEVERE]: Test rash"));
+        assertEquals(4, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type = 'Encounter' AND entity_id = ? AND (action LIKE 'PATIENT_HISTORY_%' OR action LIKE 'PATIENT_ALLERGY_%')", Integer.class, encounterId));
+    }
+
+    @Test
+    void historyEndpointsRejectWrongOwnerRoleForeignPatientRecordsInvalidInputAndClosedEncounter() throws Exception {
+        long encounterId = bookEncounterForStart("history-auth");
+        String base = "/api/doctor/encounters/" + encounterId;
+        String body = "{\"historyType\":\"PERSONAL\",\"description\":\"P18 valid\",\"isActive\":true}";
+        mvc.perform(get(base)).andExpect(status().isUnauthorized());
+        mvc.perform(get(base).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(get(base).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(post(base + "/histories").header("Authorization", "Bearer " + doctorTwoToken)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isNotFound());
+        mvc.perform(post(base + "/allergies").header("Authorization", "Bearer " + patientOneToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isForbidden());
+        mvc.perform(post(base + "/histories").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"historyType\":\"BAD\",\"description\":\" \",\"isActive\":true}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post(base + "/allergies").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"otherNote\":\"Test\",\"severity\":\"INVALID\",\"isActive\":true}"))
+                .andExpect(status().isBadRequest());
+        long foreignId = jdbc.queryForObject("""
+                INSERT INTO dbo.PatientHistory (patient_id, history_type, description, is_active, recorded_by, recorded_at)
+                OUTPUT INSERTED.id VALUES (?, 'PERSONAL', 'P18 foreign patient history', 1, ?, SYSUTCDATETIME())
+                """, Long.class, patientTwoId, accountIdForStaff(doctorOneId));
+        String foreignVersion = java.util.Base64.getEncoder().encodeToString(jdbc.queryForObject("SELECT version FROM dbo.PatientHistory WHERE id = ?", byte[].class, foreignId));
+        mvc.perform(put(base + "/histories/" + foreignId).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of(
+                        "historyType", "PERSONAL", "description", "P18 overwrite attempt", "isActive", true, "version", foreignVersion))))
+                .andExpect(status().isConflict());
+        assertEquals("P18 foreign patient history", jdbc.queryForObject("SELECT description FROM dbo.PatientHistory WHERE id = ?", String.class, foreignId));
+        mvc.perform(put(base + "/histories/" + foreignId).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.Encounter SET status = 'CANCELLED' WHERE id = ?", encounterId);
+        mvc.perform(post(base + "/histories").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
+        mvc.perform(get(base).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.editable").value(false));
+    }
+
+    @Test
+    void historyMutationAndAuditRollBackTogether() throws Exception {
+        long encounterId = bookEncounterForStart("history-rollback");
+        doThrow(new IllegalStateException("P18 history audit rollback probe")).when(historyRepository)
+                .audit(anyLong(), anyLong(), anyString(), anyLong());
+        assertThrows(Exception.class, () -> mvc.perform(post("/api/doctor/encounters/" + encounterId + "/allergies")
+                .header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"otherNote\":\"P18 rollback allergen\",\"severity\":\"UNKNOWN\",\"isActive\":true}")));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.PatientAllergy WHERE patient_id = ?", Integer.class, patientOneId));
+    }
+
+    @Test
+    void twoConcurrentHistoryEditsWithSameVersionAllowOnlyOneWriter() throws Exception {
+        long encounterId = bookEncounterForStart("history-race");
+        String base = "/api/doctor/encounters/" + encounterId + "/histories";
+        String created = mvc.perform(post(base).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"historyType\":\"SURGERY\",\"description\":\"P18 initial\",\"isActive\":true}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var item = json.readTree(created).get("histories").get(0);
+        String body = json.writeValueAsString(java.util.Map.of("historyType", "SURGERY", "description", "P18 concurrent edit", "isActive", true, "version", item.get("version").asText()));
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        java.util.concurrent.Callable<Integer> request = () -> {
+            start.await();
+            return mvc.perform(put(base + "/" + item.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andReturn().getResponse().getStatus();
+        };
+        try {
+            Future<Integer> first = executor.submit(request);
+            Future<Integer> second = executor.submit(request);
+            start.countDown();
+            var results = new java.util.ArrayList<>(java.util.List.of(first.get(20, java.util.concurrent.TimeUnit.SECONDS), second.get(20, java.util.concurrent.TimeUnit.SECONDS)));
+            java.util.Collections.sort(results);
+            assertEquals(java.util.List.of(200, 409), results);
+        } finally { executor.shutdownNow(); }
+    }
+
+    @Test
+    void startsEncounterOnceAndPreservesHistorySnapshotOnRetry() throws Exception {
+        long encounterId = bookEncounterForStart("snapshot");
+        long actorId = accountIdForStaff(doctorOneId);
+        jdbc.update("""
+                INSERT INTO dbo.PatientHistory (patient_id, history_type, description, recorded_by, recorded_at, is_active)
+                VALUES (?, 'PERSONAL', N'Tiền sử giả lập P18', ?, SYSUTCDATETIME(), 1)
+                """, patientOneId, actorId);
+        jdbc.update("""
+                INSERT INTO dbo.PatientAllergy (patient_id, substance, other_note, reaction, severity, recorded_by, is_active)
+                VALUES (?, 'P18 test substance', 'P18 test substance', 'P18 test reaction', 'MILD', ?, 1)
+                """, patientOneId, actorId);
+        jdbc.update("""
+                INSERT INTO dbo.PatientHistory (patient_id, history_type, description, recorded_by, recorded_at, is_active)
+                VALUES (?, 'FAMILY', 'P18 inactive history', ?, SYSUTCDATETIME(), 0)
+                """, patientOneId, actorId);
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.replayed").value(false))
+                .andExpect(jsonPath("$.historyText").value("PERSONAL: Tiền sử giả lập P18"))
+                .andExpect(jsonPath("$.allergyText").value("P18 test substance [MILD]: P18 test reaction"))
+                .andExpect(jsonPath("$.startedAt").isNotEmpty());
+        jdbc.update("UPDATE dbo.PatientHistory SET description = 'P18 changed' WHERE patient_id = ?", patientOneId);
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true))
+                .andExpect(jsonPath("$.historyText").value("PERSONAL: Tiền sử giả lập P18"));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterEvent WHERE encounter_id = ? AND to_status = 'IN_PROGRESS'", Integer.class, encounterId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE action = 'ENCOUNTER_STARTED' AND entity_id = ?", Integer.class, encounterId));
+    }
+
+    @Test
+    void startEncounterRejectsWrongOwnerRoleAndInvalidState() throws Exception {
+        long encounterId = bookEncounterForStart("auth");
+        mvc.perform(startRequest(encounterId).content("{\"presenceConfirmed\":false}")
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        mvc.perform(startRequest(encounterId).content("{}")
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        mvc.perform(startRequest(encounterId)).andExpect(status().isUnauthorized());
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+        jdbc.update("UPDATE dbo.Encounter SET status = 'CANCELLED' WHERE id = ?", encounterId);
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isConflict());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterHistorySnapshot WHERE encounter_id = ?", Integer.class, encounterId));
+    }
+
+    @Test
+    void startEncounterRollsBackSnapshotWhenLaterStepFails() throws Exception {
+        long encounterId = bookEncounterForStart("rollback");
+        doThrow(new IllegalStateException("P18 rollback probe")).when(encounterRepository).start(anyLong(), anyLong());
+        assertThrows(Exception.class, () -> mvc.perform(startRequest(encounterId)
+                .header("Authorization", "Bearer " + doctorToken)));
+        assertEquals("PLANNED", jdbc.queryForObject("SELECT status FROM dbo.Encounter WHERE id = ?", String.class, encounterId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterHistorySnapshot WHERE encounter_id = ?", Integer.class, encounterId));
+    }
+
+    @Test
+    void concurrentStartRequestsCreateOneSnapshotAndOneEvent() throws Exception {
+        long encounterId = bookEncounterForStart("race");
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        java.util.concurrent.Callable<Integer> call = () -> {
+            start.await();
+            return mvc.perform(startRequest(encounterId)
+                    .header("Authorization", "Bearer " + doctorToken)).andReturn().getResponse().getStatus();
+        };
+        try {
+            Future<Integer> first = executor.submit(call);
+            Future<Integer> second = executor.submit(call);
+            start.countDown();
+            assertEquals(200, first.get(20, java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(200, second.get(20, java.util.concurrent.TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+        }
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterHistorySnapshot WHERE encounter_id = ?", Integer.class, encounterId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterEvent WHERE encounter_id = ? AND to_status = 'IN_PROGRESS'", Integer.class, encounterId));
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder startRequest(long encounterId) {
+        return post("/api/doctor/encounters/" + encounterId + "/start")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"presenceConfirmed\":true}");
+    }
+
+    private long bookEncounterForStart(String suffix) throws Exception {
+        String body = mvc.perform(book(patientOneToken, prefix + "-p18-" + suffix, doctorOneId))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return json.readTree(body).get("encounterId").asLong();
+    }
+
+    @Test
+    void doctorTimetableIncludesEmptyShiftsAndProtectsOwnershipAndDateRange() throws Exception {
+        String url = "/api/doctor/appointments/timetable?from=" + workDate + "&to=" + workDate;
+        mvc.perform(get(url).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].assignmentId").value(assignmentOneId))
+                .andExpect(jsonPath("$[0].visitMode").value("ONSITE"))
+                .andExpect(jsonPath("$[0].roomCode").isNotEmpty())
+                .andExpect(jsonPath("$[0].patientName").doesNotExist());
+        mvc.perform(get(url).header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get(url)).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/doctor/appointments/timetable?from=" + workDate + "&to=" + workDate.minusDays(1))
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/doctor/appointments/timetable?from=" + workDate + "&to=" + workDate.plusDays(31))
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/doctor/appointments/timetable/" + assignmentTwoId + "/slots")
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/doctor/appointments/timetable/" + assignmentOneId + "/slots")
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+        jdbc.update("UPDATE dbo.WorkSchedule SET status = 'DRAFT', published_at = NULL, published_by = NULL WHERE department_id = ?", departmentId);
+        mvc.perform(get(url).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void onlineTimetableShowsSlotsAndOnlyAssignedDoctorCanReadBasicPatient() throws Exception {
+        // Roll back the online fixture before the shared cleanup removes its parent assignments.
+        var transaction = new org.springframework.transaction.support.TransactionTemplate(
+                new org.springframework.jdbc.support.JdbcTransactionManager(jdbc.getDataSource()));
+        transaction.executeWithoutResult(tx -> {
+            try {
+                jdbc.update("UPDATE dbo.WorkAssignment SET mode = 'ONLINE', capacity = NULL WHERE id = ?", assignmentOneId);
+                jdbc.update("UPDATE dbo.Room SET room_type = 'ONLINE' WHERE id = (SELECT room_id FROM dbo.WorkAssignment WHERE id = ?)", assignmentOneId);
+                long slotId = jdbc.queryForObject("""
+                        INSERT INTO dbo.OnlineSlot (assignment_id, starts_at, ends_at, is_open)
+                        OUTPUT INSERTED.id SELECT id, starts_at, DATEADD(MINUTE, 20, starts_at), 1
+                        FROM dbo.WorkAssignment WHERE id = ?
+                        """, Long.class, assignmentOneId);
+                long priceId = jdbc.queryForObject("SELECT TOP 1 id FROM dbo.ServicePrice WHERE service_id = ? AND doctor_id = ?", Long.class, serviceId, doctorOneId);
+                jdbc.update("UPDATE dbo.ServicePrice SET visit_mode = 'ONLINE' WHERE id = ?", priceId);
+                jdbc.update("""
+                        INSERT INTO dbo.OnlineSlot (assignment_id, starts_at, ends_at, is_open)
+                        SELECT assignment_id, ends_at, DATEADD(MINUTE, 20, ends_at), 1 FROM dbo.OnlineSlot WHERE id = ?
+                        """, slotId);
+                long holdId = jdbc.queryForObject("""
+                        INSERT INTO dbo.BookingHold (code, patient_id, slot_id, price_id, quoted_amount, status,
+                            expires_at, confirmed_at, idempotency_key)
+                        OUTPUT INSERTED.id VALUES (?, ?, ?, ?, 500000, 'CONFIRMED',
+                            DATEADD(MINUTE, 5, SYSUTCDATETIME()), SYSUTCDATETIME(), ?)
+                        """, Long.class, prefix + "HOLD", patientOneId, slotId, priceId, prefix + "ONLINE");
+                jdbc.update("""
+                        INSERT INTO dbo.Appointment (code, patient_id, doctor_id, department_id, specialty_id,
+                            visit_mode, online_slot_id, hold_id, price_id, examination_amount, status, booked_at)
+                        VALUES (?, ?, ?, ?, ?, 'ONLINE', ?, ?, ?, 500000, 'BOOKED', SYSUTCDATETIME())
+                        """, prefix + "ONLINE", patientOneId, doctorOneId, departmentId, specialtyId, slotId, holdId, priceId);
+                String slotsUrl = "/api/doctor/appointments/timetable/" + assignmentOneId + "/slots";
+                String patientUrl = "/api/doctor/appointments/timetable/slots/" + slotId + "/patient";
+                mvc.perform(get(slotsUrl).header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
+                        .andExpect(jsonPath("$[1].appointmentId").isEmpty())
+                        .andExpect(jsonPath("$[0].patientName").isNotEmpty())
+                        .andExpect(jsonPath("$[0].patientCode").doesNotExist());
+                mvc.perform(get(patientUrl).header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.patientCode").isNotEmpty())
+                        .andExpect(jsonPath("$.identityNumber").doesNotExist());
+                mvc.perform(get(slotsUrl).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+                mvc.perform(get(patientUrl).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+                mvc.perform(get(patientUrl).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+                jdbc.update("UPDATE dbo.Appointment SET status = 'CANCELLED', cancelled_at = SYSUTCDATETIME() WHERE online_slot_id = ?", slotId);
+                mvc.perform(get(slotsUrl).header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$[0].appointmentId").isEmpty());
+                mvc.perform(get(patientUrl).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            } finally {
+                tx.setRollbackOnly();
+            }
+        });
     }
 
     @Test

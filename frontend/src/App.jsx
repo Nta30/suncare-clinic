@@ -15,6 +15,9 @@ const DepartmentScheduleManagement = lazy(() => import('./features/scheduling/De
 const StaffAssignments = lazy(() => import('./features/organization/StaffAssignments'))
 const OnsiteAppointmentSearch = lazy(() => import('./features/appointment/OnsiteAppointmentSearch'))
 const AppointmentSchedule = lazy(() => import('./features/appointment/AppointmentSchedule'))
+const DoctorTimetable = lazy(() => import('./features/appointment/DoctorTimetable'))
+const DoctorEncounters = lazy(() => import('./features/encounter/DoctorEncounters'))
+const AllergenManagement = lazy(() => import('./features/encounter/AllergenManagement'))
 
 const roleLabels = {
   PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
@@ -23,7 +26,8 @@ const roleLabels = {
 
 const plannedLinks = [
   { title: 'Lịch khám được giao', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'], mode: 'doctor-appointments' },
-  { title: 'Khám và kết quả', icon: faClipboard, roles: ['DOCTOR', 'LAB_STAFF'] },
+  { title: 'Khám trực tiếp', icon: faClipboard, roles: ['DOCTOR'], mode: 'doctor-encounters' },
+  { title: 'Khám và kết quả', icon: faClipboard, roles: ['LAB_STAFF'] },
   { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'] },
   { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
 ]
@@ -167,6 +171,8 @@ function App() {
               {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('services')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Dịch vụ & giá CLS</button>}
               {account?.permissions.includes('CATALOG_MANAGE') &&
+                <button onClick={() => setMode('allergens')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Chất gây dị ứng</button>}
+              {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('scheduling-catalog')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Ca & giá khám</button>}
               {account?.permissions.includes('ACCOUNT_MANAGE') &&
                 <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
@@ -178,6 +184,8 @@ function App() {
                 <button onClick={() => setMode('patient-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch hẹn của tôi</button>}
               {account?.roles.includes('DOCTOR') &&
                 <button onClick={() => setMode('doctor-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch được giao</button>}
+              {account?.roles.includes('DOCTOR') &&
+                <button onClick={() => setMode('doctor-encounters')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Khám trực tiếp</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -187,7 +195,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
@@ -239,7 +247,7 @@ function App() {
             </section>
           </div>
         </>}
-        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule', 'onsite-search', 'patient-appointments', 'doctor-appointments'].includes(mode) && <>
+        {authState === 'signedIn' && mode === 'home' && <>
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -275,6 +283,8 @@ function App() {
           </Suspense>}
         {authState === 'signedIn' && mode === 'services' && account?.permissions.includes('CATALOG_MANAGE') &&
           <ClinicalServiceManagement onSessionExpired={handleSessionExpired} />}
+        {authState === 'signedIn' && mode === 'allergens' && account?.permissions.includes('CATALOG_MANAGE') &&
+          <Suspense fallback={<p role='status'>Đang tải danh mục...</p>}><AllergenManagement onSessionExpired={handleSessionExpired} /></Suspense>}
         {authState === 'signedIn' && mode === 'scheduling-catalog' && account?.permissions.includes('CATALOG_MANAGE') &&
           <SchedulingCatalogManagement onSessionExpired={handleSessionExpired} />}
         {authState === 'signedIn' && mode === 'department-schedule' && account?.permissions.includes('SCHEDULE_PUBLISH_DEPARTMENT') &&
@@ -291,7 +301,11 @@ function App() {
           </Suspense>}
         {authState === 'signedIn' && mode === 'doctor-appointments' && account?.roles.includes('DOCTOR') &&
           <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải lịch được giao...</p>}>
-            <AppointmentSchedule account={account} onSessionExpired={handleSessionExpired} />
+            <DoctorTimetable key={account.accountId} account={account} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'doctor-encounters' && account?.roles.includes('DOCTOR') &&
+          <Suspense fallback={<p role='status' className='p-6'>Đang tải màn khám...</p>}>
+            <DoctorEncounters key={account.accountId} onSessionExpired={handleSessionExpired} />
           </Suspense>}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"

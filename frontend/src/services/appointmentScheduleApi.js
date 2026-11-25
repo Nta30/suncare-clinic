@@ -46,3 +46,15 @@ export function getPatientAppointment(token, appointmentId) {
 export function getDoctorAppointment(token, appointmentId) {
   return requestAppointments(`/api/doctor/appointments/${appointmentId}`, token)
 }
+
+export function getDoctorTimetable(token, from, to) {
+  return appointmentList(`/api/doctor/appointments/timetable?${new URLSearchParams({ from, to })}`, token)
+}
+
+export function getDoctorShiftSlots(token, assignmentId) {
+  return appointmentList(`/api/doctor/appointments/timetable/${assignmentId}/slots`, token)
+}
+
+export function getDoctorSlotPatient(token, slotId) {
+  return requestAppointments(`/api/doctor/appointments/timetable/slots/${slotId}/patient`, token)
+}

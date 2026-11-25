@@ -1,0 +1,34 @@
+{
+  "version": "2026-11-25",
+  "codeSystem": "Suncare local codes; not SNOMED CT or ICD",
+  "note": "Starter catalog, not exhaustive. Group entries are explicitly labelled. No automatic cross-allergy inference or patient diagnosis.",
+  "sources": {
+    "FDA": "https://www.fda.gov/food/food-allergies/faster-act-sesame-ninth-major-food-allergen",
+    "NHS": "https://www.nhs.uk/conditions/allergies/",
+    "ACAAI": "https://acaai.org/allergies/symptoms/anaphylaxis/",
+    "CDC": "https://www.cdc.gov/antibiotic-use/hcp/clinical-signs/index.html"
+  },
+  "items": [
+    { "code": "ALG_FOOD_MILK", "name": "Sữa (nhóm thực phẩm)", "source": "FDA" },
+    { "code": "ALG_FOOD_EGG", "name": "Trứng (nhóm thực phẩm)", "source": "FDA" },
+    { "code": "ALG_FOOD_FISH", "name": "Cá (nhóm thực phẩm)", "source": "FDA" },
+    { "code": "ALG_FOOD_CRUSTACEAN", "name": "Giáp xác: tôm, cua, tôm hùm (nhóm)", "source": "FDA" },
+    { "code": "ALG_FOOD_TREE_NUT", "name": "Hạt cây: hạnh nhân, óc chó, hồ đào (nhóm)", "source": "FDA" },
+    { "code": "ALG_FOOD_PEANUT", "name": "Đậu phộng (lạc)", "source": "FDA" },
+    { "code": "ALG_FOOD_WHEAT", "name": "Lúa mì", "source": "FDA" },
+    { "code": "ALG_FOOD_SOY", "name": "Đậu nành (đậu tương)", "source": "FDA" },
+    { "code": "ALG_FOOD_SESAME", "name": "Mè (vừng)", "source": "FDA" },
+    { "code": "ALG_ENV_TREE_POLLEN", "name": "Phấn hoa cây thân gỗ (nhóm)", "source": "NHS" },
+    { "code": "ALG_ENV_GRASS_POLLEN", "name": "Phấn hoa cỏ (nhóm)", "source": "NHS" },
+    { "code": "ALG_ENV_DUST_MITE", "name": "Mạt bụi nhà (nhóm)", "source": "NHS" },
+    { "code": "ALG_ANIMAL_CAT", "name": "Dị nguyên từ mèo", "source": "NHS" },
+    { "code": "ALG_ANIMAL_DOG", "name": "Dị nguyên từ chó", "source": "NHS" },
+    { "code": "ALG_VENOM_BEE", "name": "Nọc ong mật (nhóm)", "source": "ACAAI" },
+    { "code": "ALG_VENOM_WASP", "name": "Nọc ong bắp cày (nhóm)", "source": "ACAAI" },
+    { "code": "ALG_DRUG_PENICILLIN_GROUP", "name": "Kháng sinh nhóm penicillin (chưa rõ hoạt chất)", "source": "CDC" },
+    { "code": "ALG_DRUG_AMOXICILLIN", "name": "Amoxicillin", "source": "CDC" },
+    { "code": "ALG_DRUG_ASPIRIN", "name": "Aspirin (acid acetylsalicylic)", "source": "ACAAI" },
+    { "code": "ALG_DRUG_IBUPROFEN", "name": "Ibuprofen", "source": "ACAAI" },
+    { "code": "ALG_MATERIAL_LATEX", "name": "Latex cao su tự nhiên", "source": "ACAAI" }
+  ]
+}

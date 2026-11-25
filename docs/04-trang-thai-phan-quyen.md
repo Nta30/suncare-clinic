@@ -55,6 +55,7 @@ Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff c
 | Xử lý hoàn tiền | Xem tiến độ của mình | — | — | — | Mặc định v1, cần xác nhận vận hành | Audit |
 | Phân lịch/công bố | — | Xem của mình | Xem của mình | Trong khoa được giao | — | Quản trị danh mục, không tự có quyền trưởng khoa |
 | Giá/danh mục/role | — | — | — | — | — | Có |
+| Danh mục chất gây dị ứng | — | Chọn chất có sẵn hoặc ghi chú chất khác trong lượt khám phụ trách | — | Theo quyền DOCTOR của lượt khám phụ trách | — | CATALOG_MANAGE tạo/sửa/ngừng áp dụng mã và tên; không tự có quyền sửa dị ứng bệnh nhân |
 | CSV | — | Lượt khám mình | — | Lịch/lượt khám/CLS/workload khoa | Hóa đơn/thu/hoàn | Thống kê toàn cơ sở |
 
 Permission gợi ý: `APPOINTMENT_CREATE_SELF`, `APPOINTMENT_CANCEL_SELF`, `ENCOUNTER_WRITE_ASSIGNED`, `RESULT_WRITE_ASSIGNED`, `INVOICE_ISSUE_ASSIGNED`, `CASH_RECEIVE`, `REFUND_PROCESS`, `SCHEDULE_PUBLISH_DEPARTMENT`, `REPORT_EXPORT_SELF`, `REPORT_EXPORT_DEPARTMENT`, `REPORT_EXPORT_BILLING`, `REPORT_EXPORT_ALL`, `ACCOUNT_MANAGE`, `CATALOG_MANAGE`.

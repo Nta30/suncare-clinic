@@ -11,9 +11,7 @@ import java.sql.ResultSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
-)
+@SpringBootTest
 class SqlServerConnectivityIT {
 
     @Autowired
@@ -28,7 +26,7 @@ class SqlServerConnectivityIT {
                 (SELECT COUNT(*)
                  FROM sys.tables
                  WHERE is_ms_shipped = 0
-                 AND name <> 'flyway_schema_history') AS table_count
+                 AND name NOT IN ('flyway_schema_history', 'sysdiagrams')) AS table_count
             """;
 
         try (
@@ -64,7 +62,7 @@ class SqlServerConnectivityIT {
             );
 
             assertEquals(
-                    59,
+                    60,
                     tableCount
             );
         }

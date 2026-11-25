@@ -87,6 +87,7 @@ WorkAssignment → Appointment chỉ dùng cho trực tiếp. Mỗi Appointment 
 erDiagram
     Patient ||--o{ PatientHistory : history
     Patient ||--o{ PatientAllergy : allergies
+    Allergen o|--o{ PatientAllergy : controlled_substance
     Appointment ||--o| PrevisitResponse : questionnaire
     Encounter ||--o| EncounterHistorySnapshot : captures
     Encounter ||--o{ VitalSign : measurements
