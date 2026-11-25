@@ -14,6 +14,7 @@ import { clearToken, getCurrentAccount, getToken, login, logout, registerPatient
 const DepartmentScheduleManagement = lazy(() => import('./features/scheduling/DepartmentScheduleManagement'))
 const StaffAssignments = lazy(() => import('./features/organization/StaffAssignments'))
 const OnsiteAppointmentSearch = lazy(() => import('./features/appointment/OnsiteAppointmentSearch'))
+const AppointmentSchedule = lazy(() => import('./features/appointment/AppointmentSchedule'))
 
 const roleLabels = {
   PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
@@ -21,7 +22,7 @@ const roleLabels = {
 }
 
 const plannedLinks = [
-  { title: 'Lịch khám', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'] },
+  { title: 'Lịch khám được giao', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'], mode: 'doctor-appointments' },
   { title: 'Khám và kết quả', icon: faClipboard, roles: ['DOCTOR', 'LAB_STAFF'] },
   { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'] },
   { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
@@ -173,6 +174,10 @@ function App() {
                 <button onClick={() => setMode('department-schedule')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch khoa</button>}
               {account?.roles.includes('PATIENT') &&
                 <button onClick={() => setMode('onsite-search')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Tìm lịch khám</button>}
+              {account?.roles.includes('PATIENT') &&
+                <button onClick={() => setMode('patient-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch hẹn của tôi</button>}
+              {account?.roles.includes('DOCTOR') &&
+                <button onClick={() => setMode('doctor-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch được giao</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -182,7 +187,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
@@ -234,7 +239,7 @@ function App() {
             </section>
           </div>
         </>}
-        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule', 'onsite-search'].includes(mode) && <>
+        {authState === 'signedIn' && !['account', 'staff', 'organization', 'rooms', 'assignments', 'services', 'scheduling-catalog', 'department-schedule', 'onsite-search', 'patient-appointments', 'doctor-appointments'].includes(mode) && <>
           <section className="rounded-2xl border border-suncare-200 bg-suncare-100 p-7 text-clinical-ink sm:p-10">
             <p className="text-sm font-semibold text-suncare-700">Suncare Clinic</p>
             <h1 className="mt-3 text-3xl font-bold sm:text-4xl">{account ? `Xin chào, ${account.loginName}` : 'Chào mừng đến Suncare Clinic'}</h1>
@@ -250,7 +255,9 @@ function App() {
             <article className="rounded-2xl border border-clinical-border bg-white p-6">
               <h2 className="text-lg font-bold">Điều hướng theo vai trò</h2>
               {availableLinks.length === 0 ? <p className="mt-3 text-sm text-clinical-muted">Chưa có mục phù hợp với vai trò hiện tại.</p> :
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">{availableLinks.map((link) => <div key={link.title} className="rounded-xl bg-clinical-canvas p-4 text-sm"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Sẽ triển khai ở bước sau</p></div>)}</div>}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">{availableLinks.map((link) => link.mode
+                  ? <button key={link.title} type="button" onClick={() => setMode(link.mode)} className="rounded-xl bg-clinical-canvas p-4 text-left text-sm hover:bg-suncare-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-suncare-700"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Mở danh sách lịch khám được phân cho bạn</p></button>
+                  : <div key={link.title} className="rounded-xl bg-clinical-canvas p-4 text-sm"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Sẽ triển khai ở bước sau</p></div>)}</div>}
             </article>
           </section>}
         </>}
@@ -277,6 +284,14 @@ function App() {
         {authState === 'signedIn' && mode === 'onsite-search' && account?.roles.includes('PATIENT') &&
           <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải tìm lịch...</p>}>
             <OnsiteAppointmentSearch onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'patient-appointments' && account?.roles.includes('PATIENT') &&
+          <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải lịch hẹn...</p>}>
+            <AppointmentSchedule account={account} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'doctor-appointments' && account?.roles.includes('DOCTOR') &&
+          <Suspense fallback={<p role='status' className='rounded-xl border border-clinical-border bg-white p-6'>Đang tải lịch được giao...</p>}>
+            <AppointmentSchedule account={account} onSessionExpired={handleSessionExpired} />
           </Suspense>}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"

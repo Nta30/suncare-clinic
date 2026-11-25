@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/services", "/api/admin/services/**").hasAuthority("CATALOG_MANAGE")
                         .requestMatchers("/api/admin/scheduling", "/api/admin/scheduling/**").hasAuthority("CATALOG_MANAGE")
                         .requestMatchers("/api/appointments/onsite/**").hasRole("PATIENT")
+                        .requestMatchers(HttpMethod.GET, "/api/patient/appointments", "/api/patient/appointments/**").hasRole("PATIENT")
+                        .requestMatchers(HttpMethod.GET, "/api/doctor/appointments", "/api/doctor/appointments/**").hasRole("DOCTOR")
                         .requestMatchers("/api/head/schedules", "/api/head/schedules/**").hasAuthority("SCHEDULE_PUBLISH_DEPARTMENT")
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

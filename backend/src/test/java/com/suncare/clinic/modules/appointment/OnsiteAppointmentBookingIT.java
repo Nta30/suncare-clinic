@@ -42,6 +42,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,6 +82,7 @@ class OnsiteAppointmentBookingIT {
     private String patientOneToken;
     private String patientTwoToken;
     private String doctorToken;
+    private String doctorTwoToken;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -148,6 +151,7 @@ class OnsiteAppointmentBookingIT {
         patientOneToken = login("p16.patient.one." + prefix.toLowerCase());
         patientTwoToken = login("p16.patient.two." + prefix.toLowerCase());
         doctorToken = login("p16.doctor.a." + prefix.toLowerCase());
+        doctorTwoToken = login("p16.doctor.b." + prefix.toLowerCase());
     }
 
     @AfterEach
@@ -175,6 +179,12 @@ class OnsiteAppointmentBookingIT {
                     SELECT encounter.id FROM dbo.Encounter encounter
                     JOIN dbo.[Appointment] appointment ON appointment.id = encounter.appointment_id
                     WHERE appointment.patient_id IN (?, ?)
+                )
+                """, patientOneId, patientTwoId);
+        jdbc.update("""
+                DELETE FROM dbo.PrevisitResponse
+                WHERE appointment_id IN (
+                    SELECT id FROM dbo.[Appointment] WHERE patient_id IN (?, ?)
                 )
                 """, patientOneId, patientTwoId);
         jdbc.update("""
@@ -242,6 +252,79 @@ class OnsiteAppointmentBookingIT {
                 SELECT COUNT(*) FROM dbo.AuditEvent
                 WHERE action = 'ONSITE_APPOINTMENT_BOOKED' AND entity_id = ?
                 """, Integer.class, created.get("appointmentId").asLong()));
+    }
+
+    @Test
+    void patientAndDoctorSchedulesOnlyExposeAppointmentsWithinTheirOwnScope() throws Exception {
+        String symptoms = "Ho khan và đau họng.";
+        String patientOneBooking = mvc.perform(bookWithSymptoms(patientOneToken, prefix + "-list-one", doctorOneId, symptoms))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String patientTwoBooking = mvc.perform(book(patientTwoToken, prefix + "-list-two", doctorTwoId))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        long patientOneAppointmentId = json.readTree(patientOneBooking).get("appointmentId").asLong();
+        long patientTwoAppointmentId = json.readTree(patientTwoBooking).get("appointmentId").asLong();
+
+        var patientOneAppointments = json.readTree(mvc.perform(get("/api/patient/appointments")
+                        .header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var patientTwoAppointments = json.readTree(mvc.perform(get("/api/patient/appointments")
+                        .header("Authorization", "Bearer " + patientTwoToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var doctorOneAppointments = json.readTree(mvc.perform(get("/api/doctor/appointments")
+                        .header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var doctorTwoAppointments = json.readTree(mvc.perform(get("/api/doctor/appointments")
+                        .header("Authorization", "Bearer " + doctorTwoToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+        assertEquals(1, patientOneAppointments.size());
+        assertEquals(patientOneAppointmentId, patientOneAppointments.get(0).get("appointmentId").asLong());
+        assertTrue(patientOneAppointments.get(0).has("specialtyName"));
+        assertFalse(patientOneAppointments.get(0).has("symptoms"));
+        assertFalse(patientOneAppointments.get(0).has("examinationAmount"));
+        assertEquals(1, patientTwoAppointments.size());
+        assertEquals(patientTwoAppointmentId, patientTwoAppointments.get(0).get("appointmentId").asLong());
+        assertTrue(patientOneAppointments.get(0).get("startsAt").asText().endsWith("+07:00"));
+
+        assertEquals(1, doctorOneAppointments.size());
+        assertEquals(patientOneAppointmentId, doctorOneAppointments.get(0).get("appointmentId").asLong());
+        assertEquals("P16 Patient One", doctorOneAppointments.get(0).get("patientName").asText());
+        assertEquals(1, doctorTwoAppointments.size());
+        assertEquals(patientTwoAppointmentId, doctorTwoAppointments.get(0).get("appointmentId").asLong());
+        assertEquals("P16 Patient Two", doctorTwoAppointments.get(0).get("patientName").asText());
+
+        var patientOneDetail = json.readTree(mvc.perform(get("/api/patient/appointments/" + patientOneAppointmentId)
+                        .header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals("P16 Patient One", patientOneDetail.get("patientName").asText());
+        assertEquals("P16 Doctor A", patientOneDetail.get("doctorName").asText());
+        assertEquals(symptoms, patientOneDetail.get("symptoms").asText());
+        assertEquals("500000", patientOneDetail.get("examinationAmount").asText());
+        assertEquals("BOOKED", patientOneDetail.get("appointmentStatus").asText());
+
+        var doctorOneDetail = json.readTree(mvc.perform(get("/api/doctor/appointments/" + patientOneAppointmentId)
+                        .header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals("P16 Patient One", doctorOneDetail.get("patientName").asText());
+        assertEquals(symptoms, doctorOneDetail.get("symptoms").asText());
+
+        mvc.perform(get("/api/patient/appointments/" + patientTwoAppointmentId)
+                        .header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/doctor/appointments/" + patientOneAppointmentId)
+                        .header("Authorization", "Bearer " + doctorTwoToken))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(get("/api/doctor/appointments").header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/patient/appointments").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/patient/appointments/" + patientOneAppointmentId)
+                        .header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/patient/appointments/" + patientOneAppointmentId)
+                        .header("Authorization", "Bearer " + patientOneToken))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -342,6 +425,17 @@ class OnsiteAppointmentBookingIT {
                 .header("Idempotency-Key", key)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(new OnsiteAppointmentBookingRequest(specialtyId, date, shiftId, doctorId)));
+        if (token != null) request.header("Authorization", "Bearer " + token);
+        return request;
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder bookWithSymptoms(
+            String token, String key, Long doctorId, String symptoms) throws Exception {
+        var request = post("/api/appointments/onsite/bookings")
+                .header("Idempotency-Key", key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new OnsiteAppointmentBookingRequest(
+                        specialtyId, workDate, shiftId, doctorId, symptoms)));
         if (token != null) request.header("Authorization", "Bearer " + token);
         return request;
     }

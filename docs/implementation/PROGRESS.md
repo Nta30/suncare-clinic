@@ -2,8 +2,16 @@
 
 Cập nhật: 2026-11-07
 
-Việc hiện tại: P15.c — kiểm tra khoảng ngày và luồng P15/P16 trên browser
-Trạng thái: IN_PROGRESS (lọc khoảng ngày trên DB thử đạt; browser host không khả dụng)
+Việc hiện tại: P17 — xem lịch hẹn của bệnh nhân và lịch được giao cho bác sĩ
+Trạng thái: IN_PROGRESS (API/UI danh sách và chi tiết đã có; kiểm thử DB thử 7/7, lint/build đạt; browser host không khả dụng)
+
+### P17 — danh sách lịch hẹn theo quyền sở hữu (2026-11-07)
+
+- Thêm `GET /api/patient/appointments` cho PATIENT và `GET /api/doctor/appointments` cho DOCTOR để lấy danh sách thông tin cơ bản; thêm `GET /api/patient/appointments/{appointmentId}` và `GET /api/doctor/appointments/{appointmentId}` để tải riêng chi tiết. Các truy vấn lấy hồ sơ từ principal đăng nhập, không nhận ID Patient/Staff từ client; chỉ trả lịch có `patient_id` hoặc `doctor_id` đúng với tài khoản đang đăng nhập. Chi tiết của lịch ngoài phạm vi trả 404. Hỗ trợ ONSITE/ONLINE từ Assignment/OnlineSlot và thời gian `Asia/Saigon`.
+- Điều hướng và màn hình riêng theo vai trò. Danh sách chỉ có mã, trạng thái, hình thức, chuyên khoa, ngày/giờ và tên người liên quan; bấm lịch mới tải chi tiết gồm bệnh nhân, bác sĩ, khoa/chuyên khoa, giờ, phòng, triệu chứng, trạng thái lượt khám và phí khám đã chốt. API đặt lịch hiện không trả phương thức hoặc trạng thái thanh toán nên màn hình không tự suy ra thông tin đó. Có trạng thái tải, rỗng, lỗi, thử lại và hết phiên; không có thao tác sửa/hủy.
+- Kiểm tra tại `backend/`: `$env:JAVA_TOOL_OPTIONS='-Djava.library.path=D:\TaiLieu\Nam4Ky1\Project_1\jdbc-auth\13.4.0'; .\mvnw.cmd '-Dtest=OnsiteAppointmentBookingIT' test -q` PASS 7/7 trên `SuncareClinicMigrationTest` schema V16. Bao gồm danh sách không trả triệu chứng/phí, chi tiết đúng chủ sở hữu/phân công, 404 khi truy cập lịch ngoài phạm vi, từ chối sai vai trò và DELETE, thời gian +07:00. Không ghi DB chính.
+- Kiểm tra tại `frontend/`: `npm run lint`, `npm run build` và `git diff --check` PASS. CUA inventory báo `The browser access host is unavailable` và `Computer Use native pipe is unavailable`; chưa xác minh trực quan/responsive ở 320/375/768/1280 px hoặc trạng thái màn hình bằng browser. P17 vẫn `IN_PROGRESS`.
+- Việc tiếp theo duy nhất: kiểm tra hai vai trò và responsive 320/375/768/1280 px trên browser với backend/DB thử; sau đó cập nhật kết quả và chốt P17 nếu đạt.
 
 ### P15 — tra cứu lịch khám trực tiếp (2026-11-07)
 
@@ -325,7 +333,7 @@ Chi tiết và điều kiện nghiệm thu của từng mã nằm trong `AGENTS.
 | P14 | IN_PROGRESS | V15/V16, publish transaction, phân công nhiều ô, lọc bác sĩ/phòng theo xung đột và sinh slot ONLINE 20 phút. `WorkScheduleIT` 2/2, `WorkSchedulePublishIT` 5/5, `RoomManagementIT` 2/2 PASS trên DB thử V16 sau cập nhật `workSlots`; lint/build/diff-check PASS, fixture đã dọn. Còn browser kiểm tra luồng chọn ca/publish/phòng ONLINE. Không ghi DB chính. |
 | P15 | IN_PROGRESS | API/UI tìm lịch theo bác sĩ/ca, khoảng ngày với preset, thẻ bác sĩ mở lịch theo ngày và ca sáng/chiều. `OnsiteAppointmentSearchIT` 4/4 PASS trên DB thử V16, gồm biên ngày, qua Chủ Nhật, khoảng ngược/ngày quá khứ. Còn browser/date picker/responsive. |
 | P16 | IN_PROGRESS | API P16.a và UI P16.b đã có; `OnsiteAppointmentBookingIT` 6/6 PASS trên DB thử V16, lint/build/diff-check PASS. Còn browser toàn luồng tìm/đặt và responsive; chưa gửi booking lên DB chính. |
-| P17 | TODO | Theo lộ trình trong AGENTS.md. |
+| P17 | IN_PROGRESS | API danh sách cơ bản + API chi tiết riêng theo chủ sở hữu/bác sĩ được phân công; `OnsiteAppointmentBookingIT` 7/7 PASS trên DB thử V16, gồm không lộ triệu chứng/phí ở danh sách và 404 khi truy cập chéo; frontend lint/build PASS. Còn browser/responsive 320/375/768/1280 px. |
 | P18 | TODO | Theo lộ trình trong AGENTS.md. |
 | P19 | TODO | Theo lộ trình trong AGENTS.md. |
 | P20 | TODO | Theo lộ trình trong AGENTS.md. |
