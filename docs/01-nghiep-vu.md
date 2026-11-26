@@ -71,3 +71,11 @@ Không chặn thiết kế quan hệ; chưa tự đưa các chính sách này v�
 - Ai thực hiện chi tiền hoàn thủ công, ai duyệt và hoàn qua kênh nào: bản v1 gán CASHIER xử lý, lưu ADMIN audit; cần xác nhận vận hành trước bật chức năng chi tiền.
 - Nhà cung cấp video, thông tin merchant MoMo, thời hạn giữ QR hóa đơn thông thường, lưu trữ tệp và thời gian lưu dữ liệu: cấu hình khi triển khai. Không suy đoán giao thức/field chính thức của MoMo trong bản thiết kế.
 - Kết quả đính chính sau khi Encounter đã hoàn tất: giữ Encounter đã hoàn tất, tạo review mới cho bác sĩ; cần xác nhận kênh thông báo và xử lý lâm sàng trước bật quy trình đính chính.
+
+## Bổ sung ngày 2026-11-25 — tiền sử, lịch sử khám và mã chẩn đoán
+
+- Tiền sử bệnh là thông tin nền: bệnh bản thân, gia đình, phẫu thuật; độc lập với danh sách những lần khám trước. Không tự biến mọi chẩn đoán cũ thành bệnh nền hiện tại.
+- Bác sĩ có Encounter phụ trách được đọc các Encounter COMPLETED khác của cùng Patient, kể cả do bác sĩ khác khám. Chỉ đọc ghi chú, sinh hiệu, chẩn đoán, snapshot tại lần khám, đơn ISSUED và phiên bản kết quả PUBLISHED mới nhất của từng chỉ định; không trả draft hay tệp qua API này. Không mở quyền sửa lượt khám của bác sĩ khác. Danh sách phân trang 10 dòng, hoàn tất mới nhất trước. Đây là P41 một phần, chưa phải EMR bệnh nhân đầy đủ.
+- Chẩn đoán mới chọn DiagnosisConcept trong danh mục ICD-10 Việt Nam theo phụ lục Thông tư 06/2026/TT-BYT, phiên bản có hiệu lực 2026-07-01. FINAL bắt buộc mã hợp lệ; PRELIMINARY được ghi nhận mô tả chưa có mã. Không cho tự nhập code/system/version. Server chốt mã, hệ mã, phiên bản và tên chính thức cùng mô tả lâm sàng riêng.
+- Chặn mã ngừng dùng, mã có mã cụ thể hơn hoặc chỉ dùng nguyên nhân tử vong; mã cấm làm bệnh chính không được đánh dấu chính. Danh mục không thay bác sĩ lựa chọn chẩn đoán hay kiểm tra toàn bộ quy tắc chuyên môn. Mã cũ chưa rõ phiên bản giữ nguyên, không tự ánh xạ.
+- Nguồn: [Cổng thông tin Chính phủ — Thông tư 06/2026/TT-BYT](https://chinhphu.vn/?classid=1&docid=217536&pageid=27160&typegroupid=6), phụ lục chính thức. Bộ dữ liệu lưu URL, SHA-256 và trang nguồn; không thu thập hàng loạt API trang tra cứu.

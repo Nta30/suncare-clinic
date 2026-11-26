@@ -49,7 +49,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = {"suncare.billing.facility-name=P20 Test Clinic", "suncare.billing.facility-address=P20 fictional address"})
 @ActiveProfiles("migrationtest")
 class OnsiteAppointmentBookingIT {
     private static final String PASSWORD = "p16-test-password-123";
@@ -63,6 +63,8 @@ class OnsiteAppointmentBookingIT {
     @MockitoSpyBean private OnsiteAppointmentBookingRepository bookingRepository;
     @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.EncounterRepository encounterRepository;
     @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.EncounterHistoryRepository historyRepository;
+    @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.EncounterClinicalRepository clinicalRepository;
+    @MockitoSpyBean private com.suncare.clinic.modules.billing.repository.InvoiceRepository invoiceRepository;
 
     private MockMvc mvc;
     private String prefix;
@@ -82,6 +84,7 @@ class OnsiteAppointmentBookingIT {
     private long assignmentOneId;
     private long assignmentTwoId;
     private long serviceId;
+    private long diagnosisConceptId;
     private String patientOneToken;
     private String patientTwoToken;
     private String doctorToken;
@@ -92,8 +95,10 @@ class OnsiteAppointmentBookingIT {
         reset(bookingRepository);
         reset(encounterRepository);
         reset(historyRepository);
+        reset(clinicalRepository);
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         prefix = "P16" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+        diagnosisConceptId = jdbc.queryForObject("INSERT INTO dbo.DiagnosisConcept (code_system,code_version,code,name,is_active,is_selectable,primary_allowed) OUTPUT INSERTED.id VALUES ('TEST','test',?,N'Test diagnosis',1,1,1)", Long.class, prefix);
 
         departmentId = jdbc.queryForObject("""
                 INSERT INTO dbo.Department (code, name, department_type, is_active)
@@ -164,7 +169,20 @@ class OnsiteAppointmentBookingIT {
         reset(bookingRepository);
         reset(encounterRepository);
         reset(historyRepository);
+        reset(clinicalRepository);
+        reset(invoiceRepository);
         if (prefix == null) return;
+
+        jdbc.update("DELETE FROM dbo.CommandReceipt WHERE command_type IN ('ONSITE_EXAM_INVOICE_CREATE','ONSITE_EXAM_INVOICE_ISSUE') AND account_id IN (?,?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type='Invoice' AND actor_id IN (?,?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.InvoiceLine WHERE invoice_id IN (SELECT id FROM dbo.Invoice WHERE encounter_id IN (SELECT e.id FROM dbo.Encounter e JOIN dbo.Appointment a ON a.id=e.appointment_id WHERE a.patient_id IN (?,?)))", patientOneId,patientTwoId);
+        jdbc.update("DELETE FROM dbo.Invoice WHERE encounter_id IN (SELECT e.id FROM dbo.Encounter e JOIN dbo.Appointment a ON a.id=e.appointment_id WHERE a.patient_id IN (?,?))", patientOneId,patientTwoId);
+
+        jdbc.update("DELETE FROM dbo.CommandReceipt WHERE command_type IN ('ENCOUNTER_VITAL_SIGN','ENCOUNTER_DIAGNOSIS_CREATE') AND account_id IN (?, ?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE action IN ('ENCOUNTER_NOTES_UPDATED','VITAL_SIGN_RECORDED','DIAGNOSIS_CREATED','DIAGNOSIS_UPDATED') AND actor_id IN (?, ?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.VitalSign WHERE encounter_id IN (SELECT e.id FROM dbo.Encounter e JOIN dbo.Appointment a ON a.id=e.appointment_id WHERE a.patient_id IN (?, ?))", patientOneId, patientTwoId);
+        jdbc.update("DELETE FROM dbo.Diagnosis WHERE encounter_id IN (SELECT e.id FROM dbo.Encounter e JOIN dbo.Appointment a ON a.id=e.appointment_id WHERE a.patient_id IN (?, ?))", patientOneId, patientTwoId);
+        jdbc.update("DELETE FROM dbo.DiagnosisConcept WHERE id=?", diagnosisConceptId);
 
         jdbc.update("DELETE FROM dbo.AuditEvent WHERE (action = 'ENCOUNTER_STARTED' OR action LIKE 'PATIENT_HISTORY_%' OR action LIKE 'PATIENT_ALLERGY_%') AND actor_id IN (?, ?)",
                 accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
@@ -232,6 +250,410 @@ class OnsiteAppointmentBookingIT {
         jdbc.update("DELETE FROM dbo.Specialty WHERE id = ?", specialtyId);
         jdbc.update("DELETE FROM dbo.Patient WHERE id IN (?, ?)", patientOneId, patientTwoId);
         if (createdShift) jdbc.update("DELETE FROM dbo.ShiftDefinition WHERE id = ?", shiftId);
+    }
+
+    @Test
+    void recordsClinicalVitalsNotesAndDiagnosisWithRetryAndVersionProtection() throws Exception {
+        long encounterId = startedEncounter("p19-basic");
+        String path = "/api/doctor/encounters/" + encounterId + "/clinical";
+        String vital = "{\"measuredAt\":\"2026-11-25T10:05:00+07:00\",\"temperatureC\":36.75,\"pulseBpm\":75,\"spo2Percent\":98.5}";
+        String clinicalBody = mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "VITAL").contentType(MediaType.APPLICATION_JSON).content(vital))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.vitals.length()").value(1))
+                .andExpect(jsonPath("$.vitals[0].measuredAt").value("2026-11-25T03:05:00Z"))
+                .andExpect(jsonPath("$.replayed").value(false)).andReturn().getResponse().getContentAsString();
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "VITAL").contentType(MediaType.APPLICATION_JSON).content(vital))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true)).andExpect(jsonPath("$.vitals.length()").value(1));
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "VITAL").contentType(MediaType.APPLICATION_JSON).content(vital.replace("36.75", "37.5")))
+                .andExpect(status().isConflict());
+        String version = json.readTree(clinicalBody).get("notes").get("version").asText();
+        String notes = json.writeValueAsString(java.util.Map.of("chiefComplaint", " P19 test complaint ", "examinationNote", "P19 test note", "version", version));
+        mvc.perform(put(path + "/notes").header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON).content(notes))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.notes.chiefComplaint").value("P19 test complaint"));
+        mvc.perform(put(path + "/notes").header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON).content(notes))
+                .andExpect(status().isConflict());
+        String preliminary = "{\"description\":\"P19 test diagnosis\",\"diagnosisType\":\"PRELIMINARY\",\"isPrimary\":true}";
+        String diagnosisBody = mvc.perform(post(path + "/diagnoses").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "DIAG").contentType(MediaType.APPLICATION_JSON).content(preliminary))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        mvc.perform(post(path + "/diagnoses").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "DIAG").contentType(MediaType.APPLICATION_JSON).content(preliminary))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.diagnoses.length()").value(1)).andExpect(jsonPath("$.replayed").value(true));
+        var diagnosis = json.readTree(diagnosisBody).get("diagnoses").get(0);
+        String finalBody = json.writeValueAsString(java.util.Map.of("diagnosisConceptId", diagnosisConceptId, "description", "P19 final diagnosis", "diagnosisType", "FINAL", "isPrimary", true, "version", diagnosis.get("version").asText()));
+        mvc.perform(put(path + "/diagnoses/" + diagnosis.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(finalBody)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.diagnoses[0].diagnosisType").value("FINAL"));
+        mvc.perform(put(path + "/diagnoses/" + diagnosis.get("id").asLong()).header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(finalBody)).andExpect(status().isConflict());
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM dbo.Encounter WHERE id=?", String.class, encounterId));
+    }
+
+    @Test
+    void clinicalEndpointsValidateInputStateAndDoctorOwnership() throws Exception {
+        long encounterId = bookEncounterForStart("p19-guard");
+        String path = "/api/doctor/encounters/" + encounterId + "/clinical";
+        String vital = "{\"measuredAt\":\"2026-11-25T10:05:00+07:00\",\"pulseBpm\":75}";
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.editable").value(false));
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "GUARD")
+                .contentType(MediaType.APPLICATION_JSON).content(vital)).andExpect(status().isConflict());
+        mvc.perform(startRequest(encounterId).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk());
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(get(path).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorTwoToken).header("Idempotency-Key", prefix + "OTHER")
+                .contentType(MediaType.APPLICATION_JSON).content(vital)).andExpect(status().isNotFound());
+        for (String body : java.util.List.of("{}", "{\"measuredAt\":\"2026-11-25T10:05:00Z\"}",
+                "{\"measuredAt\":\"2026-11-25T10:05:00Z\",\"spo2Percent\":101}",
+                "{\"measuredAt\":\"2026-11-25T10:05:00Z\",\"temperatureC\":36.555}",
+                "{\"measuredAt\":\"2026-11-25T10:05:00Z\",\"pulseBpm\":75.5}",
+                "{\"measuredAt\":\"2026-11-25T10:05:00Z\",\"pulseBpm\":0}")) {
+            mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "BAD")
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken)
+                .contentType(MediaType.APPLICATION_JSON).content(vital)).andExpect(status().isBadRequest());
+        mvc.perform(post(path + "/diagnoses").header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "PAIR")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"description\":\"P19 test\",\"diagnosisType\":\"FINAL\",\"isPrimary\":false,\"codeSystem\":\"ICD-10\"}"))
+                .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.Encounter SET status='COMPLETED', completed_at=SYSUTCDATETIME() WHERE id=?", encounterId);
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.editable").value(false));
+        mvc.perform(post(path + "/vitals").header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "CLOSED")
+                .contentType(MediaType.APPLICATION_JSON).content(vital)).andExpect(status().isConflict());
+    }
+
+    @Test
+    void clinicalWriteRollsBackVitalAndReceiptWhenAuditFails() throws Exception {
+        long encounterId = startedEncounter("p19-rollback");
+        doThrow(new IllegalStateException("P19 audit rollback probe")).when(clinicalRepository).audit(anyLong(), anyLong(), anyString(), anyLong());
+        assertThrows(Exception.class, () -> mvc.perform(post("/api/doctor/encounters/" + encounterId + "/clinical/vitals")
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "ROLLBACK")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"measuredAt\":\"2026-11-25T10:05:00Z\",\"weightKg\":60.5}")));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.VitalSign WHERE encounter_id=?", Integer.class, encounterId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE command_type='ENCOUNTER_VITAL_SIGN' AND idempotency_key=?", Integer.class, prefix + "ROLLBACK"));
+    }
+
+    @Test
+    void concurrentPrimaryFinalDiagnosesAllowOneAndRejectCrossEncounterUpdate() throws Exception {
+        long encounterId = startedEncounter("p19-primary");
+        String path = "/api/doctor/encounters/" + encounterId + "/clinical/diagnoses";
+        String diagnosis = json.writeValueAsString(java.util.Map.of("diagnosisConceptId", diagnosisConceptId, "description", "P19 final test", "diagnosisType", "FINAL", "isPrimary", true));
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            java.util.List<Future<Integer>> requests = new java.util.ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                final String key = prefix + "FINAL" + i;
+                requests.add(executor.submit(() -> { start.await(); return mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken)
+                        .header("Idempotency-Key", key).contentType(MediaType.APPLICATION_JSON).content(diagnosis)).andReturn().getResponse().getStatus(); }));
+            }
+            start.countDown();
+            var results = new java.util.ArrayList<>(java.util.List.of(requests.get(0).get(20, java.util.concurrent.TimeUnit.SECONDS), requests.get(1).get(20, java.util.concurrent.TimeUnit.SECONDS)));
+            java.util.Collections.sort(results);
+            assertEquals(java.util.List.of(200, 409), results);
+        } finally { executor.shutdownNow(); }
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Diagnosis WHERE encounter_id=? AND diagnosis_type='FINAL' AND is_primary=1", Integer.class, encounterId));
+        String created = mvc.perform(get("/api/doctor/encounters/" + encounterId + "/clinical").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var item = json.readTree(created).get("diagnoses").get(0);
+        String secondBooking = mvc.perform(book(patientTwoToken, prefix + "P19SECOND", doctorOneId)).andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long secondId = json.readTree(secondBooking).get("encounterId").asLong();
+        mvc.perform(startRequest(secondId).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk());
+        mvc.perform(put("/api/doctor/encounters/" + secondId + "/clinical/diagnoses/" + item.get("id").asLong())
+                .header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("diagnosisConceptId", diagnosisConceptId, "description", "P19 cross attempt", "diagnosisType", "FINAL", "isPrimary", true, "version", item.get("version").asText()))))
+                .andExpect(status().isConflict());
+        assertEquals("P19 final test", jdbc.queryForObject("SELECT description FROM dbo.Diagnosis WHERE id=?", String.class, item.get("id").asLong()));
+    }
+
+    @Test
+    void catalogControlsFinalCodesAndPreservesSnapshots() throws Exception {
+        long id = startedEncounter("catalog");
+        String path = "/api/doctor/encounters/" + id + "/clinical/diagnoses";
+        String body = json.writeValueAsString(java.util.Map.of("diagnosisConceptId", diagnosisConceptId, "description", "Clinical detail", "diagnosisType", "FINAL", "isPrimary", true));
+        mvc.perform(get("/api/doctor/diagnosis-concepts").param("search", prefix).header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(diagnosisConceptId));
+        mvc.perform(get("/api/doctor/diagnosis-concepts").param("search", prefix).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "NOCODE")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"description\":\"Final\",\"diagnosisType\":\"FINAL\",\"isPrimary\":true}"))
+                .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET is_active=0 WHERE id=?", diagnosisConceptId);
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "INACTIVE").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET is_active=1,is_selectable=0 WHERE id=?", diagnosisConceptId);
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "CATEGORY").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET is_selectable=1,primary_allowed=0 WHERE id=?", diagnosisConceptId);
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "SECONDARY").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET primary_allowed=1 WHERE id=?", diagnosisConceptId);
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "VALID").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.diagnoses[0].diagnosisCode").value(prefix))
+                .andExpect(jsonPath("$.diagnoses[0].codeSystem").value("TEST")).andExpect(jsonPath("$.diagnoses[0].codeVersion").value("test"))
+                .andExpect(jsonPath("$.diagnoses[0].diagnosisName").value("Test diagnosis"));
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET name='Changed catalog name' WHERE id=?", diagnosisConceptId);
+        assertEquals("Test diagnosis", jdbc.queryForObject("SELECT diagnosis_name_snapshot FROM dbo.Diagnosis WHERE encounter_id=?", String.class, id));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Diagnosis WHERE encounter_id=?", Integer.class, id));
+    }
+
+    @Test
+    void previousVisitsArePaginatedSamePatientCompletedAndReadOnlyAcrossDoctors() throws Exception {
+        long contextId = bookEncounterForStart("history-context");
+        long previousId = 0;
+        for (int i = 0; i < 12; i++) previousId = previousEncounter(patientOneId, doctorTwoId, "HIST" + i, "COMPLETED");
+        long wrongPatientId = previousEncounter(patientTwoId, doctorTwoId, "PRIVATE", "COMPLETED");
+        long unfinishedId = previousEncounter(patientOneId, doctorTwoId, "UNFINISHED", "IN_PROGRESS");
+        String path = "/api/doctor/encounters/" + contextId + "/history";
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(12)).andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalPages").value(2));
+        mvc.perform(get(path).param("page", "2").header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(2));
+        mvc.perform(get(path + "/" + previousId).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.encounter.encounterId").value(previousId)).andExpect(jsonPath("$.clinical.editable").value(false))
+                .andExpect(jsonPath("$.prescriptions.length()").value(0)).andExpect(jsonPath("$.results.length()").value(0));
+        for (long excluded : new long[]{contextId, wrongPatientId, unfinishedId}) {
+            mvc.perform(get(path + "/" + excluded).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+        }
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(get(path).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(get(path).param("page", "0").header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/doctor/encounters/" + previousId + "/clinical").header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void historyReturnsIssuedPrescriptionAndLatestPublishedResultWithoutDrafts() throws Exception {
+        long contextId = bookEncounterForStart("published-history");
+        var transaction = new org.springframework.transaction.support.TransactionTemplate(new org.springframework.jdbc.support.JdbcTransactionManager(jdbc.getDataSource()));
+        transaction.executeWithoutResult(tx -> {
+            try {
+                long previousId = previousEncounter(patientOneId, doctorTwoId, "PUBLISHED", "COMPLETED");
+                long actorId = accountIdForStaff(doctorTwoId);
+                long rxId = jdbc.queryForObject("INSERT dbo.Prescription(code,encounter_id,status,prescribed_by,issued_at,instruction) OUTPUT inserted.id VALUES (?,?,'ISSUED',?,SYSUTCDATETIME(),'Published instruction')",Long.class,prefix+"RX",previousId,actorId);
+                jdbc.update("INSERT dbo.Prescription(code,encounter_id,status,prescribed_by,instruction) VALUES (?,?,'DRAFT',?,'PRIVATE DRAFT')",prefix+"RXD",previousId,actorId);
+                long drugId = jdbc.queryForObject("INSERT dbo.Drug(code,name,unit,is_active) OUTPUT inserted.id VALUES (?,'Current name','tablet',1)",Long.class,prefix+"DRUG");
+                jdbc.update("INSERT dbo.PrescriptionItem(prescription_id,line_no,drug_id,drug_name,strength,unit,dose,route,frequency,duration_days,quantity) VALUES (?,1,?,'Issued snapshot','100 mg','tablet','1 tablet','oral','daily',3,3)",rxId,drugId);
+                long orderId = jdbc.queryForObject("INSERT dbo.ClinicalOrder(code,encounter_id,service_id,performing_department_id,ordered_by,indication,status) OUTPUT inserted.id VALUES (?,?,?,?,?,'History test','PENDING_PAYMENT')",Long.class,prefix+"ORDER",previousId,serviceId,departmentId,actorId);
+                for (int version = 1; version <= 2; version++) jdbc.update("INSERT dbo.ResultVersion(order_id,version_no,status,description,conclusion,authored_by,confirmed_by,confirmed_at,published_by,published_at) VALUES (?,?,'PUBLISHED',?,'Published conclusion',?,?,SYSUTCDATETIME(),?,SYSUTCDATETIME())",orderId,version,"Published "+version,actorId,actorId,actorId);
+                jdbc.update("INSERT dbo.ResultVersion(order_id,version_no,status,description,authored_by) VALUES (?,3,'DRAFT','PRIVATE RESULT DRAFT',?)",orderId,actorId);
+                long resultId = jdbc.queryForObject("SELECT id FROM dbo.ResultVersion WHERE order_id=? AND version_no=2",Long.class,orderId);
+                jdbc.update("INSERT dbo.ResultValue(result_version_id,line_no,analyte_name,numeric_value,unit,sort_order) VALUES (?,1,'Published analyte',12.5,'unit',1)",resultId);
+                mvc.perform(get("/api/doctor/encounters/"+contextId+"/history/"+previousId).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk())
+                        .andExpect(jsonPath("$.prescriptions.length()").value(1)).andExpect(jsonPath("$.prescriptions[0].items[0].drugName").value("Issued snapshot"))
+                        .andExpect(jsonPath("$.results.length()").value(1)).andExpect(jsonPath("$.results[0].versionNo").value(2))
+                        .andExpect(jsonPath("$.results[0].values[0].numericValue").value(12.5));
+            } catch (Exception ex) { throw new RuntimeException(ex); }
+            finally { tx.setRollbackOnly(); }
+        });
+    }
+
+    @Test
+    void clinicalDetailRetainsCatalogPrimaryRestrictionWhenEditingSecondaryDiagnosis() throws Exception {
+        long id = startedEncounter("secondary-edit");
+        jdbc.update("UPDATE dbo.DiagnosisConcept SET primary_allowed=0 WHERE id=?", diagnosisConceptId);
+        String body = json.writeValueAsString(java.util.Map.of("diagnosisConceptId", diagnosisConceptId,
+                "description", "Secondary diagnosis", "diagnosisType", "FINAL", "isPrimary", false));
+        mvc.perform(post("/api/doctor/encounters/" + id + "/clinical/diagnoses")
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "SECONDARYEDIT")
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.diagnoses[0].primaryAllowed").value(false));
+        mvc.perform(get("/api/doctor/encounters/" + id + "/clinical").header("Authorization", "Bearer " + doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.diagnoses[0].primaryAllowed").value(false));
+    }
+
+    @Test
+    void diagnosisLookupRanksNamesSupportsEnglishCompactCodesGroupsAndRealPagination() throws Exception {
+        var transaction = new org.springframework.transaction.support.TransactionTemplate(
+                new org.springframework.jdbc.support.JdbcTransactionManager(jdbc.getDataSource()));
+        transaction.executeWithoutResult(tx -> {
+            try {
+                jdbc.update("INSERT dbo.DiagnosisConcept(code_system,code_version,code,name,english_name,is_active,is_selectable,primary_allowed) VALUES ('TEST',?,'Z99',?,N'Test group',1,0,1)", prefix, prefix + " Group");
+                jdbc.update("INSERT dbo.DiagnosisConcept(code_system,code_version,code,name,english_name,is_active,is_selectable,primary_allowed) VALUES ('TEST',?,'Z99.Z9',?,?,1,1,0)", prefix, prefix + " Răng", prefix + " Dental bleeding example");
+                jdbc.update("INSERT dbo.DiagnosisConcept(code_system,code_version,code,name,english_name,is_active,is_selectable,primary_allowed) VALUES ('TEST',?,'Z99.Z8',?,N'Test',1,1,1)", prefix, prefix + " Răng extra");
+                jdbc.update("INSERT dbo.DiagnosisConcept(code_system,code_version,code,name,is_active,is_selectable,primary_allowed) VALUES ('TEST',?,'Z99.Z7',?,1,1,1)", prefix, prefix + " Trắng");
+                for (int i = 0; i < 20; i++) jdbc.update("INSERT dbo.DiagnosisConcept(code_system,code_version,code,name,is_active,is_selectable,primary_allowed) VALUES ('TEST',?,?,?,1,1,1)", prefix, "Y00.X" + i, prefix + " Răng variant " + i);
+                String path = "/api/doctor/diagnosis-concepts/search";
+                mvc.perform(get(path).param("search", prefix + " rang").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(22))
+                        .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items.length()").value(20))
+                        .andExpect(jsonPath("$.items[0].code").value("Z99.Z9"))
+                        .andExpect(jsonPath("$.items[0].categoryName").value(prefix + " Group"));
+                mvc.perform(get(path).param("search", prefix + " rang").param("page", "2").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(2));
+                mvc.perform(get(path).param("search", prefix + " bleeding").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                        .andExpect(jsonPath("$.items[0].englishName").value(prefix + " Dental bleeding example"));
+                mvc.perform(get(path).param("search", "z99z9").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].code").value("Z99.Z9"));
+                mvc.perform(get(path).param("search", prefix).param("groups", "true").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                        .andExpect(jsonPath("$.items[0].code").value("Z99"));
+                mvc.perform(get(path).param("search", prefix + "%").header("Authorization", "Bearer " + doctorToken))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+                mvc.perform(get(path).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+                mvc.perform(get(path)).andExpect(status().isUnauthorized());
+                mvc.perform(get(path).param("page", "0").header("Authorization", "Bearer " + doctorToken)).andExpect(status().isBadRequest());
+            } catch (Exception ex) { throw new RuntimeException(ex); }
+            finally { tx.setRollbackOnly(); }
+        });
+    }
+
+    @Test
+    void invoiceDraftAndIssuePreserveBookedAmountSnapshotsAndRetry() throws Exception {
+        long encounterId=startedEncounter("invoice");
+        String path="/api/doctor/encounters/"+encounterId+"/invoices";
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=900000 WHERE service_id=?",serviceId);
+        var draft=json.readTree(mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.totalAmount").value(500000)).andExpect(jsonPath("$.lines[0].unitPrice").value(500000))
+                .andReturn().getResponse().getContentAsString());
+        mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true)).andExpect(jsonPath("$.id").value(draft.get("id").asLong()));
+        mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"duplicate"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EXAMINATION_ALREADY_INVOICED"));
+        jdbc.update("UPDATE dbo.Patient SET full_name=N'P20 name at issue' WHERE id=?",patientOneId);
+        jdbc.update("UPDATE dbo.Service SET name=N'P20 exam at issue' WHERE id=?",serviceId);
+        String body=json.writeValueAsString(java.util.Map.of("version",draft.get("version").asText()));
+        String issue=path+"/"+draft.get("id").asLong()+"/issue";
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ISSUED"))
+                .andExpect(jsonPath("$.patientName").value("P20 name at issue"))
+                .andExpect(jsonPath("$.facilityName").value("P20 Test Clinic"))
+                .andExpect(jsonPath("$.issuedAt").isNotEmpty()).andExpect(jsonPath("$.lines[0].serviceName").value("P20 exam at issue"));
+        jdbc.update("UPDATE dbo.Patient SET full_name=N'P20 later name' WHERE id=?",patientOneId);
+        jdbc.update("UPDATE dbo.Service SET name=N'P20 later service' WHERE id=?",serviceId);
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true)).andExpect(jsonPath("$.patientName").value("P20 name at issue"));
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].totalAmount").value(500000)).andExpect(jsonPath("$[0].lines[0].serviceName").value("P20 exam at issue"));
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"newissue").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_NOT_DRAFT"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Diagnosis WHERE encounter_id=?",Integer.class,encounterId));
+    }
+
+    @Test
+    void invoiceRejectsWrongOwnerInvalidVersionAndReusedKey() throws Exception {
+        long encounterId=bookEncounterForStart("invoice-validation");
+        String path="/api/doctor/encounters/"+encounterId+"/invoices";
+        mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"planned"))
+                .andExpect(status().isConflict());
+        mvc.perform(startRequest(encounterId).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk());
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        mvc.perform(get(path).header("Authorization","Bearer "+patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(post(path).header("Authorization","Bearer "+doctorTwoToken).header("Idempotency-Key",prefix+"owner"))
+                .andExpect(status().isNotFound());
+        mvc.perform(post(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isBadRequest());
+        var draft=json.readTree(mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        String issue=path+"/"+draft.get("id").asLong()+"/issue";
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorTwoToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content("{\"version\":\"AAAAAAAAAAA=\"}"))
+                .andExpect(status().isNotFound());
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content("{\"version\":\"bad\"}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_VERSION"));
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content("{\"version\":\"AAAAAAAAAAA=\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_CHANGED"));
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        long other=startedEncounter("invoice-other");
+        mvc.perform(post("/api/doctor/encounters/"+other+"/invoices").header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,other));
+    }
+
+    @Test
+    void invoiceCreationAndIssueRollbackAllSteps() throws Exception {
+        long encounterId=startedEncounter("invoice-rollback");
+        String path="/api/doctor/encounters/"+encounterId+"/invoices";
+        org.mockito.Mockito.doThrow(new IllegalStateException("P20 test insert failure")).when(invoiceRepository).insertExamination(anyLong(),org.mockito.ArgumentMatchers.any());
+        assertThrows(jakarta.servlet.ServletException.class,()->mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft")));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,encounterId));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"draft"));
+        reset(invoiceRepository);
+        var draft=json.readTree(mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        org.mockito.Mockito.doThrow(new IllegalStateException("P20 test audit failure")).when(invoiceRepository).audit(anyLong(),anyLong(),org.mockito.ArgumentMatchers.eq("INVOICE_ISSUED"));
+        assertThrows(jakarta.servlet.ServletException.class,()->mvc.perform(post(path+"/"+draft.get("id").asLong()+"/issue").header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"issue")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("version",draft.get("version").asText())))));
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("DRAFT")).andExpect(jsonPath("$[0].issuedAt").isEmpty());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"issue"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='Invoice' AND entity_id=? AND action='INVOICE_ISSUED'",Integer.class,draft.get("id").asLong()));
+    }
+
+    @Test
+    void invoiceConcurrentCreationAndIssueUseTwoSqlSessions() throws Exception {
+        long encounterId=startedEncounter("invoice-race");
+        String path="/api/doctor/encounters/"+encounterId+"/invoices";
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        org.mockito.Mockito.doAnswer(call->{sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class)); return call.callRealMethod();})
+                .when(encounterRepository).lockAppointment(anyLong(),anyLong());
+        ExecutorService executor=Executors.newFixedThreadPool(2);
+        try {
+            for(int phase=0;phase<2;phase++) {
+                CountDownLatch start=new CountDownLatch(1);
+                final int step=phase;
+                var drafts=json.readTree(mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andReturn().getResponse().getContentAsString());
+                String url=phase==0?path:path+"/"+drafts.get(0).get("id").asLong()+"/issue";
+                String body=phase==0?"":json.writeValueAsString(java.util.Map.of("version",drafts.get(0).get("version").asText()));
+                sessions.clear();
+                var requests=new java.util.ArrayList<Future<Integer>>();
+                for(int i=0;i<2;i++) { final int index=i; requests.add(executor.submit(()->{
+                    start.await(); return mvc.perform(post(url).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"race"+step+index)
+                            .contentType(MediaType.APPLICATION_JSON).content(body)).andReturn().getResponse().getStatus();
+                })); }
+                start.countDown();
+                var codes=new java.util.ArrayList<>(java.util.List.of(requests.get(0).get(25,java.util.concurrent.TimeUnit.SECONDS),requests.get(1).get(25,java.util.concurrent.TimeUnit.SECONDS)));
+                codes.sort(Integer::compareTo);
+                assertEquals(java.util.List.of(200,409),codes);
+                assertEquals(2,sessions.size());
+            }
+        } finally {executor.shutdownNow();}
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=? AND status='ISSUED'",Integer.class,encounterId));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine l JOIN dbo.Invoice i ON i.id=l.invoice_id WHERE i.encounter_id=?",Integer.class,encounterId));
+    }
+
+    @Test
+    void invoiceMissingFacilityFailsWithoutWriting() throws Exception {
+        long encounterId=startedEncounter("invoice-config");
+        var service=new com.suncare.clinic.modules.billing.service.InvoiceService(invoiceRepository,encounterRepository,"","");
+        var transaction=new org.springframework.transaction.support.TransactionTemplate(new org.springframework.jdbc.support.JdbcTransactionManager(jdbc.getDataSource()));
+        var error=assertThrows(com.suncare.clinic.common.exception.ApiException.class,()->transaction.execute(tx->
+                service.create(new CurrentAccountResponse(accountIdForStaff(doctorOneId),"fixture","STAFF",null,doctorOneId,java.util.List.of("DOCTOR"),java.util.List.of()),encounterId,prefix+"config")));
+        assertEquals("BILLING_FACILITY_NOT_CONFIGURED",error.getCode());
+        assertEquals(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,error.getStatus());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,encounterId));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"config"));
+    }
+
+    @Test
+    void invoiceRejectsMismatchedTotalAndClientSuppliedMoney() throws Exception {
+        long encounterId=startedEncounter("invoice-total");
+        String path="/api/doctor/encounters/"+encounterId+"/invoices";
+        var draft=json.readTree(mvc.perform(post(path).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"draft"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        String issue=path+"/"+draft.get("id").asLong()+"/issue";
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"money").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("version",draft.get("version").asText(),"totalAmount",1))))
+                .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.Invoice SET total_amount=1 WHERE id=?",draft.get("id").asLong());
+        var current=json.readTree(mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andReturn().getResponse().getContentAsString()).get(0);
+        mvc.perform(post(issue).header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",prefix+"invalid").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("version",current.get("version").asText()))))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        assertEquals("DRAFT",jdbc.queryForObject("SELECT status FROM dbo.Invoice WHERE id=?",String.class,draft.get("id").asLong()));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"invalid"));
+    }
+
+    private long previousEncounter(long patientId, long doctorId, String suffix, String state) {
+        insertExistingAppointment(assignmentTwoId, doctorId, patientId, suffix);
+        long appointmentId = jdbc.queryForObject("SELECT id FROM dbo.Appointment WHERE code=?", Long.class, prefix + suffix);
+        return jdbc.queryForObject("INSERT INTO dbo.Encounter(code,appointment_id,status,started_at,completed_at) OUTPUT INSERTED.id VALUES (?,?,?,SYSUTCDATETIME(),CASE WHEN ?='COMPLETED' THEN SYSUTCDATETIME() ELSE NULL END)", Long.class,
+                prefix + "E" + suffix, appointmentId, state, state);
+    }
+
+    private long startedEncounter(String suffix) throws Exception {
+        long id = bookEncounterForStart(suffix);
+        mvc.perform(startRequest(id).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk());
+        return id;
     }
 
     @Test

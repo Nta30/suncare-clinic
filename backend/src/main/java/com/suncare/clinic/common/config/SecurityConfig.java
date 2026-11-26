@@ -50,7 +50,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/doctor/encounters", "/api/doctor/encounters/*").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/histories", "/api/doctor/encounters/*/allergies").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/doctor/encounters/*/histories/*", "/api/doctor/encounters/*/allergies/*").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/doctor/encounters/*/clinical").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/doctor/encounters/*/history", "/api/doctor/encounters/*/history/*", "/api/doctor/diagnosis-concepts", "/api/doctor/diagnosis-concepts/search").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/doctor/encounters/*/clinical/notes", "/api/doctor/encounters/*/clinical/diagnoses/*").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/clinical/vitals", "/api/doctor/encounters/*/clinical/diagnoses").hasRole("DOCTOR")
                         .requestMatchers("/api/head/schedules", "/api/head/schedules/**").hasAuthority("SCHEDULE_PUBLISH_DEPARTMENT")
+                        .requestMatchers(HttpMethod.GET, "/api/doctor/encounters/*/invoices").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/invoices", "/api/doctor/encounters/*/invoices/*/issue").hasRole("DOCTOR")
                         .anyRequest().denyAll())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

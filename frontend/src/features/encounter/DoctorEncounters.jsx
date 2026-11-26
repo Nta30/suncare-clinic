@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight, faNotesMedical, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
+import EncounterClinical from './EncounterClinical'
+import EncounterInvoices from './EncounterInvoices'
+import PatientEncounterHistory from './PatientEncounterHistory'
 import { getEncounterWorklist, getEncounter, startEncounter, savePatientHistory, savePatientAllergy } from '../../services/encounterApi'
 
 const inputClass = 'mt-1 min-h-11 w-full rounded-lg border border-clinical-border-strong bg-white px-3 py-2 text-sm text-clinical-ink focus-visible:outline-2 focus-visible:outline-suncare-700 disabled:bg-clinical-canvas'
 const historyTypes = { PERSONAL: 'Bản thân', FAMILY: 'Gia đình', SURGERY: 'Phẫu thuật' }
 const severities = { UNKNOWN: 'Chưa xác định', MILD: 'Nhẹ', MODERATE: 'Vừa', SEVERE: 'Nặng' }
 const statuses = { PLANNED: 'Chưa bắt đầu', IN_PROGRESS: 'Đang khám', WAITING_CLS: 'Chờ cận lâm sàng', COMPLETED: 'Đã hoàn tất', CANCELLED: 'Đã hủy', NO_SHOW: 'Vắng mặt' }
+const encounterSections = [['overview', 'Tổng quan'], ['visit-history', 'Lịch sử khám'], ['history', 'Tiền sử bệnh'], ['allergy', 'Dị ứng'], ['vitals', 'Sinh hiệu'], ['notes', 'Ghi chú'], ['diagnosis', 'Chẩn đoán'], ['invoices', 'Hóa đơn']]
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Saigon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const time = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 const dateTime = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -96,6 +100,7 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
 }
 
 function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
+  const [activeSection, setActiveSection] = useState('overview')
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -105,6 +110,17 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
   const [dirty, setDirty] = useState({})
   const hasUnsaved = Object.values(dirty).some(Boolean)
   function onDirtyChange(kind, value) { setDirty((previous) => ({ ...previous, [kind]: value })) }
+  function navigateSection(event, index) {
+    let next
+    if (event.key === 'ArrowRight') next = (index + 1) % encounterSections.length
+    else if (event.key === 'ArrowLeft') next = (index + encounterSections.length - 1) % encounterSections.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = encounterSections.length - 1
+    else return
+    event.preventDefault()
+    setActiveSection(encounterSections[next][0])
+    document.getElementById(`encounter-tab-${encounterSections[next][0]}`)?.focus()
+  }
   useEffect(() => {
     let active = true
     getEncounter(encounterId).then((data) => { if (active) setState({ data }) }).catch((error) => {
@@ -170,11 +186,20 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
     </section>
     {actionError && <ErrorBox message={actionError} />}
     {message && <p role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success'>{message}</p>}
-    <div className='grid min-w-0 gap-4 xl:grid-cols-2'>
+    <div role='tablist' aria-label='Các mục trong lượt khám' className='flex flex-wrap gap-2 border-b border-clinical-border pb-3'>
+      {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-11 rounded-lg border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-suncare-700 ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white hover:bg-suncare-50'}`}>{label}{dirty[code] ? ' *' : ''}</button>)}
+    </div>
+    <div id='encounter-panel-history' role='tabpanel' aria-labelledby='encounter-tab-history' hidden={activeSection !== 'history'}>
+      <p className='mb-3 text-sm text-clinical-muted'>Bệnh nền, bệnh đã mắc, yếu tố gia đình và phẫu thuật trước đây. Các lần khám trước nằm trong mục Lịch sử khám.</p>
       <HistorySection key={`history-${reload}`} kind='history' items={data.histories} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} />
+    </div>
+    <div id='encounter-panel-visit-history' role='tabpanel' aria-labelledby='encounter-tab-visit-history' hidden={activeSection !== 'visit-history'}>
+      <PatientEncounterHistory encounterId={encounterId} active={activeSection === 'visit-history'} onSessionExpired={onSessionExpired} />
+    </div>
+    <div id='encounter-panel-allergy' role='tabpanel' aria-labelledby='encounter-tab-allergy' hidden={activeSection !== 'allergy'}>
       <HistorySection key={`allergy-${reload}`} kind='allergy' items={data.allergies} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} allergenOptions={data.allergenOptions} />
     </div>
-    <section className='space-y-3 rounded-xl border border-clinical-border bg-white p-4 sm:p-5' aria-labelledby='history-snapshot-title'>
+    <section id='encounter-panel-overview' role='tabpanel' hidden={activeSection !== 'overview'} className='space-y-3 rounded-xl border border-clinical-border bg-white p-4 sm:p-5' aria-labelledby='encounter-tab-overview'>
       <h2 id='history-snapshot-title' className='text-lg font-bold'>Bản chốt khi bắt đầu khám</h2>
       {data.snapshot ? <>
         <p className='text-sm text-clinical-muted'>Chốt lúc {dateTime(data.snapshot.recordedAt)}. Thay đổi tiền sử/dị ứng hiện tại không sửa bản đã chốt của lượt khám này.</p>
@@ -186,6 +211,12 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
         <Button variant='primary' disabled={!present || busy || hasUnsaved} onClick={begin}>{busy ? 'Đang xử lý...' : 'Bắt đầu khám và chốt thông tin'}</Button>
       </div>}
     </section>
+    <div hidden={!['vitals', 'notes', 'diagnosis'].includes(activeSection)}>
+      <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} />
+    </div>
+    <div id='encounter-panel-invoices' role='tabpanel' aria-labelledby='encounter-tab-invoices' hidden={activeSection !== 'invoices'}>
+      <EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />
+    </div>
   </div>
 }
 

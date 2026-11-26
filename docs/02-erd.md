@@ -147,3 +147,5 @@ erDiagram
 Invoice dùng Encounter **hoặc** BookingHold, không cả hai. Hóa đơn online luôn giữ hold_id kể cả sau khi có Encounter; báo cáo truy ngược qua Appointment.hold_id. Không sửa FK hóa đơn sau phát hành.
 
 Các FK actor tới Account và bảng SystemSetting/AuditEvent không vẽ hết để tránh che luồng nghiệp vụ. Chúng được định nghĩa ở tài liệu 03.
+
+Bổ sung V18: `DiagnosisConcept ||--o{ Diagnosis` qua `Diagnosis.diagnosis_concept_id` nullable; UNIQUE (code_system, code_version, code). Diagnosis giữ code_system, diagnosis_code, code_version, diagnosis_name_snapshot để đọc đúng bản chốt. Lịch sử khám tổng hợp từ các bảng hiện có, không thêm bảng EMR.

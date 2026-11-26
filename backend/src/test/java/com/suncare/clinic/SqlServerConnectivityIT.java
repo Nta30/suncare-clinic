@@ -62,7 +62,7 @@ class SqlServerConnectivityIT {
             );
 
             assertEquals(
-                    60,
+                    61,
                     tableCount
             );
         }

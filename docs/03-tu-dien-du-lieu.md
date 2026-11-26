@@ -120,3 +120,14 @@ Không lưu trực tiếp refund_status trên Order. Suy từ request và tổng
 | AuditEvent | actor_id? → Account; actor_type USER/SYSTEM; action varchar(100); entity_type varchar(60); entity_id bigint; occurred_at datetime2(3); correlation_id varchar(100); reason? nvarchar(1000); redacted_change? nvarchar(max). Append-only, generic entity_id không là FK thay thế quan hệ nghiệp vụ. |
 
 Các cột tổng hợp amount/status phải được cập nhật trong cùng transaction và có truy vấn đối soát. Rowversion là số phiên bản nhị phân SQL Server, không phải timestamp thời gian. Cấu hình hiệu lực được chốt trên nghiệp vụ nên sửa setting không đổi dữ liệu cũ.
+
+## Bổ sung V18 — danh mục chẩn đoán
+
+| Bảng/cột | Ý nghĩa |
+|---|---|
+| DiagnosisConcept | id bigint identity PK; code_system/code_version/code varchar(30), UNIQUE cả ba; name/english_name nvarchar(1000); is_active/is_selectable/primary_allowed bit; source_page int nullable; created_at UTC. |
+| Diagnosis.diagnosis_concept_id | FK nullable đến DiagnosisConcept; NULL với bản ghi cũ hoặc sơ bộ chưa mã hóa. |
+| Diagnosis.code_version | Phiên bản bộ mã được chốt, nullable với legacy. |
+| Diagnosis.diagnosis_name_snapshot | Tên chính thức được chốt khi chọn mã; description tiếp tục là mô tả lâm sàng bác sĩ ghi. |
+
+Không điền ngược phiên bản/ID cho mã cũ. Import danh mục là thao tác master data có transaction và audit SYSTEM kèm nguồn/hash, không sửa lịch sử Diagnosis. Không tạo bảng EMR sao chép.

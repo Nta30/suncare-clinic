@@ -61,3 +61,7 @@ Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff c
 Permission gợi ý: `APPOINTMENT_CREATE_SELF`, `APPOINTMENT_CANCEL_SELF`, `ENCOUNTER_WRITE_ASSIGNED`, `RESULT_WRITE_ASSIGNED`, `INVOICE_ISSUE_ASSIGNED`, `CASH_RECEIVE`, `REFUND_PROCESS`, `SCHEDULE_PUBLISH_DEPARTMENT`, `REPORT_EXPORT_SELF`, `REPORT_EXPORT_DEPARTMENT`, `REPORT_EXPORT_BILLING`, `REPORT_EXPORT_ALL`, `ACCOUNT_MANAGE`, `CATALOG_MANAGE`.
 
 Backend luôn ghép quyền hành động với điều kiện row-level, không chỉ ẩn nút UI. Không cấp `DEPARTMENT_HEAD` nếu thiếu `DOCTOR`; không thu hồi `DOCTOR` trước khi thu hồi `DEPARTMENT_HEAD`. Khóa tài khoản hoặc thu hồi role có hiệu lực ở request tiếp theo. Tài khoản đa role dùng hợp quyền hành động nhưng không mở rộng vượt phạm vi dữ liệu của từng hành động. File và link video cũng kiểm tra chủ sở hữu/phân công; không suy quyền từ biết ID.
+
+### Phạm vi lịch sử khám (2026-11-25)
+
+GET `/api/doctor/encounters/{contextId}/history` và `/{previousId}` yêu cầu DOCTOR. Context phải thuộc Appointment.doctor_id của Staff đang đăng nhập; target phải cùng Patient, khác context và COMPLETED. Không đạt trả 404; role sai trả 403. Đọc chéo bác sĩ qua context này không mở quyền GET/PUT clinical trực tiếp của lượt khám khác. Chỉ trả ISSUED/PUBLISHED, không draft/tệp. API tra cứu `/api/doctor/diagnosis-concepts` chỉ cho DOCTOR; danh mục không trao quyền ghi Encounter. FINAL bắt buộc concept hợp lệ; phân quyền/rowversion/idempotency hiện hành tiếp tục áp dụng.

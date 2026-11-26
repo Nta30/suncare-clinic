@@ -286,3 +286,13 @@ ca làm việc, giá dịch vụ hoặc tài khoản.
 
 Không đánh dấu các hạng mục chưa kiểm thử
 là hoàn thành.
+
+## Bổ sung V18 — DiagnosisConcept (2026-11-25)
+
+Nguồn dữ liệu: phụ lục `06-byt-kem.pdf` tại `https://datafiles.chinhphu.vn/cpp/files/vbpq/2026/4/06-byt-kem.pdf`, 1.271 trang, SHA256 `8639f5eeb77b571363dc841923095895d2498748f9bc6620f50710a6da9159e2`. JSON giữ 15.844 dòng, trong đó 12.878 dòng được phép chọn theo các cột nguồn đã trích. Đây không phải bằng chứng đối chiếu thủ công toàn bộ mã/quy tắc ICD.
+
+Ngoại lệ nguồn: dòng 15.750, trang 1.258 in mã `U13/9` nhưng tên chứa `U13.9`. Giữ nguyên mã in trong nguồn, lưu `sourceIssue` trong JSON và khóa cả `selectable`/`primaryAllowed`; không tự sửa hoặc tự ánh xạ mã này. Mã không đủ chi tiết/chỉ dùng thống kê tử vong và cờ không được làm bệnh chính được lấy từ các cột tương ứng của phụ lục, không suy từ tên bệnh.
+
+Tái tạo từ thư mục `backend/`: chạy `python scripts/prepare_icd_catalog.py` (cần `pypdf`), đọc lại toàn bộ PDF; script không đọc cache `target/icd-source/rows.json`. So sánh JSON mới với bản đã rà trước khi import, đặc biệt A99, X60 và ngoại lệ U13/9. Thử `powershell -File scripts/Import-DiagnosisCatalog.ps1 -Database SuncareClinicMigrationTest -Rollback` trước khi nhập thật. Import chạy transaction SERIALIZABLE, từ chối xung đột thay vì ghi đè, không tự bật mã inactive; mỗi dòng mới có audit SYSTEM kèm URL/hash nguồn. Không sửa V18 đã áp dụng.
+
+Thêm 1 bảng DiagnosisConcept sau V17 Allergen, tổng dự kiến 61 bảng nghiệp vụ (58 nền + AuthToken + Allergen + DiagnosisConcept; không tính flyway_schema_history/sysdiagrams). Thêm FK nullable và snapshot phiên bản/tên trên Diagnosis; không tự ánh xạ legacy. Dữ liệu ICD chính thức nằm ở scripts/data/icd10-vn-2026.json, import riêng có audit bằng Import-DiagnosisCatalog.ps1; không nhúng dữ liệu vào migration. Kiểm chứng hiện hành ghi tại PROGRESS.md; danh sách 58 bảng ở phần nền phía trên là mốc ban đầu.
