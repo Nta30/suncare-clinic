@@ -72,6 +72,18 @@ public class InvoiceRepository {
         return jdbc.query("SELECT id FROM dbo.Invoice WHERE encounter_id=? ORDER BY id",(rs,n)->rs.getLong(1),encounterId);
     }
 
+    public BigDecimal receivedAmount(long invoiceId) {
+        // Payments and actual refunds are aggregated independently; requests are not refunds.
+        return jdbc.queryForObject("""
+                SELECT COALESCE((SELECT SUM(amount) FROM dbo.Payment
+                                WHERE invoice_id=? AND status='CONFIRMED'),0)
+                     - COALESCE((SELECT SUM(f.amount) FROM dbo.Refund f
+                                 JOIN dbo.RefundRequest rr ON rr.id=f.request_id
+                                 JOIN dbo.PaymentAllocation pa ON pa.id=rr.allocation_id
+                                 JOIN dbo.Payment p ON p.id=pa.payment_id WHERE p.invoice_id=?),0)
+                """, BigDecimal.class, invoiceId, invoiceId);
+    }
+
     public void lockInvoice(long encounterId,long invoiceId) {
         jdbc.query("SELECT id FROM dbo.Invoice WITH (UPDLOCK,HOLDLOCK) WHERE encounter_id=? AND id=?",(rs,n)->rs.getLong(1),encounterId,invoiceId);
     }

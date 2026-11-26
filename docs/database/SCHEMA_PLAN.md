@@ -296,3 +296,39 @@ Ngoại lệ nguồn: dòng 15.750, trang 1.258 in mã `U13/9` nhưng tên chứ
 Tái tạo từ thư mục `backend/`: chạy `python scripts/prepare_icd_catalog.py` (cần `pypdf`), đọc lại toàn bộ PDF; script không đọc cache `target/icd-source/rows.json`. So sánh JSON mới với bản đã rà trước khi import, đặc biệt A99, X60 và ngoại lệ U13/9. Thử `powershell -File scripts/Import-DiagnosisCatalog.ps1 -Database SuncareClinicMigrationTest -Rollback` trước khi nhập thật. Import chạy transaction SERIALIZABLE, từ chối xung đột thay vì ghi đè, không tự bật mã inactive; mỗi dòng mới có audit SYSTEM kèm URL/hash nguồn. Không sửa V18 đã áp dụng.
 
 Thêm 1 bảng DiagnosisConcept sau V17 Allergen, tổng dự kiến 61 bảng nghiệp vụ (58 nền + AuthToken + Allergen + DiagnosisConcept; không tính flyway_schema_history/sysdiagrams). Thêm FK nullable và snapshot phiên bản/tên trên Diagnosis; không tự ánh xạ legacy. Dữ liệu ICD chính thức nằm ở scripts/data/icd10-vn-2026.json, import riêng có audit bằng Import-DiagnosisCatalog.ps1; không nhúng dữ liệu vào migration. Kiểm chứng hiện hành ghi tại PROGRESS.md; danh sách 58 bảng ở phần nền phía trên là mốc ban đầu.
+
+## Bổ sung V19 — Hỏi bệnh theo lượt khám (2026-11-26)
+
+Theo chấp thuận của chủ dự án, bổ sung tối thiểu `Encounter.history_of_present_illness` (NVARCHAR(MAX), API tối đa 20.000 ký tự), bảng `Symptom` (id, name NVARCHAR(200), normalized_name tính toán, is_active, created_at) và `EncounterSymptom` (encounter_id, symptom_id nullable, name_snapshot, normalized_name, display_order). Tổng sau V19: 63 bảng nghiệp vụ; V1–V18 giữ nguyên.
+
+FK triệu chứng nullable phân biệt nội dung tự nhập theo lượt khám với danh mục dùng chung. Unique tên chuẩn hóa và thứ tự trong từng Encounter; ứng dụng chống trùng không phân biệt hoa/thường/dấu tiếng Việt/khoảng trắng. Tên danh mục được chốt từ server, giữ snapshot đã ghi nhận khi danh mục đổi tên/ngừng hoạt động. Không seed triệu chứng giả, không tạo API ghi danh mục; dữ liệu danh mục cần nguồn được duyệt riêng.
+
+`GET /api/doctor/symptoms?search=` chỉ DOCTOR, từ khóa tối đa 100 ký tự, rỗng trả [], tối đa 20 gợi ý active, tìm không phân biệt dấu và xử lý đ/d. `PUT /api/doctor/encounters/{id}/clinical/notes` hiện có nhận thêm `historyOfPresentIllness` và `symptoms: [{symptomId, name}]` (tối đa 50, tên tối đa 200). Bỏ qua/null field mới giữ dữ liệu cũ để tương thích; chuỗi rỗng/danh sách [] xóa nội dung tương ứng. Không ánh xạ sang examination_note hay PrevisitResponse.
+
+Thay thế danh sách triệu chứng, cập nhật ghi chú và audit ENCOUNTER_NOTES_UPDATED trong cùng transaction, khóa Appointment → Encounter và kiểm tra rowversion hiện có. Giữ phân quyền bác sĩ phụ trách/trạng thái IN_PROGRESS, không đổi vòng đời Encounter/Invoice/Prescription. V19 đã kiểm chứng trên SuncareClinicMigrationTest; chưa áp dụng DB chính trong phiên này. Bằng chứng kiểm thử và giới hạn ghi tại PROGRESS.md.
+
+## Bổ sung V20 — seed triệu chứng cơ năng ngoại trú (2026-11-26)
+
+V20__seed_outpatient_symptom_catalog.sql bổ sung 250 tên triệu chứng/lời than phiền thường dùng, Unicode N'...', bao phủ toàn thân20, hô hấp20, tim mạch18, tiêu hóa34, thần kinh22, cơ xương khớp22, tiết niệu20, da liễu16, tai mũi họng24, mắt18, nội tiết12, sản phụ khoa24. Nhóm chỉ là comment để rà nội dung; không thêm bảng/cột phân nhóm. Đây là danh mục ứng dụng tự biên soạn theo phạm vi chủ dự án, không phải bộ mã triệu chứng chính thức hoặc công cụ chẩn đoán. Không chứa tên bệnh/chẩn đoán, giá trị xét nghiệm hay dấu hiệu khám thực thể; mục như sốt, nước tiểu đục, tiết dịch được hiểu là người bệnh khai báo, không thay kết quả khám.
+
+Tham khảo cách phân biệt triệu chứng với khám: [MSD chuyên gia – Khó thở](https://www.msdmanuals.com/vi/professional/rối-loạn-chức-năng-hô-hấp/triệu-chứng-của-các-bệnh-lý-hô-hấp/khó-thở), [MSD chuyên gia – Đánh giá bệnh nhân có bệnh lý tiêu hóa](https://www.msdmanuals.com/vi/professional/rối-loạn-tiêu-hóa/tiếp-cận-bệnh-nhân-có-bệnh-lý-tiêu-hóa/đánh-giá-bệnh-nhân-có-bệnh-lý-tiêu-hóa). Không nhập tên bệnh từ các bảng chẩn đoán phân biệt trong tài liệu.
+
+V19 suy ra normalized_name NVARCHAR(4000)/8.000byte do REPLACE, gây cảnh báo vượt1.700byte của nonclustered index. V20 drop/recreate computed column/index trong transaction migration, giữ nguyên biểu thức LOWER/REPLACE đ→d/collation Latin1_General_100_CI_AI nhưng CONVERT NVARCHAR(200), giới hạn400byte, không cắt tên hợp lệ vì name cũng NVARCHAR(200). Không chỉnh V19, không đổi name/id/activity/created_at hoặc snapshot EncounterSymptom. [Microsoft – giới hạn index](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-index-transact-sql?view=sql-server-ver17).
+
+CTE VALUES + INSERT WHERE NOT EXISTS (UPDLOCK,HOLDLOCK) so sánh bằng normalized_name/cùng collation để bỏ qua mục đã có, kể cả khác dấu/hoa thường; không tự kích hoạt lại mục inactive. Danh mục được rà trùng bằng chuẩn bỏ dấu/đ/hoa thường và unique index SQL. Đổi cách diễn đạt “Đau cổ” thành “Đau vùng cổ” để không trùng khóa không dấu với “Đau cơ”. Searchable multi-select/API và cơ chế Enter tự nhập giữ nguyên; triệu chứng ngoài danh mục chỉ thuộc lượt khám. Tổng bảng vẫn63.
+
+### Chạy có chủ đích trên DB chính
+
+V20 phải được kiểm chứng migrationtest trước. Từ backend/, dùng Java21 và JDBC native auth DLL đã cấu hình, chạy PowerShell:
+
+```powershell
+$env:JAVA_HOME='C:/Users/ADMIN/.jdks/openjdk-21.0.2'
+$env:Path="$env:JAVA_HOME/bin;D:/Nam_4/Project_1/jdbc-auth/13.4.0;"+$env:Path
+.\mvnw.cmd '-Dspring-boot.run.profiles=migrationmain' '-Dspring-boot.run.arguments=--server.port=8082' spring-boot:run
+```
+
+Kiểm tra profile migrationmain trỏ đúng SuncareClinic trước khi chạy;8082 để không chiếm API8080 đang mở. Flyway áp dụng mọi version còn thiếu theo thứ tự (main phiên trước ởV18 nên chạy cảV19 rồiV20), không reset/clean/baseline/repair. Đợi log migrate thành công và ứng dụng khởi động, Ctrl+C dừng phiên migration rồi khởi động API theo cấu hình thường (Flyway mặc định tắt). Không chạy đồng thời nhiều instance đang migrate. Không tự sửa version/checksum trong flyway_schema_history.
+
+Sau đó truy vấn dbo.flyway_schema_history: V20 success=1; sys.columns normalized_name max_length=400; dbo.Symptom có các mục Ho/Sốt/Đau bụng, không nhóm normalized_name trùng. Tổng250 là kết quả DB thử ban đầu rỗng, không ép số dòng chính bằng250 nếu có dữ liệu trước đó. API doctor search ho/sot/đau/dau bung phải trả kết quả thật; giữ giới hạn20 hiện có. Kết quả thực chạy ở PROGRESS.md; lệnh trên là hướng dẫn, không phải bằng chứng đã migrate main.
+
+Hậu kiểm phiênV20: cả test và main hiệnV20,250 triệu chứng, normalized_name400byte,0 khóa trùng, checksum V19/V20 khớp. Agent chỉ chạy Maven profile migrationtest để kiểm thử; main được tiến trình migrationmain+DevTools đã có áp dụng lúc resource mới xuất hiện. Không chạy lại lệnh migrationmain nếu đãV20; chuyển ứng dụng về profile thường sau migration để tránh tự áp dụng version mới trong lúc phát triển. Chi tiết thời điểm và bằng chứng tại PROGRESS.md.

@@ -66,7 +66,7 @@ Khoa trong báo cáo lượt khám là Appointment.department_id; khoa CLS là C
 | AT18 | Trực tiếp khám không CLS | Bác sĩ lập invoice phí khám; thu đủ rồi được hoàn tất, không cần đơn thuốc. |
 | AT19 | Online đã trả phí, phát sinh 2 CLS | Invoice mới chỉ có CLS; không line phí khám lần hai. |
 | AT20 | Invoice đã trả, thêm CLS | Tạo invoice bổ sung và QR riêng; invoice cũ bất biến. |
-| AT21 | A=150.000, B=300.000; thu 300.000 theo line_no A rồi B | A được 150.000 READY, B mới 150.000 chưa READY; không đánh dấu cả hai đã đủ. |
+| AT21 | Quyết định Cashier2026-11-26: hóa đơn A=150.000, B=300.000; tiền mặt thu đủ450.000 theo line_no A rồi B, thử thu300.000 bị chặn | Từ chối khoản thiếu trước ghi Payment; thu đủ phân bổ A150.000/B300.000. Kiểm chứng READY thuộcP24, không suy từ UI Cashier hoặc hóa đơn ISSUED. Kịch bản tiền mặt một phần trước đây đã được thay bằng quyết định này; vẫn kiểm tra từng allocation để hoàn/hủy đúng dòng. |
 | AT22 | MoMo và tiền mặt đồng thời trả cùng hóa đơn | Không allocate vượt charge; MoMo thực thu thừa có request hoàn. |
 | AT23 | Order vừa trả đủ nhưng chưa đến lab | READY, có hạn 10 ngày, chưa có queue. |
 | AT24 | Lab xác nhận có mặt trong hạn | Tạo một active queue ở phòng hỗ trợ service, không tạo lịch khám mới. |

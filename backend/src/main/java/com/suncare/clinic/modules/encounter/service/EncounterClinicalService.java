@@ -9,6 +9,8 @@ import com.suncare.clinic.modules.encounter.dto.VitalSignRequest;
 import com.suncare.clinic.modules.encounter.repository.EncounterClinicalRepository;
 import com.suncare.clinic.modules.encounter.repository.EncounterRepository;
 import com.suncare.clinic.modules.encounter.repository.DiagnosisConceptRepository;
+import com.suncare.clinic.modules.encounter.repository.SymptomRepository;
+import com.suncare.clinic.modules.encounter.repository.SymptomRepository.Selection;
 import com.suncare.clinic.modules.encounter.dto.DiagnosisConceptResponse;
 import com.suncare.clinic.modules.encounter.dto.DiagnosisConceptSearchResponse;
 import java.util.List;
@@ -30,11 +32,48 @@ public class EncounterClinicalService {
     private final EncounterClinicalRepository clinical;
     private final ObjectMapper json;
     private final DiagnosisConceptRepository concepts;
-    public EncounterClinicalService(EncounterRepository encounters, EncounterClinicalRepository clinical, ObjectMapper json, DiagnosisConceptRepository concepts) {
+    private final SymptomRepository symptoms;
+    public EncounterClinicalService(EncounterRepository encounters, EncounterClinicalRepository clinical, ObjectMapper json, DiagnosisConceptRepository concepts,
+            SymptomRepository symptoms) {
         this.encounters = encounters;
         this.clinical = clinical;
         this.json = json;
         this.concepts = concepts;
+        this.symptoms = symptoms;
+    }
+
+    public List<EncounterClinicalResponse.Symptom> searchSymptoms(String query) {
+        if (query != null && query.length() > 100) throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SEARCH", "Từ khóa tối đa 100 ký tự.");
+        String term = query == null ? "" : normalizeSymptom(query);
+        return term.isBlank() ? List.of() : symptoms.search(term);
+    }
+
+    private String normalizeSymptom(String name) {
+        return java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+                .toLowerCase(java.util.Locale.ROOT).replace('đ', 'd').replaceAll("(?U)\\s+", " ").strip();
+    }
+
+    private List<Selection> resolveSymptoms(long encounterId, EncounterNotesRequest request) {
+        if (request.symptoms() == null) return null; // Older clients leave the new fields untouched.
+        var result = new java.util.ArrayList<Selection>();
+        var previous = symptoms.selections(encounterId);
+        var names = new java.util.HashSet<String>();
+        var ids = new java.util.HashSet<Long>();
+        for (var input : request.symptoms()) {
+            String name = java.text.Normalizer.normalize(input.name().replaceAll("(?U)\\s+", " ").strip(), java.text.Normalizer.Form.NFC);
+            if (input.symptomId() != null) {
+                var catalogue = symptoms.active(input.symptomId());
+                var recorded = previous.stream().filter(item -> input.symptomId().equals(item.symptomId())).findFirst().orElse(null);
+                if (catalogue == null && recorded == null) throw new ApiException(HttpStatus.BAD_REQUEST, "SYMPTOM_UNAVAILABLE", "Triệu chứng trong danh mục không còn khả dụng. Hãy kiểm tra lại lựa chọn.");
+                name = recorded == null ? catalogue.name() : recorded.name();
+            }
+            String normalized = normalizeSymptom(name);
+            if (normalized.isBlank()) throw new ApiException(HttpStatus.BAD_REQUEST, "EMPTY_SYMPTOM", "Triệu chứng không được để trống.");
+            if (!names.add(normalized) || (input.symptomId() != null && !ids.add(input.symptomId())))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "DUPLICATE_SYMPTOM", "Không ghi nhận trùng triệu chứng trong cùng lượt khám.");
+            result.add(new Selection(input.symptomId(), name, normalized));
+        }
+        return result;
     }
 
     public List<DiagnosisConceptResponse> searchConcepts(String query, int page) {
@@ -56,7 +95,9 @@ public class EncounterClinicalService {
     @Transactional
     public EncounterClinicalResponse notes(CurrentAccountResponse account, long encounterId, EncounterNotesRequest request) {
         requireWritable(owned(account, encounterId));
+        var selections = resolveSymptoms(encounterId, request);
         if (clinical.updateNotes(encounterId, request, version(request.version())) != 1) throw changed();
+        if (selections != null) symptoms.replace(encounterId, selections);
         clinical.audit(account.accountId(), encounterId, "ENCOUNTER_NOTES_UPDATED", encounterId);
         return clinical.detail(encounterId, true, false);
     }

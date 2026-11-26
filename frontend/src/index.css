@@ -48,6 +48,46 @@ body {
   min-height: 100vh;
 }
 
+/* Collapsing a section keeps its form mounted and preserves the current draft. */
+.encounter-fold::details-content {
+  opacity: 0;
+  transition: opacity 160ms ease, content-visibility 160ms allow-discrete;
+}
+
+.encounter-fold[open]::details-content {
+  opacity: 1;
+}
+
+.encounter-workspace [role='tabpanel'][hidden] {
+  display: none;
+}
+
+.encounter-workspace .encounter-compact-slot {
+  margin-top: 0;
+}
+
+.encounter-compact-header {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
+}
+
+.encounter-compact-slot[data-compact='true'] .encounter-compact-header {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.encounter-workspace :is(input, textarea, select, button, summary, [tabindex]) {
+  scroll-margin-top: 4.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encounter-fold::details-content { transition: none; }
+  .encounter-compact-header { transition: none; transform: none; }
+}
+
 :focus-visible {
   outline: 2px solid #936100;
   outline-offset: 2px;

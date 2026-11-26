@@ -3,6 +3,8 @@ package com.suncare.clinic.modules.billing.service;
 import com.suncare.clinic.common.exception.ApiException;
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.billing.dto.InvoiceResponse;
+import com.suncare.clinic.modules.billing.dto.EncounterBillingSummaryResponse;
+import com.suncare.clinic.modules.billing.repository.CashPaymentRepository;
 import com.suncare.clinic.modules.billing.dto.IssueInvoiceRequest;
 import com.suncare.clinic.modules.billing.repository.InvoiceRepository;
 import com.suncare.clinic.modules.encounter.repository.EncounterRepository;
@@ -21,14 +23,16 @@ import java.util.List;
 public class InvoiceService {
     private final InvoiceRepository invoices;
     private final EncounterRepository encounters;
+    private final CashPaymentRepository payments;
     private final String facilityName;
     private final String facilityAddress;
 
-    public InvoiceService(InvoiceRepository invoices, EncounterRepository encounters,
+    public InvoiceService(InvoiceRepository invoices, EncounterRepository encounters, CashPaymentRepository payments,
             @Value("${suncare.billing.facility-name:}") String facilityName,
             @Value("${suncare.billing.facility-address:}") String facilityAddress) {
         this.invoices=invoices;
         this.encounters=encounters;
+        this.payments=payments;
         this.facilityName=facilityName.strip();
         this.facilityAddress=facilityAddress.strip();
     }
@@ -38,6 +42,44 @@ public class InvoiceService {
         owned(account,encounterId);
         return invoices.ids(encounterId).stream().map(id->invoices.detail(encounterId,id,false)).toList();
     }
+
+    @Transactional
+    public EncounterBillingSummaryResponse summary(CurrentAccountResponse account, long encounterId) {
+        owned(account, encounterId);
+        var source = invoices.source(encounterId);
+        var documents = invoices.ids(encounterId).stream().map(id -> invoices.detail(encounterId, id, false)).toList();
+        var costs = new java.util.ArrayList<EncounterBillingSummaryResponse.Cost>();
+        var billingInvoices = new java.util.ArrayList<EncounterBillingSummaryResponse.BillingInvoice>();
+        java.math.BigDecimal invoiced = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal received = java.math.BigDecimal.ZERO;
+        boolean examinationInvoiced = false;
+        for (var invoice : documents) {
+            invoices.lockInvoice(encounterId, invoice.id());
+            var balances = payments.balances(invoice.id());
+            var paid = invoices.receivedAmount(invoice.id());
+            boolean settled = balances.stream().allMatch(line -> line.outstanding().signum() == 0);
+            boolean hasPayableLines = balances.stream().anyMatch(line -> "ACTIVE".equals(line.status()));
+            String paymentStatus = "VOID".equals(invoice.status()) || !hasPayableLines ? "NOT_APPLICABLE"
+                    : !"ISSUED".equals(invoice.status()) ? "NOT_DUE"
+                    : settled && paid.signum() > 0 ? "PAID" : paid.signum() > 0 ? "PARTIAL" : "UNPAID";
+            billingInvoices.add(new EncounterBillingSummaryResponse.BillingInvoice(invoice, money(paid), paymentStatus));
+            received = received.add(paid);
+            if ("VOID".equals(invoice.status())) continue;
+            invoiced = invoiced.add(invoice.totalAmount());
+            for (var line : invoice.lines()) {
+                if ("EXAMINATION".equals(line.lineType())) examinationInvoiced = true;
+                costs.add(new EncounterBillingSummaryResponse.Cost(line.serviceName(), line.unitName(),
+                        line.quantity(), money(line.unitPrice()), money(line.amount()), line.status()));
+            }
+        }
+        if (!examinationInvoiced) costs.addFirst(new EncounterBillingSummaryResponse.Cost(source.serviceName(),
+                "Lượt", java.math.BigDecimal.ONE, money(source.amount()), money(source.amount()), "ACTIVE"));
+        return new EncounterBillingSummaryResponse(money(source.amount()), money(invoiced),
+                money(examinationInvoiced ? java.math.BigDecimal.ZERO : source.amount()), money(received),
+                examinationInvoiced, costs, billingInvoices);
+    }
+
+    private String money(java.math.BigDecimal amount) { return amount.toBigIntegerExact().toString(); }
 
     @Transactional
     public InvoiceResponse create(CurrentAccountResponse account,long encounterId,String key) {

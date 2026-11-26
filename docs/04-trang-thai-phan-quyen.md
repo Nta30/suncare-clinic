@@ -65,3 +65,12 @@ Backend luôn ghép quyền hành động với điều kiện row-level, không
 ### Phạm vi lịch sử khám (2026-11-25)
 
 GET `/api/doctor/encounters/{contextId}/history` và `/{previousId}` yêu cầu DOCTOR. Context phải thuộc Appointment.doctor_id của Staff đang đăng nhập; target phải cùng Patient, khác context và COMPLETED. Không đạt trả 404; role sai trả 403. Đọc chéo bác sĩ qua context này không mở quyền GET/PUT clinical trực tiếp của lượt khám khác. Chỉ trả ISSUED/PUBLISHED, không draft/tệp. API tra cứu `/api/doctor/diagnosis-concepts` chỉ cho DOCTOR; danh mục không trao quyền ghi Encounter. FINAL bắt buộc concept hợp lệ; phân quyền/rowversion/idempotency hiện hành tiếp tục áp dụng.
+### Bổ sung truy vấn viện phí bác sĩ theo Encounter (2026-11-26)
+
+`GET /api/doctor/encounters/{id}/billing-summary` yêu cầu DOCTOR và Appointment.doctor_id đúng Staff của tài khoản; khóa nguồn Appointment → Encounter như đọc hóa đơn P20, không mở phạm vi bác sĩ khác/thu ngân/admin. Chỉ trả tổng quan phí và hóa đơn/thanh toán; không trả chỉ số số dư, không ghi dữ liệu hoặc cập nhật vòng đời.
+
+POST lập/phát hành hóa đơn hiện có giữ nguyên kiểm tra trạng thái, idempotency và rowversion. Bác sĩ không được gọi POST thu tiền; API /api/cashier/invoices và cash-payments vẫn chỉ CASHIER. PAID/PARTIAL/UNPAID/NOT_DUE/NOT_APPLICABLE trong DTO mới là trạng thái trình bày tính từ dữ liệu, không phải enum mới trên Invoice hoặc Payment. ISSUED không tự xác nhận đã thu.
+
+Lượt GET bác sĩ không hiển thị số dư. Quyết định Cashier tiếp theo ngày2026-11-26 đã chốt bỏ thu mới một phần: CASHIER chỉ xác nhận toàn bộ khoản cần thanh toán hợp lệ của hóa đơn, dưới khóa và kiểm tra idempotency; xem TX05. Bác sĩ vẫn không được thu tiền. Payment/Allocation lịch sử không sửa; replay vẫn trả khoản cũ.
+
+GET Cashier /invoices/search và /invoices/{id}/detail chỉ CASHIER, DOCTOR/PATIENT bị403. Tra cứu CCCD không mở thêm quyền đọc số định danh; danh sách/chi tiết mới không trả CCCD. Thu toàn bộ vẫn khóa nguồn Appointment→Encounter→Invoice→command, kiểm tra idempotency trước khi xét chính sách số tiền mới. Không cấp quyền thu tiền cho bác sĩ hoặc admin.

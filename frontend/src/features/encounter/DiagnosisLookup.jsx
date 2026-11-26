@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import Button from '../../components/ui/Button'
 import { searchDiagnosisConcepts } from '../../services/encounterApi'
 
 export default function DiagnosisLookup({ value, onSelect, disabled, onSessionExpired }) {
+  const helpId = useId()
   const [search, setSearch] = useState('')
   const [groups, setGroups] = useState(true)
   const [page, setPage] = useState(1)
@@ -76,9 +77,9 @@ export default function DiagnosisLookup({ value, onSelect, disabled, onSessionEx
           if (event.key === 'Enter') { event.preventDefault(); if (canSearch) retry() }
           if (event.key === 'ArrowDown') { event.preventDefault(); resultsRef.current?.querySelector('button')?.focus() }
           if (event.key === 'Escape' && value) { setOpen(false); selectedRef.current?.focus() }
-        }} placeholder='Tên bệnh tiếng Việt/Anh hoặc mã ICD' aria-describedby='diagnosis-search-help' className='mt-1 min-h-11 w-full rounded-lg border border-clinical-border-strong px-3 py-2 font-normal focus-visible:outline-2 focus-visible:outline-suncare-700' />
+        }} placeholder='Tên bệnh tiếng Việt/Anh hoặc mã ICD' aria-describedby={helpId} className='mt-1 min-h-11 w-full rounded-lg border border-clinical-border-strong px-3 py-2 font-normal focus-visible:outline-2 focus-visible:outline-suncare-700' />
       </label>
-      <p id='diagnosis-search-help' className='text-xs text-clinical-muted'>Tìm không dấu; mã có hoặc không có dấu chấm. Ưu tiên mã và tên khớp nhất. Bạn cũng có thể duyệt nhóm rồi chọn mã cụ thể.</p>
+      <p id={helpId} className='text-xs text-clinical-muted'>Tìm không dấu; mã có hoặc không có dấu chấm. Ưu tiên mã và tên khớp nhất. Bạn cũng có thể duyệt nhóm rồi chọn mã cụ thể.</p>
       <div className='flex flex-wrap items-center gap-2'>
         <Button disabled={disabled} aria-pressed={groups} onClick={() => change('', true)}>Duyệt nhóm ICD</Button>
         {!groups && search.trim().length >= 2 && <Button disabled={disabled} onClick={() => change(search, true)}>Xem nhóm khớp từ khóa</Button>}

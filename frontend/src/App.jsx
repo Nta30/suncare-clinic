@@ -18,6 +18,7 @@ const AppointmentSchedule = lazy(() => import('./features/appointment/Appointmen
 const DoctorTimetable = lazy(() => import('./features/appointment/DoctorTimetable'))
 const DoctorEncounters = lazy(() => import('./features/encounter/DoctorEncounters'))
 const AllergenManagement = lazy(() => import('./features/encounter/AllergenManagement'))
+const CashierPayments = lazy(() => import('./features/billing/CashierPayments'))
 
 const roleLabels = {
   PATIENT: 'Bệnh nhân', DOCTOR: 'Bác sĩ', LAB_STAFF: 'Nhân viên cận lâm sàng',
@@ -28,7 +29,7 @@ const plannedLinks = [
   { title: 'Lịch khám được giao', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'], mode: 'doctor-appointments' },
   { title: 'Khám trực tiếp', icon: faClipboard, roles: ['DOCTOR'], mode: 'doctor-encounters' },
   { title: 'Khám và kết quả', icon: faClipboard, roles: ['LAB_STAFF'] },
-  { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'] },
+  { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'], mode: 'cashier-payments', description: 'Tra cứu hóa đơn và xác nhận thanh toán tiền mặt' },
   { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
 ]
 
@@ -186,6 +187,8 @@ function App() {
                 <button onClick={() => setMode('doctor-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch được giao</button>}
               {account?.roles.includes('DOCTOR') &&
                 <button onClick={() => setMode('doctor-encounters')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Khám trực tiếp</button>}
+              {account?.roles.includes('CASHIER') &&
+                <button onClick={() => setMode('cashier-payments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Thu phí</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
             </> : <>
               <button onClick={() => changeMode('login')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Đăng nhập</button>
@@ -195,7 +198,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens', 'cashier-payments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}
@@ -264,7 +267,7 @@ function App() {
               <h2 className="text-lg font-bold">Điều hướng theo vai trò</h2>
               {availableLinks.length === 0 ? <p className="mt-3 text-sm text-clinical-muted">Chưa có mục phù hợp với vai trò hiện tại.</p> :
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">{availableLinks.map((link) => link.mode
-                  ? <button key={link.title} type="button" onClick={() => setMode(link.mode)} className="rounded-xl bg-clinical-canvas p-4 text-left text-sm hover:bg-suncare-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-suncare-700"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Mở danh sách lịch khám được phân cho bạn</p></button>
+                  ? <button key={link.title} type="button" onClick={() => setMode(link.mode)} className="rounded-xl bg-clinical-canvas p-4 text-left text-sm hover:bg-suncare-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-suncare-700"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">{link.description || 'Mở danh sách lịch khám được phân cho bạn'}</p></button>
                   : <div key={link.title} className="rounded-xl bg-clinical-canvas p-4 text-sm"><FontAwesomeIcon icon={link.icon} className="mr-2 text-suncare-700" />{link.title}<p className="mt-1 text-xs text-clinical-muted">Sẽ triển khai ở bước sau</p></div>)}</div>}
             </article>
           </section>}
@@ -306,6 +309,10 @@ function App() {
         {authState === 'signedIn' && mode === 'doctor-encounters' && account?.roles.includes('DOCTOR') &&
           <Suspense fallback={<p role='status' className='p-6'>Đang tải màn khám...</p>}>
             <DoctorEncounters key={account.accountId} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'cashier-payments' && account?.roles.includes('CASHIER') &&
+          <Suspense fallback={<p role='status'>Đang tải màn thu phí...</p>}>
+            <CashierPayments key={account.accountId} accountId={account.accountId} onSessionExpired={handleSessionExpired} />
           </Suspense>}
       </main>
       <dialog ref={logoutDialogRef} aria-labelledby="logout-title" aria-describedby="logout-description"

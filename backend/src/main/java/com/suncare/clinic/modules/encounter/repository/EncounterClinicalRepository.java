@@ -15,15 +15,17 @@ import java.util.UUID;
 @Repository
 public class EncounterClinicalRepository {
     private final JdbcTemplate jdbc;
-    public EncounterClinicalRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final SymptomRepository symptoms;
+    public EncounterClinicalRepository(JdbcTemplate jdbc, SymptomRepository symptoms) { this.jdbc = jdbc; this.symptoms = symptoms; }
 
     public EncounterClinicalResponse detail(long encounterId, boolean editable, boolean replayed) {
+        var selectedSymptoms = symptoms.selections(encounterId);
         var notes = jdbc.queryForObject("""
-                SELECT chief_complaint, examination_note, treatment_plan, followup_note, version
+                SELECT chief_complaint, examination_note, treatment_plan, followup_note, version, history_of_present_illness
                 FROM dbo.Encounter WHERE id = ?
                 """, (rs, n) -> new EncounterClinicalResponse.Notes(rs.getString("chief_complaint"),
                 rs.getString("examination_note"), rs.getString("treatment_plan"), rs.getString("followup_note"),
-                Base64.getEncoder().encodeToString(rs.getBytes("version"))), encounterId);
+                Base64.getEncoder().encodeToString(rs.getBytes("version")), rs.getString("history_of_present_illness"), selectedSymptoms), encounterId);
         var vitals = jdbc.query("""
                 SELECT id, CONVERT(varchar(23), measured_at, 126) + 'Z' AS measured_at, temperature_c, pulse_bpm,
                        systolic_mmhg, diastolic_mmhg, respiratory_rate, spo2_percent, weight_kg, height_cm
@@ -60,9 +62,10 @@ public class EncounterClinicalRepository {
     public int updateNotes(long encounterId, EncounterNotesRequest request, byte[] version) {
         return jdbc.update("""
                 UPDATE dbo.Encounter SET chief_complaint = ?, examination_note = ?, treatment_plan = ?,
-                    followup_note = ?, updated_at = SYSUTCDATETIME() WHERE id = ? AND version = ?
+                    followup_note = ?, history_of_present_illness = CASE WHEN ? IS NULL THEN history_of_present_illness ELSE ? END,
+                    updated_at = SYSUTCDATETIME() WHERE id = ? AND version = ?
                 """, clean(request.chiefComplaint()), clean(request.examinationNote()), clean(request.treatmentPlan()),
-                clean(request.followupNote()), encounterId, version);
+                clean(request.followupNote()), request.historyOfPresentIllness(), clean(request.historyOfPresentIllness()), encounterId, version);
     }
 
     public long insertDiagnosis(long encounterId, long actorId, DiagnosisRequest request, DiagnosisConceptResponse concept) {

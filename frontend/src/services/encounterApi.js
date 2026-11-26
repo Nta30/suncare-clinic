@@ -20,7 +20,20 @@ async function request(path = '', method = 'GET', data, idempotencyKey, signal) 
     if (failure.name === 'TimeoutError') throw new Error('Tra cứu danh mục quá thời gian chờ. Hãy thử lại.', { cause: failure })
     throw new Error('Không kết nối được máy chủ. Hãy thử lại sau.', { cause: failure })
   }
-  const body = await response.json().catch(() => null)
+  let body
+  try {
+    body = (path.includes('/invoices') || path.endsWith('/billing-summary'))
+      ? JSON.parse(await response.text(), (key, value, context) => {
+        if (!['amount', 'totalAmount', 'unitPrice'].includes(key) || typeof value !== 'number') return value
+        if (context?.source) return context.source
+        if (Number.isSafeInteger(value)) return String(value)
+        throw new Error('Trình duyệt không đọc chính xác số tiền này. Hãy cập nhật trình duyệt.')
+      })
+      : await response.json()
+  } catch (failure) {
+    if (!(failure instanceof SyntaxError)) throw failure
+    body = null
+  }
   if (!response.ok) {
     const error = new Error(body?.message || `Không xử lý được yêu cầu (HTTP ${response.status}).`)
     error.status = response.status
@@ -55,7 +68,10 @@ export function savePatientAllergy(encounterId, itemId, data) {
 }
 
 export const getEncounterClinical = (id) => request(`/${id}/clinical`)
+export const searchSymptoms = (search, signal) => request(`/api/doctor/symptoms?${new URLSearchParams({ search })}`, 'GET', undefined, undefined,
+  signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000))
 export const getEncounterInvoices = (id) => request(`/${id}/invoices`)
+export const getEncounterBillingSummary = (id) => request(`/${id}/billing-summary`)
 export const createExaminationInvoice = (id, key) => request(`/${id}/invoices`, 'POST', undefined, key)
 export const issueExaminationInvoice = (id, invoiceId, version, key) => request(`/${id}/invoices/${invoiceId}/issue`, 'POST', { version }, key)
 export const saveEncounterNotes = (id, data) => request(`/${id}/clinical/notes`, 'PUT', data)

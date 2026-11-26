@@ -51,7 +51,7 @@ SlotReservation là bảng khóa chiếm tài nguyên, không là lịch sử. A
 
 | Bảng | Cột nghiệp vụ và ràng buộc |
 |---|---|
-| Encounter | code UQ; appointment_id → Appointment UQ; status PLANNED/IN_PROGRESS/WAITING_CLS/COMPLETED/CANCELLED/NO_SHOW; started_at? datetime2(3); completed_at? datetime2(3); chief_complaint? nvarchar(2000); examination_note? nvarchar(max); treatment_plan? nvarchar(max); followup_note? nvarchar(2000). Patient/doctor/department lấy từ Appointment bất biến. |
+| Encounter | code UQ; appointment_id → Appointment UQ; status PLANNED/IN_PROGRESS/WAITING_CLS/COMPLETED/CANCELLED/NO_SHOW; started_at? datetime2(3); completed_at? datetime2(3); chief_complaint? nvarchar(2000); history_of_present_illness? nvarchar(max) (V19, bệnh sử); examination_note? nvarchar(max); treatment_plan? nvarchar(max); followup_note? nvarchar(2000). Patient/doctor/department lấy từ Appointment bất biến. |
 | PatientHistory | patient_id → Patient; history_type PERSONAL/FAMILY/SURGERY; description nvarchar(2000); recorded_by → Account; recorded_at datetime2(3); is_active bit. |
 | Allergen | V17: danh mục chất gây dị ứng, code varchar(40) UQ giữ cố định; name nvarchar(200) UQ không phân biệt hoa thường/dấu; is_active bit; version rowversion. Quyền CATALOG_MANAGE tạo/sửa/ngừng áp dụng, không xóa hồ sơ đang tham chiếu. Không mặc định coi mã nội bộ là mã thuật ngữ quốc tế. |
 | PatientAllergy | patient_id → Patient; allergen_id? → Allergen; substance nvarchar(200) giữ tên lúc ghi nhận; other_note? nvarchar(1000) bắt buộc khi không có allergen_id và phải trống khi đã chọn danh mục; reaction? nvarchar(1000); severity UNKNOWN/MILD/MODERATE/SEVERE; recorded_by → Account; is_active bit; version rowversion. Một bệnh nhân có nhiều dòng ứng với nhiều chất, mỗi dòng có phản ứng/mức độ riêng. UQ filtered (patient_id,allergen_id) khi active và allergen_id khác NULL. V17 giữ các tên cũ trong other_note để bác sĩ đối chiếu, không tự gộp/đoán chất. |
@@ -131,3 +131,30 @@ Các cột tổng hợp amount/status phải được cập nhật trong cùng t
 | Diagnosis.diagnosis_name_snapshot | Tên chính thức được chốt khi chọn mã; description tiếp tục là mô tả lâm sàng bác sĩ ghi. |
 
 Không điền ngược phiên bản/ID cho mã cũ. Import danh mục là thao tác master data có transaction và audit SYSTEM kèm nguồn/hash, không sửa lịch sử Diagnosis. Không tạo bảng EMR sao chép.
+### Bổ sung Hỏi bệnh V19 (2026-11-26)
+
+| Bảng | Dữ liệu và ràng buộc |
+|---|---|
+| Symptom | id bigint PK; name nvarchar(200); normalized_name tính toán, unique, collation CI_AI, đổi đ thành d (V20 giới hạn NVARCHAR(200)/400byte); is_active bit; created_at UTC. Danh mục rỗng khi migrate, không tự đưa triệu chứng tự nhập vào đây. |
+| EncounterSymptom | id bigint PK; encounter_id FK Encounter; symptom_id nullable FK Symptom; name_snapshot nvarchar(200); normalized_name nvarchar(200) BIN2; display_order int dương. UQ(encounter_id,normalized_name) và UQ(encounter_id,display_order). API tối đa 50 mục, chống trùng tên không dấu/hoa thường/khoảng trắng. |
+
+Bệnh sử và triệu chứng do bác sĩ ghi nhận thuộc Encounter, độc lập với khám thực thể và khai báo PrevisitResponse. Tên danh mục lấy từ server và chốt snapshot; tên tự nhập chỉ lưu trong EncounterSymptom. Toàn bộ được ghi cùng transaction/rowversion/audit ghi chú khám hiện có; không thay đổi enum hoặc điều kiện kết thúc lượt khám. Chi tiết hợp đồng và kiểm chứng V19 xem SCHEMA_PLAN.md và implementation/PROGRESS.md.
+Bổ sung V20 (2026-11-26): seed250 triệu chứng cơ năng ngoại trú theo12nhóm; nhóm chỉ là comment trong migration, không thêm bảng. INSERT bỏ qua normalized_name đã có, không đổi ID/tên/trạng thái hay snapshot; không tự kích hoạt mục inactive. Danh mục tự biên soạn phục vụ chọn triệu chứng, không phải danh mục chẩn đoán chính thức. Chi tiết và hướng dẫn migrationmain tại database/SCHEMA_PLAN.md.
+
+### Read model viện phí bác sĩ (2026-11-26, không đổi schema)
+
+EncounterBillingSummaryResponse đọc examinationAmount từ Appointment.examination_amount; invoicedAmount cộng total_amount của hóa đơn khôngVOID (gồmDRAFT); unbilledAmount bằng phí khám nếu chưa có dòngEXAMINATION thuộc hóa đơn khôngVOID, ngược lại0; receivedAmount là tổng Payment CONFIRMED trừ Refund thực chi, tổng hợp riêng để không nhân tiền. Không có field số dư trong DTO này. Tiền tổng quan truyền chuỗi số nguyên VND để giữ chính xác19chữ số.
+
+costs hiển thị dịch vụ/đơn vị/SL/đơn giá/thành tiền/trạng thái dòng: trước hóa đơn, đơn giá lấy phí chốt trên Appointment, tên dịch vụ theo Service được tham chiếu bởi price_id; sau lập/phát hành dùng InvoiceLine.service_name/unit_price/amount đã lưu, không lấy giá hiện hành thay snapshot. Không có chỉnh sửa giá từ UI.
+
+invoices chứa InvoiceResponse hiện có cùng receivedAmount và paymentStatus trình bày: NOT_DUE cho nháp, NOT_APPLICABLE choVOID hoặc không có dòng thu ACTIVE, UNPAID khi chưa thu, PARTIAL khi đã thu nhưng chưa đủ, PAID khi dữ liệu thu thực có tiền và các dòng hợp lệ đã đủ theo cách tính P21. Đối soát nội bộ tái sử dụng CashPaymentRepository.balances, không trả số dư qua API bác sĩ. Không thay enum persisted, API ghi hóa đơn/thu tiền, hoặc luồng Encounter.
+
+### Cashier Workspace và chính sách thu toàn bộ (2026-11-26)
+
+GET /api/cashier/invoices/search?search=&status=PENDING|PAID|ALL&page=1&pageSize=10 trả CashierWorkspaceResponse: statistics (pending, paid, receivedToday dạng chuỗi VND, date Việt Nam), items, page/pageSize/totalElements/totalPages. pageSize chỉ10/20/50, từ khóa tối đa100, trang từ1; thứ tự issued_at DESC,id DESC ổn định. Chỉ liệt kê Invoice ISSUED có Encounter trực tiếp (không BookingHold), kể cả tabTất cả; không đưa DRAFT/VOID vào luồng thu. PENDING là còn khoản thu hợp lệ; PAID là có dòng ACTIVE và từng dòng đã đủ theo phân bổ ròng. Hóa đơn hủy hết dòng chỉ xem ởTất cả, không tính đã thanh toán.
+
+Tìm theo mã hóa đơn/mãPatient/tên snapshot hoặc tên hiện tại/số điện thoại; tên dùng collation CI_AI, bỏ dấu/đ/hoa thường. CCCD so khớp đầy đủ để tra cứu, không trả identity_number trong DTO danh sách hoặc chi tiết mới; không sinh bản lưu CCCD khác. Escape ký tự LIKE để %, _, [ không thành wildcard ngoài ý muốn.
+
+Thống kê chờ/đã thanh toán là toàn bộ hóa đơn ISSUED trực tiếp, độc lập search/tab/page. receivedToday = Payment CONFIRMED/CASH của lượt trực tiếp có paid_at trong ngày Asia/Saigon trừ Refund thực chi hôm đó của các Payment CASH này; không trừ RefundRequest chưa chi, không nhân tổng qua JOIN dòng. Ngày Việt Nam chuyển thành hai mốc UTC nửa mở; JDBC truyền LocalDateTime UTC cho datetime2, không dùng múi giờ mặc định JVM. issuedAt cũng đọc UTC tường minh rồi frontend hiển thị Asia/Saigon.
+
+GET /api/cashier/invoices/{id}/detail trả invoice snapshot, patientCode, phone, paymentAmount (chuỗi tổng khoản thanh toán hợp lệ), paymentStatus, canCollect. Không trả cột số dư/phân bổ ở read model mới; backend vẫn dùng P21 balances/PaymentAllocation để tính đúng từng dòng. GET chính xác theo code và GET balance cũ giữ tương thích, chỉCASHIER. API thu tiền nhận amount nhưng chỉ chấp nhận bằng toàn bộ khoản hợp lệ sau khóa; không thêm bảng/đổi schema. Dữ liệu thu một phần cũ được đọc nguyên trạng và thanh toán nốt toàn bộ phần còn hợp lệ, không xóa hoặc viết lại lịch sử.

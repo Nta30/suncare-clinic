@@ -5,7 +5,9 @@ import java.util.List;
 
 public record EncounterClinicalResponse(Notes notes, List<Vital> vitals, List<Diagnosis> diagnoses,
         boolean editable, boolean replayed) {
-    public record Notes(String chiefComplaint, String examinationNote, String treatmentPlan, String followupNote, String version) {}
+    public record Notes(String chiefComplaint, String examinationNote, String treatmentPlan, String followupNote,
+            String version, String historyOfPresentIllness, List<Symptom> symptoms) {}
+    public record Symptom(Long symptomId, String name) {}
     public record Vital(long id, String measuredAt, BigDecimal temperatureC, Integer pulseBpm,
             Integer systolicMmhg, Integer diastolicMmhg, Integer respiratoryRate,
             BigDecimal spo2Percent, BigDecimal weightKg, BigDecimal heightCm) {}

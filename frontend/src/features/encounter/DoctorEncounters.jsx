@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { cloneElement, useEffect, useId, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faChevronRight, faNotesMedical, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
 import EncounterClinical from './EncounterClinical'
+import EncounterPatientHeader from './EncounterPatientHeader'
 import EncounterInvoices from './EncounterInvoices'
 import PatientEncounterHistory from './PatientEncounterHistory'
 import { getEncounterWorklist, getEncounter, startEncounter, savePatientHistory, savePatientAllergy } from '../../services/encounterApi'
@@ -11,27 +12,29 @@ const inputClass = 'mt-1 min-h-11 w-full rounded-lg border border-clinical-borde
 const historyTypes = { PERSONAL: 'Bản thân', FAMILY: 'Gia đình', SURGERY: 'Phẫu thuật' }
 const severities = { UNKNOWN: 'Chưa xác định', MILD: 'Nhẹ', MODERATE: 'Vừa', SEVERE: 'Nặng' }
 const statuses = { PLANNED: 'Chưa bắt đầu', IN_PROGRESS: 'Đang khám', WAITING_CLS: 'Chờ cận lâm sàng', COMPLETED: 'Đã hoàn tất', CANCELLED: 'Đã hủy', NO_SHOW: 'Vắng mặt' }
-const encounterSections = [['overview', 'Tổng quan'], ['visit-history', 'Lịch sử khám'], ['history', 'Tiền sử bệnh'], ['allergy', 'Dị ứng'], ['vitals', 'Sinh hiệu'], ['notes', 'Ghi chú'], ['diagnosis', 'Chẩn đoán'], ['invoices', 'Hóa đơn']]
+const encounterSections = [['clinical', 'Khám lâm sàng'], ['treatment', 'Chẩn đoán và điều trị'], ['invoices', 'Viện phí']]
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Saigon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const time = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 const dateTime = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
-const snapshotText = (value) => value.replace(/^(PERSONAL|FAMILY|SURGERY):/gm, (_, type) => `${historyTypes[type]}:`).replace(/\[(UNKNOWN|MILD|MODERATE|SEVERE)\]/g, (_, severity) => `[${severities[severity]}]`)
+const snapshotText = (value) => (value || '').replace(/^(PERSONAL|FAMILY|SURGERY):/gm, (_, type) => `${historyTypes[type]}:`).replace(/\[(UNKNOWN|MILD|MODERATE|SEVERE)\]/g, (_, severity) => `[${severities[severity]}]`)
 
 function ErrorBox({ message, onRetry }) {
   return <div role='alert' className='space-y-3 rounded-xl border border-clinical-danger/40 bg-white p-4'><p className='text-sm text-clinical-danger'>{message}</p>{onRetry && <Button onClick={onRetry}>Tải lại</Button>}</div>
 }
 
 function Field({ label, error, children }) {
-  return <label className='block text-sm font-semibold'>{label}{children}{error && <span className='mt-1 block text-sm font-normal text-clinical-danger'>{error}</span>}</label>
+  const id = useId()
+  return <div className='min-w-0 text-sm'><label htmlFor={id} className='block font-semibold'>{label}</label>{cloneElement(children, { id })}{error && <p className='mt-1 text-clinical-danger'>{error}</p>}</div>
 }
 
-function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, allergenOptions = [] }) {
+function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, allergenOptions = [], compact = false }) {
   const allergy = kind === 'allergy'
   const initial = allergy ? { allergenId: '', otherNote: '', reaction: '', severity: 'UNKNOWN', isActive: true } : { historyType: 'PERSONAL', description: '', isActive: true }
   const [form, setForm] = useState(initial)
   const [editing, setEditing] = useState(null)
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const editorRef = useRef(null)
   function change(event) {
     const { name, value, checked, type } = event.target
     setForm((previous) => ({ ...previous, [name]: type === 'checkbox' ? checked : value, ...(name === 'allergenId' ? { otherNote: '' } : {}) }))
@@ -47,6 +50,7 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
     onDirtyChange(kind, false)
   }
   function edit(item) {
+    if (editorRef.current) editorRef.current.open = true
     setEditing(item)
     setForm(allergy ? { allergenId: item.allergenId == null ? 'OTHER' : String(item.allergenId), otherNote: item.otherNote || '', reaction: item.reaction || '', severity: item.severity, isActive: item.isActive } : { historyType: item.historyType, description: item.description, isActive: item.isActive })
     setErrors({})
@@ -62,7 +66,7 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
     if (result.ok) { reset(); setMessage('Đã lưu thông tin.') }
     else setErrors(result.fieldErrors || {})
   }
-  return <section className='min-w-0 space-y-4 rounded-xl border border-clinical-border bg-white p-4 sm:p-5' aria-labelledby={`${kind}-title`}>
+  return <section className={compact ? 'min-w-0 space-y-4 border-t border-clinical-border p-4' : 'min-w-0 space-y-4 rounded-xl border border-clinical-border bg-white p-4 sm:p-5'} aria-labelledby={`${kind}-title`}>
     <h2 id={`${kind}-title`} className='text-lg font-bold'>{allergy ? 'Dị ứng hiện tại' : 'Tiền sử hiện tại'}</h2>
     {allergy && <p className='text-sm text-clinical-muted'>Mỗi chất là một dòng riêng với phản ứng và mức độ tương ứng. Có thể lưu thêm nhiều chất cho cùng bệnh nhân.</p>}
     {items.length === 0 ? <p className='text-sm text-clinical-muted'>Chưa ghi nhận thông tin {allergy ? 'dị ứng' : 'tiền sử'}. Điều này chưa xác nhận bệnh nhân không có {allergy ? 'dị ứng' : 'tiền sử'}.</p> : <ul className='divide-y divide-clinical-border'>{items.map((item) => <li key={item.id} className='py-3 first:pt-0'>
@@ -72,7 +76,7 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
         <p className={`mt-1 text-xs font-semibold ${item.isActive ? 'text-clinical-leaf' : 'text-clinical-muted'}`}>{item.isActive ? 'Đang áp dụng' : 'Đã ngừng áp dụng'}</p>
       </div>{editable && <Button disabled={busy} onClick={() => edit(item)}>Sửa</Button>}</div>
     </li>)}</ul>}
-    {editable && <form onSubmit={submit} className='space-y-3 border-t border-clinical-border pt-4'>
+    {editable && <details ref={editorRef} className='encounter-fold'><summary className='cursor-pointer text-sm font-semibold'>Ghi nhận / cập nhật {allergy ? 'dị ứng' : 'tiền sử'}</summary><form onSubmit={submit} className='mt-3 space-y-3 border-t border-clinical-border pt-4'>
       <h3 className='text-sm font-bold'>{editing ? 'Chỉnh sửa thông tin' : `Thêm ${allergy ? 'dị ứng' : 'tiền sử'}`}</h3>
       <fieldset disabled={busy} className='space-y-3'>
         {allergy ? <>
@@ -94,13 +98,13 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
         {errors.version && <p role='alert' className='text-sm text-clinical-danger'>{errors.version}</p>}
         <div className='flex flex-wrap gap-2'><Button type='submit' variant='primary'>{busy ? 'Đang lưu...' : allergy && !editing ? 'Lưu và thêm chất khác' : 'Lưu thông tin'}</Button><Button onClick={reset}>{editing ? 'Bỏ chỉnh sửa' : 'Xóa nội dung chưa lưu'}</Button></div>
       </fieldset>
-    </form>}
+    </form></details>}
     {message && <p role='status' className='text-sm font-semibold text-clinical-success'>{message}</p>}
   </section>
 }
 
 function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
-  const [activeSection, setActiveSection] = useState('overview')
+  const [activeSection, setActiveSection] = useState('clinical')
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -174,52 +178,34 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
   if (state.error) return <ErrorBox message={state.error} onRetry={refresh} />
   const data = state.data
   const item = data.encounter
-  return <div className='min-w-0 space-y-4'>
-    <section className='rounded-xl border border-clinical-border bg-white p-4 sm:p-5'>
-      <div className='flex flex-wrap items-start justify-between gap-3'><div><h2 className='break-words text-xl font-bold'>{item.patientName}</h2><p className='mt-1 text-sm text-clinical-muted'>{item.patientCode} · {item.encounterCode}</p></div><Button disabled={busy} onClick={refresh}>Tải lại hồ sơ</Button></div>
-      <dl className='mt-4 grid gap-3 text-sm sm:grid-cols-2'>
-        <div><dt className='text-clinical-muted'>Ngày và ca khám</dt><dd>{dateTime(item.startsAt)} – {time(item.endsAt)}</dd></div>
-        <div><dt className='text-clinical-muted'>Phòng · chuyên khoa</dt><dd>{item.roomName} · {item.specialtyName}</dd></div>
-        <div><dt className='text-clinical-muted'>Trạng thái lượt khám</dt><dd className='font-semibold'>{statuses[item.status] || item.status}</dd></div>
-      </dl>
-      {!data.editable && <p className='mt-3 text-sm text-clinical-muted'>Lượt khám này chỉ cho phép xem thông tin.</p>}
-    </section>
+  const activeAllergies = data.allergies.filter((allergy) => allergy.isActive)
+  const sidebar = <>
+    <details open className='encounter-fold rounded-xl border border-clinical-border bg-white'><summary className='cursor-pointer p-4 text-sm font-bold'>Tiền sử bệnh lý</summary><HistorySection key={`history-${reload}`} kind='history' items={data.histories} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} compact /></details>
+    <details open className='encounter-fold rounded-xl border border-clinical-border bg-white'><summary className='cursor-pointer p-4 text-sm font-bold'>Tiền sử dị ứng</summary><HistorySection key={`allergy-${reload}`} kind='allergy' items={data.allergies} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} allergenOptions={data.allergenOptions} compact /></details>
+    <details className='encounter-fold rounded-xl border border-clinical-border bg-white'><summary className='cursor-pointer p-4 text-sm font-bold'>Lịch sử khám bệnh</summary><div className='min-w-0 p-3'><PatientEncounterHistory encounterId={encounterId} active onSessionExpired={onSessionExpired} /></div></details>
+    <details open={item.status === 'PLANNED'} className='encounter-fold rounded-xl border border-clinical-border bg-white'><summary className='cursor-pointer p-4 text-sm font-bold'>Bản chốt hồ sơ đầu lượt khám</summary><div className='space-y-3 border-t border-clinical-border p-4 text-sm'>
+      {data.snapshot ? <><p className='text-xs text-clinical-muted'>Chốt lúc {dateTime(data.snapshot.recordedAt)} · Chỉ đọc</p><h3 className='font-semibold'>Tiền sử bệnh lý</h3><p className='whitespace-pre-wrap break-words'>{snapshotText(data.snapshot.historyText) || 'Chưa ghi nhận tại thời điểm chốt.'}</p><h3 className='font-semibold'>Tiền sử dị ứng</h3><p className='whitespace-pre-wrap break-words'>{snapshotText(data.snapshot.allergyText) || 'Chưa ghi nhận tại thời điểm chốt.'}</p></> : <p className='text-clinical-muted'>Chưa có bản chốt. Kiểm tra tiền sử và dị ứng trước khi bắt đầu khám.</p>}
+      {item.status === 'PLANNED' && data.editable && <div className='space-y-3 border-t border-clinical-border pt-3'><label className='flex min-h-11 items-start gap-2'><input type='checkbox' checked={present} onChange={(event) => setPresent(event.target.checked)} disabled={busy} className='mt-1 h-4 w-4 shrink-0 accent-suncare-700' />Tôi xác nhận người bệnh đã có mặt và đã kiểm tra tiền sử/dị ứng.</label>{hasUnsaved && <p className='text-clinical-warning'>Lưu hoặc bỏ nội dung tiền sử/dị ứng đang sửa trước khi bắt đầu khám.</p>}<Button variant='primary' disabled={!present || busy || hasUnsaved} onClick={begin}>Bắt đầu khám và chốt thông tin</Button></div>}
+    </div></details>
+  </>
+  return <div className='encounter-workspace min-w-0 space-y-4'>
+    <EncounterPatientHeader patientName={item.patientName} status={statuses[item.status] || item.status} allergies={activeAllergies}>
+      <div className='flex flex-wrap items-start justify-between gap-3'><div className='flex min-w-0 items-start gap-3'><span className='grid h-11 w-11 shrink-0 place-items-center rounded-full bg-clinical-leaf-soft text-clinical-leaf'><FontAwesomeIcon icon={faNotesMedical} /></span><div className='min-w-0'><h2 className='break-words text-xl font-bold'>{item.patientName}</h2><p className='mt-1 break-words text-xs text-clinical-muted'>Người bệnh: {item.patientCode} · Lượt khám: {item.encounterCode}</p></div></div><span className='rounded-full bg-clinical-leaf-soft px-3 py-1 text-xs font-bold text-clinical-success'>{statuses[item.status] || item.status}</span></div>
+      <dl className='grid grid-cols-2 gap-3 border-t border-clinical-border pt-3 text-sm sm:grid-cols-3'><div><dt className='text-xs text-clinical-muted'>Chuyên khoa</dt><dd className='break-words font-semibold'>{item.specialtyName}</dd></div><div><dt className='text-xs text-clinical-muted'>Phòng khám</dt><dd className='break-words font-semibold'>{item.roomName}</dd></div><div><dt className='text-xs text-clinical-muted'>Ngày và ca khám</dt><dd className='text-xs'>{dateTime(item.startsAt)} – {time(item.endsAt)}</dd></div></dl>
+      <div className={`rounded-lg px-3 py-2 text-sm ${activeAllergies.length ? 'bg-suncare-100 text-clinical-warning' : 'bg-clinical-canvas text-clinical-muted'}`} role={activeAllergies.length ? 'note' : undefined}><p className='font-semibold'>{activeAllergies.length ? 'Cảnh báo dị ứng' : 'Chưa ghi nhận thông tin dị ứng đang áp dụng'}</p>{activeAllergies.length > 0 ? <ul className='mt-1 max-h-16 space-y-1 overflow-y-auto text-xs'>{activeAllergies.map((allergy) => <li key={allergy.id} className='break-words'>{allergy.substance || allergy.otherNote || 'Chất chưa đối chiếu'} · {severities[allergy.severity]}{allergy.reaction ? ` · ${allergy.reaction}` : ''}</li>)}</ul> : <p className='mt-1 text-xs'>Cần khai thác trực tiếp; không đồng nghĩa không có dị ứng.</p>}</div>
+      <div className='flex flex-wrap items-center justify-between gap-2 text-xs'><p className='text-clinical-muted'>Viện phí khám bệnh</p><button type='button' onClick={() => setActiveSection('invoices')} className='min-h-9 rounded-lg border border-clinical-border px-3 font-semibold hover:bg-suncare-50'>Xem viện phí</button></div>
+      {!data.editable && <p className='text-xs text-clinical-muted'>Lượt khám chỉ đọc.</p>}
+    </EncounterPatientHeader>
     {actionError && <ErrorBox message={actionError} />}
     {message && <p role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success'>{message}</p>}
-    <div role='tablist' aria-label='Các mục trong lượt khám' className='flex flex-wrap gap-2 border-b border-clinical-border pb-3'>
-      {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-11 rounded-lg border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-suncare-700 ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white hover:bg-suncare-50'}`}>{label}{dirty[code] ? ' *' : ''}</button>)}
+    <div role='tablist' aria-label='Các mục trong lượt khám' className='grid grid-cols-3 gap-2'>
+      {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-14 rounded-xl border px-2 py-3 text-xs font-semibold sm:text-sm ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white text-clinical-muted hover:bg-suncare-50'}`}>{label}</button>)}
     </div>
-    <div id='encounter-panel-history' role='tabpanel' aria-labelledby='encounter-tab-history' hidden={activeSection !== 'history'}>
-      <p className='mb-3 text-sm text-clinical-muted'>Bệnh nền, bệnh đã mắc, yếu tố gia đình và phẫu thuật trước đây. Các lần khám trước nằm trong mục Lịch sử khám.</p>
-      <HistorySection key={`history-${reload}`} kind='history' items={data.histories} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} />
-    </div>
-    <div id='encounter-panel-visit-history' role='tabpanel' aria-labelledby='encounter-tab-visit-history' hidden={activeSection !== 'visit-history'}>
-      <PatientEncounterHistory encounterId={encounterId} active={activeSection === 'visit-history'} onSessionExpired={onSessionExpired} />
-    </div>
-    <div id='encounter-panel-allergy' role='tabpanel' aria-labelledby='encounter-tab-allergy' hidden={activeSection !== 'allergy'}>
-      <HistorySection key={`allergy-${reload}`} kind='allergy' items={data.allergies} editable={data.editable} busy={busy} onSave={save} onDirtyChange={onDirtyChange} allergenOptions={data.allergenOptions} />
-    </div>
-    <section id='encounter-panel-overview' role='tabpanel' hidden={activeSection !== 'overview'} className='space-y-3 rounded-xl border border-clinical-border bg-white p-4 sm:p-5' aria-labelledby='encounter-tab-overview'>
-      <h2 id='history-snapshot-title' className='text-lg font-bold'>Bản chốt khi bắt đầu khám</h2>
-      {data.snapshot ? <>
-        <p className='text-sm text-clinical-muted'>Chốt lúc {dateTime(data.snapshot.recordedAt)}. Thay đổi tiền sử/dị ứng hiện tại không sửa bản đã chốt của lượt khám này.</p>
-        <dl className='grid gap-4 text-sm sm:grid-cols-2'><div><dt className='font-semibold'>Tiền sử</dt><dd className='mt-1 whitespace-pre-wrap break-words'>{snapshotText(data.snapshot.historyText) || 'Chưa có thông tin được ghi nhận lúc chốt.'}</dd></div><div><dt className='font-semibold'>Dị ứng</dt><dd className='mt-1 whitespace-pre-wrap break-words'>{snapshotText(data.snapshot.allergyText) || 'Chưa có thông tin được ghi nhận lúc chốt.'}</dd></div></dl>
-      </> : <p className='text-sm text-clinical-muted'>Chưa có bản chốt. Hãy kiểm tra và cập nhật tiền sử/dị ứng trước khi bắt đầu khám.</p>}
-      {item.status === 'PLANNED' && data.editable && <div className='space-y-3 border-t border-clinical-border pt-3'>
-        <label className='flex min-h-11 items-start gap-2 text-sm'><input type='checkbox' checked={present} onChange={(event) => setPresent(event.target.checked)} disabled={busy} className='mt-1 h-4 w-4 shrink-0 accent-suncare-700' />Tôi xác nhận bệnh nhân đã có mặt và đã kiểm tra tiền sử/dị ứng được ghi nhận.</label>
-        {hasUnsaved && <p role='status' className='text-sm text-clinical-warning'>Hãy lưu hoặc bỏ nội dung đang sửa trước khi bắt đầu khám.</p>}
-        <Button variant='primary' disabled={!present || busy || hasUnsaved} onClick={begin}>{busy ? 'Đang xử lý...' : 'Bắt đầu khám và chốt thông tin'}</Button>
-      </div>}
-    </section>
-    <div hidden={!['vitals', 'notes', 'diagnosis'].includes(activeSection)}>
-      <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} />
-    </div>
-    <div id='encounter-panel-invoices' role='tabpanel' aria-labelledby='encounter-tab-invoices' hidden={activeSection !== 'invoices'}>
-      <EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />
-    </div>
+    {/* P24 adds a real CLS tab here; P26 actions stay separate from note saving. */}
+    <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} sidebar={sidebar} invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />} />
+    {/* P23 completion belongs to an explicit future command, never the save action. */}
   </div>
 }
-
 export default function DoctorEncounters({ onSessionExpired }) {
   const [filters, setFilters] = useState(() => ({ date: today(), status: 'ALL', search: '', pageSize: 10 }))
   const [query, setQuery] = useState(() => ({ date: today(), status: 'ALL', search: '', pageSize: 10, page: 1 }))
