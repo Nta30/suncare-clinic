@@ -358,3 +358,41 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+/* Chuyển động danh mục thuốc tuân theo quy tắc reduced-motion phía trên. */
+.prescription-section :is(input, textarea):focus {
+  border-color: var(--color-suncare-600);
+  outline: 2px solid var(--color-suncare-600);
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+.prescription-dose-field:focus-within {
+  border-color: var(--color-suncare-600);
+  outline: 2px solid var(--color-suncare-600);
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+.prescription-section .prescription-dose-field input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.prescription-lookup {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 160ms ease, transform 160ms ease, display 160ms allow-discrete;
+}
+
+.prescription-lookup[hidden] {
+  display: none;
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+@starting-style {
+  .prescription-lookup:not([hidden]) {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "source": "Quyết định chủ dự án trong hội thoại ngày 2026-11-27",
+  "policy": "Chỉ chốt đơn vị cấp phát; không chốt dung tích/quy cách hoặc tỷ lệ quy đổi.",
+  "records": [
+    {
+      "code": "SCG-2518BC83FE3C6376",
+      "name": "Acetaminophen",
+      "ingredient": "Acetaminophen",
+      "strength": "32 mg/mL",
+      "dosage_form": "Hỗn dịch (uống)",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai"
+    },
+    {
+      "code": "SCG-CADBA3EF416D237D",
+      "name": "Albuterol sulfate",
+      "ingredient": "Albuterol sulfate",
+      "strength": ".63 mg/3mL",
+      "dosage_form": "Dung dịch (hít)",
+      "dose_unit": "mL",
+      "dispensing_unit": "ống"
+    },
+    {
+      "code": "SCG-71904691D2018147",
+      "name": "Aluminum hydroxide + Magnesium hydroxide",
+      "ingredient": "Aluminum hydroxide + Magnesium hydroxide",
+      "strength": "40 mg/mL + 40 mg/mL",
+      "dosage_form": "Hỗn dịch (uống)",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai"
+    },
+    {
+      "code": "SCG-A67A02672F3239DD",
+      "name": "Clindamycin phosphate",
+      "ingredient": "Clindamycin phosphate",
+      "strength": "10 mg/mL",
+      "dosage_form": "Dung dịch (dùng ngoài)",
+      "dose_unit": "mL",
+      "dispensing_unit": "lọ"
+    },
+    {
+      "code": "SCG-46288571F49C9C9E",
+      "name": "Cyanocobalamin",
+      "ingredient": "Cyanocobalamin",
+      "strength": "0.5 mg",
+      "dosage_form": "Thuốc xịt định liều (mũi)",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình xịt"
+    },
+    {
+      "code": "SCG-9BC704484ACD12C9",
+      "name": "Furosemide",
+      "ingredient": "Furosemide",
+      "strength": "10 mg/mL",
+      "dosage_form": "Dung dịch (uống)",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai"
+    },
+    {
+      "code": "SCG-0C6026C0C1C21D00",
+      "name": "Ipratropium bromide",
+      "ingredient": "Ipratropium bromide",
+      "strength": ".5 mg/2.5mL",
+      "dosage_form": "Dung dịch (hít)",
+      "dose_unit": "mL",
+      "dispensing_unit": "ống"
+    },
+    {
+      "code": "SCG-4AAC771137FA19AF",
+      "name": "Nitroglycerin",
+      "ingredient": "Nitroglycerin",
+      "strength": "20 mg/g",
+      "dosage_form": "Thuốc mỡ (dùng ngoài)",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp"
+    },
+    {
+      "code": "SCG-16796B955116AC4B",
+      "name": "Sucralfate",
+      "ingredient": "Sucralfate",
+      "strength": "100 mg/mL",
+      "dosage_form": "Hỗn dịch (uống)",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai"
+    },
+    {
+      "code": "SCG-734E3A623E57D278",
+      "name": "Sulfamethoxazole + Trimethoprim",
+      "ingredient": "Sulfamethoxazole + Trimethoprim",
+      "strength": "40 mg/mL + 8 mg/mL",
+      "dosage_form": "Hỗn dịch (uống)",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai"
+    },
+    {
+      "code": "SCG-ECEC0E2B356D5AB4",
+      "name": "Tretinoin",
+      "ingredient": "Tretinoin",
+      "strength": ".2 mg/g",
+      "dosage_form": "Kem (dùng ngoài)",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp"
+    }
+  ]
+}

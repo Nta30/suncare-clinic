@@ -96,7 +96,7 @@ function DiagnosisEditor({ type, data, disabled, encounterId, perform, errors, o
   </section>
 }
 
-function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, onSessionExpired, perform, busy, errors, onRefresh }) {
+function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onRefresh }) {
   const [notes, setNotes] = useState(() => Object.fromEntries(noteFields.map(([name]) => [name, data.notes[name] || ''])))
   const [savedNotes, setSavedNotes] = useState(data.notes)
   const [symptoms, setSymptoms] = useState(data.notes.symptoms || [])
@@ -140,20 +140,20 @@ function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, onSe
         <div id='encounter-panel-treatment' role='tabpanel' aria-labelledby='encounter-tab-treatment' hidden={section !== 'treatment'} className='space-y-4'>
           <DiagnosisEditor type='FINAL' {...{ data, encounterId, disabled, perform, onSessionExpired }} errors={fields('diagnosis')} />
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Hướng xử trí và điều trị</h3>{noteField('treatmentPlan')}</section>
-          <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Đơn thuốc ngoại trú</h3><p className='text-sm text-clinical-muted'>Chức năng lập và xem đơn thuốc của lượt khám này chưa được hỗ trợ.</p></section>
+          {prescriptions}
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Tư vấn và hẹn tái khám</h3>{noteField('followupNote')}<p className='text-xs text-clinical-muted'>Ghi dặn dò và đề nghị tái khám; không tạo lịch hẹn mới.</p></section>
         </div>
         <div id='encounter-panel-invoices' role='tabpanel' aria-labelledby='encounter-tab-invoices' hidden={section !== 'invoices'}>{invoices}</div>
       </div>
     </div>
     <footer role='region' className='sticky bottom-0 z-30 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t border-clinical-border bg-white/95 p-4 shadow-[0_-4px_16px_rgb(0_0_0/0.04)] backdrop-blur-sm' aria-label='Lưu hồ sơ khám'>
-      <div className='min-w-0 text-sm'><p role='status' className='font-semibold'>{busy ? 'Đang lưu…' : dirty ? 'Ghi chú khám chưa lưu' : 'Ghi chú khám đã đồng bộ'}</p><p className='mt-1 text-xs text-clinical-muted'>{savedAt ? `Lưu ghi chú gần nhất: ${showTime(savedAt)}` : 'Chưa có lần lưu ghi chú trong phiên này.'}</p><p className='mt-1 max-w-2xl text-xs text-clinical-muted'>Lưu ghi chú khám; sinh hiệu, tiền sử, dị ứng và chẩn đoán lưu riêng.</p></div>
+      <div className='min-w-0 text-sm'><p role='status' className='font-semibold'>{busy ? 'Đang lưu…' : dirty ? 'Ghi chú khám chưa lưu' : 'Ghi chú khám đã đồng bộ'}</p><p className='mt-1 text-xs text-clinical-muted'>{savedAt ? `Lưu ghi chú gần nhất: ${showTime(savedAt)}` : 'Chưa có lần lưu ghi chú trong phiên này.'}</p><p className='mt-1 max-w-2xl text-xs text-clinical-muted'>Lưu ghi chú khám; sinh hiệu, tiền sử, dị ứng, chẩn đoán và đơn thuốc lưu riêng.</p></div>
       <div className='flex flex-wrap gap-2'><Button disabled={Boolean(busy)} onClick={() => { if (window.confirm('Tải lại sẽ bỏ các nội dung khám chưa lưu. Tiếp tục?')) onRefresh() }}>Tải lại dữ liệu khám</Button><form id='encounter-notes-form' onSubmit={saveNotes}><Button type='submit' variant='primary' disabled={disabled || !dirty}>Lưu hồ sơ khám</Button></form></div>
     </footer>
   </>
 }
 
-export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', sidebar, invoices }) {
+export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', sidebar, invoices, prescriptions }) {
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState('')
@@ -188,6 +188,6 @@ export default function EncounterClinical({ encounterId, onSessionExpired, secti
     {error && <p role='alert' className='rounded-lg border border-clinical-danger/40 bg-white p-3 text-sm text-clinical-danger'>{error}</p>}
     {message && <p role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm text-clinical-success'>{message}</p>}
     {!state.data.editable && <p className='text-sm text-clinical-muted'>Hồ sơ chỉ đọc. Chỉ được ghi nhận khi lượt khám đang diễn ra.</p>}
-    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, sidebar, invoices, onSessionExpired, perform, busy, errors }} onRefresh={refresh} />
+    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors }} onRefresh={refresh} />
   </div>
 }

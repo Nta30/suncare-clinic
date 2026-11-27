@@ -1,6 +1,10 @@
 
 # SUNCARE CLINIC — SQL SCHEMA PLAN
 
+### Bổ sung V21 — dữ liệu Drug, không đổi schema (2026-11-27)
+
+V21__seed_outpatient_drug_catalog.sql thêm400 công thức generic từ FDA NDC/openFDA vào Drug V8; không bảng/cột/index mới. Giữ bản ghi hiện có bằng kiểm mã và khóa ingredient/strength/dosage_form/unit; trùng mã khác công thức thì dừng, không ghi đè. Đã kiểm trên SuncareClinicMigrationTest; main chưa chạy. Nguồn/provenance và cách cập nhật main: [DRUG_CATALOG.md](DRUG_CATALOG.md). Kết quả và trạng thái thực tế chỉ ghi ở PROGRESS.md.
+
 ## 1. Thông tin chung
 
 - Database: SuncareClinic
@@ -332,3 +336,12 @@ Kiểm tra profile migrationmain trỏ đúng SuncareClinic trước khi chạy;
 Sau đó truy vấn dbo.flyway_schema_history: V20 success=1; sys.columns normalized_name max_length=400; dbo.Symptom có các mục Ho/Sốt/Đau bụng, không nhóm normalized_name trùng. Tổng250 là kết quả DB thử ban đầu rỗng, không ép số dòng chính bằng250 nếu có dữ liệu trước đó. API doctor search ho/sot/đau/dau bung phải trả kết quả thật; giữ giới hạn20 hiện có. Kết quả thực chạy ở PROGRESS.md; lệnh trên là hướng dẫn, không phải bằng chứng đã migrate main.
 
 Hậu kiểm phiênV20: cả test và main hiệnV20,250 triệu chứng, normalized_name400byte,0 khóa trùng, checksum V19/V20 khớp. Agent chỉ chạy Maven profile migrationtest để kiểm thử; main được tiến trình migrationmain+DevTools đã có áp dụng lúc resource mới xuất hiện. Không chạy lại lệnh migrationmain nếu đãV20; chuyển ứng dụng về profile thường sau migration để tránh tự áp dụng version mới trong lúc phát triển. Chi tiết thời điểm và bằng chứng tại PROGRESS.md.
+## V23 — bổ sung đơn vị cấp phát đã chốt
+
+V23__complete_confirmed_drug_dispensing_units.sql điền 11 dispensing_unit NULL theo quyết định chủ dự án ngày 2026-11-27, đối chiếu chính xác mã/tên/hoạt chất/hàm lượng/dạng/unit/dose_unit. Không đổi schema, không sửa V22 hoặc đơn thuốc cũ, không quy đổi. Nguồn bổ sung: scripts/data/outpatient-drug-units-confirmed.json; kết quả chạy thực tế tại PROGRESS.md.
+
+## V22 — đơn vị liều dùng và cấp phát
+
+Theo quyết định mới ngày2026-11-27: thuốc viên cấp phát theo viên; thuốc lỏng/bôi dùng bao gói nguồn rõ; không thêm quy đổi. Thêm dose_unit/dispensing_unit nvarchar(50) nullable vào Drug và PrescriptionItem, giữ unit cũ cho dữ liệu cũ/tương thích. Không thêm bảng, không sửa V8/V21, không update đơn đã phát hành. API mới chỉ kê thuốc active có đủ hai đơn vị và chốt hai snapshot khi lưu; đơn cũ chưa phát hành phải xác nhận lại khi lưu trước khi issue.
+
+Nguồn và11 mục cần rà soát nằm trong scripts/data/outpatient-drug-units.json; script prepare_drug_units.py đọc manifest V21 đã chốt, không tự chọn dung tích. 400 dose_unit/389 dispensing_unit/11 NULL cần rà soát; các bản ghi source đã chỉnh khác công thức/định danh hoặc ngoài manifest không bị ghi đè. Chi tiết tại DRUG_CATALOG.md; bằng chứng migrationtest/migrationmain tại PROGRESS.md.

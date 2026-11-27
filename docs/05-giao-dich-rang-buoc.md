@@ -87,6 +87,16 @@ Phát hành result khóa Order và các version. Xác nhận cùng Order, nội 
 
 Review tham chiếu đúng result version/order/Encounter. Hoàn tất khóa Encounter, Orders, invoice liên quan (gồm hold invoice) và kiểm tra lại chẩn đoán FINAL, tất cả current published result đã review hoặc Order đã hủy, không draft prescription, mọi outstanding=0. Chuyển Encounter và Appointment COMPLETED nguyên tử. Nếu published correction đến sau hoàn tất, giữ trạng thái và ghi review bổ sung, không tự mở lại hoặc tự xóa chẩn đoán.
 
+### Đơn thuốc — phạm vi P22.b.1
+
+P22.units/V22: trước khi tạo/lưu phải kiểm Drug active có đủ dose_unit/dispensing_unit dưới cùng khóa Drug; lưu hai snapshot vào PrescriptionItem cùng các trường cũ. Phát hành kiểm snapshot hai đơn vị đã đầy đủ; DRAFT legacy thiếu phải lưu xác nhận lại. Đổi đơn vị danh mục không tự thay snapshot đã lưu, không dùng dữ liệu mới của Drug để suy đơn vị cho ISSUED cũ. Không có quy đổi số lượng tự động giữa hai đơn vị khác nhau.
+
+Khóa Appointment → Encounter → command idempotency → Prescription → các Drug theo ID tăng dần. Kiểm tra DOCTOR và bác sĩ phụ trách trước replay; lệnh ghi mới chỉ khi Appointment BOOKED/Encounter IN_PROGRESS. Tạo mới kiểm tra bản làm việc hiện có dưới khóa Encounter, khóa Drug tăng dần rồi tạo đơn/dòng/snapshot/lời dặn/audit/receipt nguyên tử. POST nhận body có1–100 dòng; không lưu đơn rỗng theo P22.UI.validation ngày2026-11-27. Lưu thay toàn bộ dòng DRAFT cùng transaction, kiểm rowversion Prescription và lấy snapshot từ Drug còn sử dụng. Không tính liều hoặc số lượng thay bác sĩ.
+
+Phát hành kiểm DRAFT/ít nhất một dòng hợp lệ/thuốc active/không đơn ISSUED khác, cập nhật status/issued_at và giữ snapshot đã lưu. Khóa Encounter và unique index V8 cùng chống phát hành trùng. ISSUED không có API sửa/xóa. Bỏ nháp xóa riêng PrescriptionItem và Prescription DRAFT sau kiểm version, giữ audit/receipt; lỗi phải rollback cả dòng/đơn.
+
+Audit và CommandReceipt(resource_type=Prescription) cùng transaction với đơn/dòng. Cùng key/payload/tài khoản replay trước kiểm trạng thái/version/thuốc để retry sau commit vẫn thành công; quyền/chủ sở hữu luôn kiểm lại. Bỏ nháp replay từ receipt dù tài nguyên đã xóa. Retry lệnh cũ không tự tạo lại tài nguyên đã bỏ. Không tự hoàn tất lượt khám hoặc phát sinh tiền.
+
 ### TX11 — Hoàn tiền thủ công
 
 Khóa RefundRequest và Payment nguồn. Tổng yêu cầu hoàn chưa được giải quyết không vượt số tiền còn có thể hoàn; LINE_CANCELLED còn bị giới hạn theo allocation của dòng đã hủy tương ứng. Tiền chi được ghi bằng Refund với bằng chứng/reference và command key; tổng chi không vượt request và tổng refund/payment không vượt Payment.amount. Hoàn thất bại không tạo dòng Refund thành công. COMPLETED khi đủ số tiền; mọi lần chi được audit. Không gọi API tự hoàn MoMo trong v1.

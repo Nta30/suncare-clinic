@@ -18,6 +18,7 @@ const AppointmentSchedule = lazy(() => import('./features/appointment/Appointmen
 const DoctorTimetable = lazy(() => import('./features/appointment/DoctorTimetable'))
 const DoctorEncounters = lazy(() => import('./features/encounter/DoctorEncounters'))
 const AllergenManagement = lazy(() => import('./features/encounter/AllergenManagement'))
+const DrugManagement = lazy(() => import('./features/prescription/DrugManagement'))
 const CashierPayments = lazy(() => import('./features/billing/CashierPayments'))
 
 const roleLabels = {
@@ -174,6 +175,8 @@ function App() {
               {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('allergens')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Chất gây dị ứng</button>}
               {account?.permissions.includes('CATALOG_MANAGE') &&
+                <button onClick={() => setMode('drugs')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Thuốc</button>}
+              {account?.permissions.includes('CATALOG_MANAGE') &&
                 <button onClick={() => setMode('scheduling-catalog')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Ca & giá khám</button>}
               {account?.permissions.includes('ACCOUNT_MANAGE') &&
                 <button onClick={() => setMode('assignments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Phân công</button>}
@@ -198,7 +201,11 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens', 'cashier-payments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens', 'drugs', 'cashier-payments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+        {authState === 'signedIn' && mode === 'drugs' && account?.permissions.includes('CATALOG_MANAGE') &&
+          <Suspense fallback={<p role='status'>Đang tải danh mục thuốc...</p>}>
+            <DrugManagement key={account.accountId} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
         {authError && <div role="alert" className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">{authError}</div>}
         {authState === 'loading' && <p role="status" className="rounded-2xl bg-white p-6">Đang kiểm tra phiên đăng nhập...</p>}
         {authState === 'error' && <button onClick={() => window.location.reload()} className="rounded-xl bg-suncare-700 px-5 py-3 text-white">Thử kết nối lại</button>}

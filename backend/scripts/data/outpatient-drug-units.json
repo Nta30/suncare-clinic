@@ -1,0 +1,5180 @@
+{
+  "policy": "viên cấp phát theo viên; bao gói khác chỉ khi nguồn rõ; không quy đổi",
+  "source": "outpatient-drugs-openfda.json",
+  "records": [
+    {
+      "code": "SCG-4214F8CF1462914A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0054-0142",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-0142%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0054-0142-25)"
+      ]
+    },
+    {
+      "code": "SCG-AA52A6CAEC101043",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0054-0140",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-0140%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0054-0140-25)"
+      ]
+    },
+    {
+      "code": "SCG-D8BB839021E88CA2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0054-0141",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-0141%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0054-0141-25)"
+      ]
+    },
+    {
+      "code": "SCG-2518BC83FE3C6376",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0121-0966",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-0966%22",
+      "packaging": [
+        "10 TRAY in 1 CASE (0121-0966-00)  / 10 CUP, UNIT-DOSE in 1 TRAY / 5 mL in 1 CUP, UNIT-DOSE (0121-0966-05)",
+        "3 TRAY in 1 CASE (0121-0966-94)  / 10 CUP, UNIT-DOSE in 1 TRAY / 5 mL in 1 CUP, UNIT-DOSE (0121-0966-05)"
+      ]
+    },
+    {
+      "code": "SCG-E3CD03AB9DDD2BEE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42507-501",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242507-501%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (42507-501-02)  / 100 TABLET in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-C0343310944A97EE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-1750",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-1750%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (0363-1750-08)  / 24 TABLET, FILM COATED in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-C528DDBFCA662FD7",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0472-0082",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220472-0082%22",
+      "packaging": [
+        "473 mL in 1 BOTTLE (0472-0082-16)"
+      ]
+    },
+    {
+      "code": "SCG-A545DB6403A1EFE6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7519",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7519%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-7519-61)  / 1 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-FADBB2ABAA6416D0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7507",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7507%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-7507-61)  / 1 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-C24DCF92A45ED2FD",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "73453-114",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2273453-114%22",
+      "packaging": [
+        "1 TUBE in 1 BOX (73453-114-01)  / 1 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-BFA0CAC3123CE925",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-453",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-453%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (45802-453-84)  / 45 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-C08B0D7BB8452FE4",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0424",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0424%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0168-0424-46)  / 45 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-E975E3AE6294BC4E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42799-110",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242799-110%22",
+      "packaging": [
+        "2 TABLET in 1 BOTTLE (42799-110-02)"
+      ]
+    },
+    {
+      "code": "SCG-785FB6F0B42DC615",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0115-1701",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220115-1701%22",
+      "packaging": [
+        "2 TABLET, FILM COATED in 1 BOTTLE (0115-1701-49)"
+      ]
+    },
+    {
+      "code": "SCG-CADBA3EF416D237D",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0378-7057",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-7057%22",
+      "packaging": [
+        "5 POUCH in 1 CARTON (0378-7057-52)  / 5 VIAL in 1 POUCH (0378-7057-98)  / 3 mL in 1 VIAL"
+      ]
+    },
+    {
+      "code": "SCG-E96352D46DDD5258",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0054-0742",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-0742%22",
+      "packaging": [
+        "1 CANISTER in 1 CARTON (0054-0742-87)  / 200 AEROSOL, METERED in 1 CANISTER"
+      ]
+    },
+    {
+      "code": "SCG-1EB09DE60CB35001",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51407-367",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251407-367%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (51407-367-01)"
+      ]
+    },
+    {
+      "code": "SCG-0B47DFEE3E878AB2",
+      "dose_unit": "mL",
+      "dispensing_unit": "hộp",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0054-0282",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-0282%22",
+      "packaging": [
+        "4 BOTTLE, UNIT-DOSE in 1 CARTON (0054-0282-59)  / 75 mL in 1 BOTTLE, UNIT-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-572D3A537C6EF441",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0115-1678",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220115-1678%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0115-1678-01)",
+        "30 TABLET in 1 BOTTLE (0115-1678-08)"
+      ]
+    },
+    {
+      "code": "SCG-55A6D4578F78E235",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70539-400",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270539-400%22",
+      "packaging": [
+        "4 BLISTER PACK in 1 BOX (70539-400-04)  / 1 TABLET, EFFERVESCENT in 1 BLISTER PACK (70539-400-00)",
+        "4 BLISTER PACK in 1 BOX (70539-400-94)  / 1 TABLET, EFFERVESCENT in 1 BLISTER PACK (70539-400-00)"
+      ]
+    },
+    {
+      "code": "SCG-B85B5FFEBC802677",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "78206-137",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2278206-137%22",
+      "packaging": [
+        "4 TABLET in 1 BLISTER PACK (78206-137-01)"
+      ]
+    },
+    {
+      "code": "SCG-22187982DFD3F6B9",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "78206-136",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2278206-136%22",
+      "packaging": [
+        "4 TABLET in 1 BLISTER PACK (78206-136-01)"
+      ]
+    },
+    {
+      "code": "SCG-DDA0244DB8073579",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-0137",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-0137%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0378-0137-01)",
+        "1000 TABLET in 1 BOTTLE (0378-0137-10)"
+      ]
+    },
+    {
+      "code": "SCG-12B0741381496505",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "14445-172",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2214445-172%22",
+      "packaging": [
+        "1000 TABLET in 1 BOTTLE (14445-172-00)",
+        "100 TABLET in 1 BOTTLE (14445-172-01)",
+        "500 TABLET in 1 BOTTLE (14445-172-05)",
+        "10 BLISTER PACK in 1 CARTON (14445-172-10)  / 10 TABLET in 1 BLISTER PACK (14445-172-02)",
+        "90 TABLET in 1 BOTTLE (14445-172-90)"
+      ]
+    },
+    {
+      "code": "SCG-2BD6AAC687E0CC55",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-0181",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-0181%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0378-0181-01)",
+        "500 TABLET in 1 BOTTLE (0378-0181-05)"
+      ]
+    },
+    {
+      "code": "SCG-3DDDEAAED2811450",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "45802-103",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-103%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (45802-103-65)"
+      ]
+    },
+    {
+      "code": "SCG-07F53C54FC0D0267",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "45802-150",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-150%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (45802-150-65)"
+      ]
+    },
+    {
+      "code": "SCG-97FC4FCE01219B1E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "45802-087",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-087%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (45802-087-65)"
+      ]
+    },
+    {
+      "code": "SCG-96D4C849BCD78682",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "45802-260",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-260%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (45802-260-65)"
+      ]
+    },
+    {
+      "code": "SCG-00C3E43621450DFE",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "55681-031",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2255681-031%22",
+      "packaging": [
+        "106 g in 1 TUBE (55681-031-04)"
+      ]
+    },
+    {
+      "code": "SCG-CBB94DFB2F037763",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0135-0098",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220135-0098%22",
+      "packaging": [
+        "100 TABLET, CHEWABLE in 1 BOTTLE (0135-0098-26)"
+      ]
+    },
+    {
+      "code": "SCG-71904691D2018147",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0121-1760",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-1760%22",
+      "packaging": [
+        "10 TRAY in 1 CASE (0121-1760-30)  / 10 CUP, UNIT-DOSE in 1 TRAY / 30 mL in 1 CUP, UNIT-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-6B3666BF54294782",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "43063-041",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2243063-041%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE, PLASTIC (43063-041-30)",
+        "90 TABLET in 1 BOTTLE, PLASTIC (43063-041-90)"
+      ]
+    },
+    {
+      "code": "SCG-90CA0D651FA580DA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "66993-270",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2266993-270%22",
+      "packaging": [
+        "30 TABLET, COATED in 1 BOTTLE (66993-270-30)"
+      ]
+    },
+    {
+      "code": "SCG-5A62575E28D0B59A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0069-7810",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220069-7810%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (0069-7810-30)"
+      ]
+    },
+    {
+      "code": "SCG-705BD83E20CE1EB6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-6427",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-6427%22",
+      "packaging": [
+        "30 CAPSULE in 1 BOTTLE (50090-6427-0)",
+        "90 CAPSULE in 1 BOTTLE (50090-6427-1)"
+      ]
+    },
+    {
+      "code": "SCG-A8E9C463DE81E50D",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50090-0404",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-0404%22",
+      "packaging": [
+        "100 mL in 1 BOTTLE (50090-0404-0)"
+      ]
+    },
+    {
+      "code": "SCG-8DD522F6FFD1254B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-1826",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-1826%22",
+      "packaging": [
+        "30 CAPSULE in 1 BOTTLE (50090-1826-0)",
+        "21 CAPSULE in 1 BOTTLE (50090-1826-1)"
+      ]
+    },
+    {
+      "code": "SCG-31E47A6D293C6150",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-0709",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-0709%22",
+      "packaging": [
+        "20 TABLET, FILM COATED in 1 BOTTLE (50090-0709-0)"
+      ]
+    },
+    {
+      "code": "SCG-6964A3899186E7A2",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0143-9853",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220143-9853%22",
+      "packaging": [
+        "125 mL in 1 BOTTLE (0143-9853-16)",
+        "200 mL in 1 BOTTLE (0143-9853-24)",
+        "75 mL in 1 BOTTLE (0143-9853-75)"
+      ]
+    },
+    {
+      "code": "SCG-FA9EF65DB4C19F26",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "62135-091",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-091%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (62135-091-01)",
+        "20 TABLET in 1 BOTTLE (62135-091-20)"
+      ]
+    },
+    {
+      "code": "SCG-3DA0CDC5A4423613",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-1874",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-1874%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (0781-1874-31)"
+      ]
+    },
+    {
+      "code": "SCG-00E596DCB8880063",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0003-0898",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220003-0898%22",
+      "packaging": [
+        "28 CAPSULE in 1 BOTTLE (0003-0898-28)"
+      ]
+    },
+    {
+      "code": "SCG-C4368EB94F281D27",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0003-0893",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220003-0893%22",
+      "packaging": [
+        "60 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0003-0893-21)",
+        "10 BLISTER PACK in 1 CARTON (0003-0893-31)  / 10 TABLET, FILM COATED in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (0003-0893-91)  / 14 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-971B0015F0823ABC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0003-0894",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220003-0894%22",
+      "packaging": [
+        "60 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0003-0894-21)",
+        "10 BLISTER PACK in 1 CARTON (0003-0894-31)  / 10 TABLET, FILM COATED in 1 BLISTER PACK",
+        "74 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0003-0894-70)",
+        "1 BLISTER PACK in 1 CARTON (0003-0894-91)  / 14 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-3F69F91217BAF9DE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "53185-249",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2253185-249%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (53185-249-12)"
+      ]
+    },
+    {
+      "code": "SCG-79CB7FF9E91F2D97",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-0157",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-0157%22",
+      "packaging": [
+        "500 TABLET, FILM COATED in 1 BOTTLE (0363-0157-14)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (0363-0157-98)"
+      ]
+    },
+    {
+      "code": "SCG-638553AECBC07593",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0280-2090",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220280-2090%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0280-2090-36)  / 36 TABLET, CHEWABLE in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-275C21746C0C7B39",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-0753",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0753%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-0753-01)",
+        "500 TABLET in 1 BOTTLE (0093-0753-05)"
+      ]
+    },
+    {
+      "code": "SCG-51046195266680F3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-0787",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0787%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-0787-01)",
+        "1000 TABLET in 1 BOTTLE (0093-0787-10)"
+      ]
+    },
+    {
+      "code": "SCG-E30AF08EF0FB0232",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-0752",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0752%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-0752-01)",
+        "1000 TABLET in 1 BOTTLE (0093-0752-10)"
+      ]
+    },
+    {
+      "code": "SCG-1F7EFEAF0FFAEB4A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "60290-039",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2260290-039%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE (60290-039-01)",
+        "1000 TABLET in 1 BOTTLE (60290-039-02)",
+        "5000 TABLET in 1 BOTTLE (60290-039-03)",
+        "500 TABLET in 1 BOTTLE (60290-039-04)"
+      ]
+    },
+    {
+      "code": "SCG-34153417068526DC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "31722-424",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2231722-424%22",
+      "packaging": [
+        "500 TABLET, FILM COATED in 1 BOTTLE (31722-424-05)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE (31722-424-10)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (31722-424-90)"
+      ]
+    },
+    {
+      "code": "SCG-484A5F10304BA785",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0591-2131",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220591-2131%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0591-2131-55)  / 50 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-45818782C62095FB",
+      "dose_unit": "g",
+      "dispensing_unit": "chai",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "87386-003",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2287386-003%22",
+      "packaging": [
+        "1 BOTTLE, DROPPER in 1 BOX (87386-003-01)  / 30 g in 1 BOTTLE, DROPPER"
+      ]
+    },
+    {
+      "code": "SCG-17ADA878D0756577",
+      "dose_unit": "g",
+      "dispensing_unit": "chai",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "87386-002",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2287386-002%22",
+      "packaging": [
+        "1 BOTTLE, DROPPER in 1 BOX (87386-002-01)  / 40 g in 1 BOTTLE, DROPPER"
+      ]
+    },
+    {
+      "code": "SCG-AD973BAFE159E8A0",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "chai",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "47335-779",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2247335-779%22",
+      "packaging": [
+        "1 BOTTLE, SPRAY in 1 BOX (47335-779-91)  / 200 SPRAY, METERED in 1 BOTTLE, SPRAY"
+      ]
+    },
+    {
+      "code": "SCG-7676306C5C6B766D",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "chai",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0280-0065",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220280-0065%22",
+      "packaging": [
+        "60 CARTON in 1 BOTTLE (0280-0065-01)  / 1 SPRAY, METERED in 1 CARTON",
+        "120 CARTON in 1 BOTTLE (0280-0065-02)  / 1 SPRAY, METERED in 1 CARTON",
+        "120 PACKAGE in 1 BOTTLE (0280-0065-03)  / 3 SPRAY, METERED in 1 PACKAGE",
+        "200 CARTON in 1 BOTTLE (0280-0065-04)  / 1 SPRAY, METERED in 1 CARTON",
+        "22 CARTON in 1 BOTTLE (0280-0065-05)  / 1 SPRAY, METERED in 1 CARTON",
+        "120 CARTON in 1 BOTTLE (0280-0065-09)  / 2 SPRAY, METERED in 1 CARTON",
+        "22 CARTON in 1 BOTTLE (0280-0065-10)  / 1 SPRAY, METERED in 1 CARTON"
+      ]
+    },
+    {
+      "code": "SCG-7CF71FCB325531C5",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "chai",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "42291-094",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242291-094%22",
+      "packaging": [
+        "1 BOTTLE, SPRAY in 1 CARTON (42291-094-30)  / 30 mL in 1 BOTTLE, SPRAY"
+      ]
+    },
+    {
+      "code": "SCG-09887FFA6C337D19",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "80425-0431",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2280425-0431%22",
+      "packaging": [
+        "6 TABLET in 1 BLISTER PACK (80425-0431-1)"
+      ]
+    },
+    {
+      "code": "SCG-9EB8C03FD591E8C9",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "62135-704",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-704%22",
+      "packaging": [
+        "15 mL in 1 BOTTLE (62135-704-51)"
+      ]
+    },
+    {
+      "code": "SCG-376646476AE9D146",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50111-787",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250111-787%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (50111-787-10)",
+        "1 BLISTER PACK in 1 CARTON (50111-787-51)  / 6 TABLET, FILM COATED in 1 BLISTER PACK",
+        "3 CARTON in 1 PACKAGE (50111-787-66)  / 1 BLISTER PACK in 1 CARTON / 6 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-F82AD7538CEE552C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "72426-818",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2272426-818%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (72426-818-03)",
+        "7 TABLET, FILM COATED in 1 BLISTER PACK (72426-818-99)"
+      ]
+    },
+    {
+      "code": "SCG-4413A93C9493B443",
+      "dose_unit": "mL",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0299-4611",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220299-4611%22",
+      "packaging": [
+        "1 TUBE in 1 BOX (0299-4611-00)  / 28 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-49298E275A8D4E45",
+      "dose_unit": "mL",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "58980-332",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2258980-332%22",
+      "packaging": [
+        "1 TUBE in 1 BOX (58980-332-50)  / 141.8 g in 1 TUBE",
+        "1 TUBE in 1 BOX (58980-332-80)  / 226.8 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-95DE07188DD0D4BD",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "14222-1610",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2214222-1610%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (14222-1610-1)  / 125 mL in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-090ABAF31EB0DFED",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "51672-1309",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251672-1309%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (51672-1309-1)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (51672-1309-3)  / 50 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-BA975386AB94F18E",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0055",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0055%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0168-0055-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0168-0055-46)  / 45 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-E9103818E0EA11AB",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-021",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-021%22",
+      "packaging": [
+        "56.2 g in 1 BOTTLE, PLASTIC (45802-021-46)"
+      ]
+    },
+    {
+      "code": "SCG-7F09969F72A4B152",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0040",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0040%22",
+      "packaging": [
+        "15 g in 1 TUBE (0168-0040-15)",
+        "45 g in 1 TUBE (0168-0040-46)"
+      ]
+    },
+    {
+      "code": "SCG-2F255CADBA8BF125",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0041",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0041%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE (0168-0041-60)"
+      ]
+    },
+    {
+      "code": "SCG-7F6B4156FB6F395F",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0033",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0033%22",
+      "packaging": [
+        "15 g in 1 TUBE (0168-0033-15)",
+        "45 g in 1 TUBE (0168-0033-46)"
+      ]
+    },
+    {
+      "code": "SCG-C5BD53443EBA7EFB",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "41167-0222",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2241167-0222%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (41167-0222-0)  / 20 CAPSULE, LIQUID FILLED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (41167-0222-1)  / 72 CAPSULE, LIQUID FILLED in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-A6C65EFC8A7C372C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "21130-552",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2221130-552%22",
+      "packaging": [
+        "2 BLISTER PACK in 1 CARTON (21130-552-30)  / 15 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-6A3DABB69262ACD7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "41167-0101",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2241167-0101%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (41167-0101-0)  / 8 TABLET, FILM COATED in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (41167-0101-1)  / 10 TABLET, FILM COATED in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (41167-0101-2)  / 25 TABLET, FILM COATED in 1 BLISTER PACK",
+        "2 BLISTER PACK in 1 CARTON (41167-0101-3)  / 25 TABLET, FILM COATED in 1 BLISTER PACK",
+        "4 BLISTER PACK in 1 CARTON (41167-0101-4)  / 25 TABLET, FILM COATED in 1 BLISTER PACK",
+        "8 BLISTER PACK in 1 CARTON (41167-0101-5)  / 25 TABLET, FILM COATED in 1 BLISTER PACK",
+        "3 BLISTER PACK in 1 CARTON (41167-0101-6)  / 10 TABLET, FILM COATED in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (41167-0101-7)  / 6 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-6C2F90FCFC2AF28B",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "11673-291",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211673-291%22",
+      "packaging": [
+        "236 mL in 1 BOTTLE, PLASTIC (11673-291-06)",
+        "473 mL in 1 BOTTLE, PLASTIC (11673-291-07)",
+        "2 BOTTLE, PLASTIC in 1 PACKAGE (11673-291-08)  / 473 mL in 1 BOTTLE, PLASTIC (11673-291-07)"
+      ]
+    },
+    {
+      "code": "SCG-76E3503F93854AF9",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "11673-122",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211673-122%22",
+      "packaging": [
+        "48 TABLET in 1 BOTTLE, PLASTIC (11673-122-48)"
+      ]
+    },
+    {
+      "code": "SCG-01DCFC55EAE4A370",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-9125",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-9125%22",
+      "packaging": [
+        "40 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0363-9125-40)"
+      ]
+    },
+    {
+      "code": "SCG-50B8DBC67FADDBC8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "29300-127",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2229300-127%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (29300-127-01)",
+        "500 TABLET in 1 BOTTLE, PLASTIC (29300-127-05)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (29300-127-13)"
+      ]
+    },
+    {
+      "code": "SCG-FE7DF2C8841A35FF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "29300-126",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2229300-126%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (29300-126-01)",
+        "500 TABLET in 1 BOTTLE, PLASTIC (29300-126-05)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (29300-126-13)"
+      ]
+    },
+    {
+      "code": "SCG-07E28181BE20529A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16714-530",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-530%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (16714-530-01)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (16714-530-02)"
+      ]
+    },
+    {
+      "code": "SCG-FCB8A493B31E44BD",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-6815",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-6815%22",
+      "packaging": [
+        "30 POUCH in 1 CARTON (0093-6815-55)  / 1 VIAL, SINGLE-DOSE in 1 POUCH / 2 mL in 1 VIAL, SINGLE-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-60E7C49262E1EAFE",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "64764-105",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2264764-105%22",
+      "packaging": [
+        "10 POUCH in 1 CARTON (64764-105-00)  / 10 mL in 1 POUCH (64764-105-01)",
+        "60 POUCH in 1 CARTON (64764-105-60)  / 10 mL in 1 POUCH (64764-105-10)"
+      ]
+    },
+    {
+      "code": "SCG-312C3A5C2A57E2FF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0574-9855",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220574-9855%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (0574-9855-10)"
+      ]
+    },
+    {
+      "code": "SCG-1969203307C6DC90",
+      "dose_unit": "mL",
+      "dispensing_unit": "cốc",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "17856-3117",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2217856-3117%22",
+      "packaging": [
+        "5 mL in 1 CUP (17856-3117-3)"
+      ]
+    },
+    {
+      "code": "SCG-8F6F56527E05CD89",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "11822-3480",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211822-3480%22",
+      "packaging": [
+        "72 TABLET in 1 PACKAGE (11822-3480-1)"
+      ]
+    },
+    {
+      "code": "SCG-544647ADBA99F856",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0135-0180",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220135-0180%22",
+      "packaging": [
+        "86 TABLET, CHEWABLE in 1 BOTTLE (0135-0180-01)",
+        "72 TABLET, CHEWABLE in 1 BOTTLE (0135-0180-02)",
+        "160 TABLET, CHEWABLE in 1 BOTTLE (0135-0180-14)"
+      ]
+    },
+    {
+      "code": "SCG-8DF2F594358A6BF2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-5034",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-5034%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (50090-5034-0)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (50090-5034-1)"
+      ]
+    },
+    {
+      "code": "SCG-3537A476B1C8E9C8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-4364",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-4364%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (50090-4364-0)"
+      ]
+    },
+    {
+      "code": "SCG-CD577B6E1CA580E8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50458-943",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250458-943%22",
+      "packaging": [
+        "60 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (50458-943-01)"
+      ]
+    },
+    {
+      "code": "SCG-11024D2ABF27EBC6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-3231",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-3231%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-3231-77)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (0378-3231-93)"
+      ]
+    },
+    {
+      "code": "SCG-03875B24F959B1F5",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-3232",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-3232%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-3232-77)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (0378-3232-93)"
+      ]
+    },
+    {
+      "code": "SCG-7E19279E1EA393EB",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-3224",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-3224%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-3224-77)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (0378-3224-93)"
+      ]
+    },
+    {
+      "code": "SCG-6FF25A3A60895535",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0143-1174",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220143-1174%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0143-1174-01)"
+      ]
+    },
+    {
+      "code": "SCG-641BD22D21DA5AA1",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0143-1171",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220143-1171%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0143-1171-01)",
+        "1000 TABLET in 1 BOTTLE (0143-1171-10)"
+      ]
+    },
+    {
+      "code": "SCG-A12342D85FB05106",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0143-1172",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220143-1172%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0143-1172-01)",
+        "1000 TABLET in 1 BOTTLE (0143-1172-10)"
+      ]
+    },
+    {
+      "code": "SCG-15A2D9725B3EC8B1",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-7295",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-7295%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-7295-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (0093-7295-05)"
+      ]
+    },
+    {
+      "code": "SCG-30C0CF2565301C53",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-7296",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-7296%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-7296-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (0093-7296-05)"
+      ]
+    },
+    {
+      "code": "SCG-095BE9EF88BF14C2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0115-1248",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220115-1248%22",
+      "packaging": [
+        "100 CAPSULE, EXTENDED RELEASE in 1 BOTTLE (0115-1248-01)",
+        "1000 CAPSULE, EXTENDED RELEASE in 1 BOTTLE (0115-1248-03)",
+        "30 CAPSULE, EXTENDED RELEASE in 1 BOTTLE (0115-1248-08)",
+        "90 CAPSULE, EXTENDED RELEASE in 1 BOTTLE (0115-1248-10)"
+      ]
+    },
+    {
+      "code": "SCG-25D3D0EA442A66D4",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "16714-390",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-390%22",
+      "packaging": [
+        "75 mL in 1 BOTTLE (16714-390-01)",
+        "100 mL in 1 BOTTLE (16714-390-02)"
+      ]
+    },
+    {
+      "code": "SCG-217F6A3367AFFA82",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-3196",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-3196%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (0093-3196-01)",
+        "50 CAPSULE in 1 BOTTLE (0093-3196-53)"
+      ]
+    },
+    {
+      "code": "SCG-F2C9E56E3C09D1A6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-4059",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-4059%22",
+      "packaging": [
+        "50 TABLET in 1 BOTTLE (0093-4059-53)"
+      ]
+    },
+    {
+      "code": "SCG-2B51E7E36D524EE6",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50090-4258",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-4258%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE (50090-4258-0)"
+      ]
+    },
+    {
+      "code": "SCG-6C42F9CDCDA36B8A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-3160",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-3160%22",
+      "packaging": [
+        "60 CAPSULE in 1 BOTTLE (0093-3160-06)"
+      ]
+    },
+    {
+      "code": "SCG-A94B76B65EB36532",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-4136",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-4136%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE (0093-4136-64)",
+        "100 mL in 1 BOTTLE (0093-4136-73)"
+      ]
+    },
+    {
+      "code": "SCG-1A40A843A348355C",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "65862-751",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2265862-751%22",
+      "packaging": [
+        "100 mL in 1 BOTTLE (65862-751-01)",
+        "50 mL in 1 BOTTLE (65862-751-50)"
+      ]
+    },
+    {
+      "code": "SCG-E8B274BBC4F386B2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "59651-647",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2259651-647%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (59651-647-10)  / 10 CAPSULE in 1 BLISTER PACK",
+        "50 CAPSULE in 1 BOTTLE (59651-647-50)"
+      ]
+    },
+    {
+      "code": "SCG-BDB268334E5B6192",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "64980-430",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2264980-430%22",
+      "packaging": [
+        "10 TABLET in 1 BOTTLE, PLASTIC (64980-430-01)"
+      ]
+    },
+    {
+      "code": "SCG-EA2801AF7AE8C6D4",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-5438",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-5438%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0781-5438-01)",
+        "20 TABLET, FILM COATED in 1 BOTTLE (0781-5438-20)"
+      ]
+    },
+    {
+      "code": "SCG-1C9DF2E0A8485244",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-5439",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-5439%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0781-5439-01)",
+        "20 TABLET, FILM COATED in 1 BOTTLE (0781-5439-20)"
+      ]
+    },
+    {
+      "code": "SCG-B22BAE2633417A76",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "65862-698",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2265862-698%22",
+      "packaging": [
+        "20 TABLET in 1 BOTTLE (65862-698-20)",
+        "60 TABLET in 1 BOTTLE (65862-698-60)"
+      ]
+    },
+    {
+      "code": "SCG-A261575DD48A640E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16714-400",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-400%22",
+      "packaging": [
+        "20 TABLET in 1 BOTTLE (16714-400-01)",
+        "60 TABLET in 1 BOTTLE (16714-400-02)"
+      ]
+    },
+    {
+      "code": "SCG-B84D64C682491D64",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7542",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7542%22",
+      "packaging": [
+        "2 BLISTER PACK in 1 CARTON (0904-7542-10)  / 10 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-A0E78051B26119EE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8572",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8572%22",
+      "packaging": [
+        "30 CAPSULE in 1 BLISTER PACK (0615-8572-39)"
+      ]
+    },
+    {
+      "code": "SCG-75219B2C219A8FA2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8571",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8571%22",
+      "packaging": [
+        "30 CAPSULE in 1 BLISTER PACK (0615-8571-39)"
+      ]
+    },
+    {
+      "code": "SCG-0D8101CE97C88579",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "13668-310",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2213668-310%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (13668-310-01)",
+        "500 CAPSULE in 1 BOTTLE (13668-310-05)",
+        "30 CAPSULE in 1 BOTTLE (13668-310-30)",
+        "750 CAPSULE in 1 BOTTLE (13668-310-49)",
+        "60 CAPSULE in 1 BOTTLE (13668-310-60)",
+        "90 CAPSULE in 1 BOTTLE (13668-310-90)"
+      ]
+    },
+    {
+      "code": "SCG-843544EEF8F42685",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-3145",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-3145%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (0093-3145-01)",
+        "500 CAPSULE in 1 BOTTLE (0093-3145-05)"
+      ]
+    },
+    {
+      "code": "SCG-A6DFD6EE9262FE50",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-2238",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-2238%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-2238-01)"
+      ]
+    },
+    {
+      "code": "SCG-91C2BF8A66D1DF28",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "59651-783",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2259651-783%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (59651-783-01)"
+      ]
+    },
+    {
+      "code": "SCG-B2D58BF47929BAFA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-6341",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-6341%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (0363-6341-15)  / 40 CAPSULE in 1 BOTTLE, PLASTIC",
+        "1 BOTTLE, PLASTIC in 1 CARTON (0363-6341-78)  / 80 CAPSULE in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-068B285060885866",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-1794",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-1794%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (0363-1794-38)  / 5 TABLET in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (0363-1794-46)  / 14 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-F389B55105211FE0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-4101",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-4101%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0363-4101-39)  / 30 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-47)  / 150 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-58)  / 40 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-72)  / 60 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-75)  / 90 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-88)  / 365 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-4101-95)  / 45 TABLET, FILM COATED in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-4A6BD74A8B19FCC4",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0536-1006",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220536-1006%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (0536-1006-01)  / 100 TABLET in 1 BOTTLE, PLASTIC",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (0536-1006-10)"
+      ]
+    },
+    {
+      "code": "SCG-F53CA271A87A4786",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "53185-277",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2253185-277%22",
+      "packaging": [
+        "24 TABLET, COATED in 1 BOTTLE (53185-277-24)"
+      ]
+    },
+    {
+      "code": "SCG-7B553A86559B4E63",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "10702-017",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2210702-017%22",
+      "packaging": [
+        "100 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (10702-017-01)",
+        "60 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (10702-017-06)",
+        "24 TABLET, FILM COATED, EXTENDED RELEASE in 1 CARTON (10702-017-24)",
+        "50 PACKAGE in 1 CARTON (10702-017-54)  / 4 TABLET, FILM COATED, EXTENDED RELEASE in 1 PACKAGE (10702-017-04)"
+      ]
+    },
+    {
+      "code": "SCG-0423718F5B966A3F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50742-285",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250742-285%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (50742-285-30)",
+        "90 TABLET in 1 BOTTLE (50742-285-90)"
+      ]
+    },
+    {
+      "code": "SCG-7D495D88B5D48461",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70199-017",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270199-017%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (70199-017-01)",
+        "30 TABLET in 1 BOTTLE (70199-017-30)"
+      ]
+    },
+    {
+      "code": "SCG-C9F914EEFE1FF146",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-0222",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-0222%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (0378-0222-01)",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (0378-0222-10)"
+      ]
+    },
+    {
+      "code": "SCG-3FCC19269B04B082",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "62135-814",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-814%22",
+      "packaging": [
+        "6.6 mL in 1 BOTTLE (62135-814-45)"
+      ]
+    },
+    {
+      "code": "SCG-1C74C4FBDF3B54FE",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "63629-2522",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2263629-2522%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (63629-2522-1)  / 30 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-6946C6C13F35EA0D",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0713-0638",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220713-0638%22",
+      "packaging": [
+        "1 TUBE in 1 BOX (0713-0638-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 BOX (0713-0638-18)  / 90 g in 1 TUBE",
+        "1 TUBE in 1 BOX (0713-0638-31)  / 30 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-7DA6815D24AA8EBA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "52183-223",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2252183-223%22",
+      "packaging": [
+        "3 BLISTER PACK in 1 BOX (52183-223-30)  / 10 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-F5CAFF16B79B2AE4",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-7099",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-7099%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0113-7099-76)  / 120 TABLET, FILM COATED in 1 BOTTLE (0113-7099-00)"
+      ]
+    },
+    {
+      "code": "SCG-A511B9611340B474",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0121-1025",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-1025%22",
+      "packaging": [
+        "237 mL in 1 BOTTLE (0121-1025-08)"
+      ]
+    },
+    {
+      "code": "SCG-D84636CDD37A90D3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "43547-688",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2243547-688%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (43547-688-10)"
+      ]
+    },
+    {
+      "code": "SCG-9B1F0A1E16075076",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "58657-675",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2258657-675%22",
+      "packaging": [
+        "100 TABLET, COATED in 1 BOTTLE (58657-675-01)"
+      ]
+    },
+    {
+      "code": "SCG-206DBDDE3EF84FB7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16571-411",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216571-411%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (16571-411-10)"
+      ]
+    },
+    {
+      "code": "SCG-71B35F28E4A01258",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0781-6022",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-6022%22",
+      "packaging": [
+        "100 mL in 1 BOTTLE (0781-6022-46)",
+        "50 mL in 1 BOTTLE (0781-6022-52)"
+      ]
+    },
+    {
+      "code": "SCG-F0F9059BE15E1E58",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-1961",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-1961%22",
+      "packaging": [
+        "60 TABLET in 1 BOTTLE (0781-1961-60)"
+      ]
+    },
+    {
+      "code": "SCG-100BC26BD4A86FEA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0527-1931",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220527-1931%22",
+      "packaging": [
+        "60 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0527-1931-06)"
+      ]
+    },
+    {
+      "code": "SCG-D768F25139A533EC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0009-0225",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220009-0225%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (0009-0225-02)"
+      ]
+    },
+    {
+      "code": "SCG-F2FD0087329915BC",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "16714-483",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-483%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (16714-483-01)  / 100 mL in 1 BOTTLE",
+        "1 BOTTLE, PLASTIC in 1 CARTON (16714-483-02)  / 100 mL in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-A67A02672F3239DD",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "16571-256",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216571-256%22",
+      "packaging": [
+        "60 APPLICATOR in 1 JAR (16571-256-60)  / 1 mL in 1 APPLICATOR",
+        "69 APPLICATOR in 1 JAR (16571-256-69)  / 1 mL in 1 APPLICATOR"
+      ]
+    },
+    {
+      "code": "SCG-246999ED320F040F",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "33342-321",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-321%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (33342-321-39)  / 25 mL in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (33342-321-86)  / 50 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-0EC39AB6459A3539",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-925",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-925%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (45802-925-14)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (45802-925-94)  / 30 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (45802-925-96)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-909D2EE7157A9940",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "68040-713",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2268040-713%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (68040-713-38)  / 100 g in 1 TUBE",
+        "20 TUBE in 1 CARTON (68040-713-44)  / 2.5 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-A28C44DEC0455A58",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "31722-759",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2231722-759%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (31722-759-05)",
+        "30 TABLET in 1 BOTTLE (31722-759-30)"
+      ]
+    },
+    {
+      "code": "SCG-D0E7551AFF910F01",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42543-714",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242543-714%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (42543-714-01)",
+        "500 TABLET in 1 BOTTLE (42543-714-05)",
+        "30 TABLET in 1 BOTTLE (42543-714-30)",
+        "90 TABLET in 1 BOTTLE (42543-714-90)"
+      ]
+    },
+    {
+      "code": "SCG-6796C1E476835CDF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0024-1332",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220024-1332%22",
+      "packaging": [
+        "3 BLISTER PACK in 1 CARTON (0024-1332-30)  / 10 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-D973A2EC0428DA1C",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0536-1443",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220536-1443%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0536-1443-70)  / 10 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-0006407D27217343",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "72127-0806",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2272127-0806%22",
+      "packaging": [
+        ".085 kg in 1 TUBE (72127-0806-0)"
+      ]
+    },
+    {
+      "code": "SCG-A321162EC6E2630B",
+      "dose_unit": "g",
+      "dispensing_unit": "hộp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "84167-930",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2284167-930%22",
+      "packaging": [
+        "1 CREAM in 1 BOX (84167-930-11)"
+      ]
+    },
+    {
+      "code": "SCG-E23D53D38E4242F6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0143-3018",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220143-3018%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE, PLASTIC (0143-3018-01)",
+        "1000 CAPSULE in 1 BOTTLE, PLASTIC (0143-3018-10)",
+        "30 CAPSULE in 1 BOTTLE, PLASTIC (0143-3018-30)"
+      ]
+    },
+    {
+      "code": "SCG-5DA6CD7C218E44EE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "82867-001",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2282867-001%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (82867-001-01)  / 30 TABLET in 1 BLISTER PACK",
+        "1 BLISTER PACK in 1 CARTON (82867-001-02)  / 30 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-9A234ED1BD1D82DE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7120",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7120%22",
+      "packaging": [
+        "30 BLISTER PACK in 1 CARTON (0904-7120-04)  / 1 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-46288571F49C9C9E",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": null,
+      "legacy_unit": "liều xịt",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "43386-237",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2243386-237%22",
+      "packaging": [
+        "1 CARTON in 1 BLISTER PACK (43386-237-60)  / 4 SPRAY, METERED in 1 CARTON (43386-237-70)"
+      ]
+    },
+    {
+      "code": "SCG-6D05D7CD8FFD6986",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-1920",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-1920%22",
+      "packaging": [
+        "60 CAPSULE, EXTENDED RELEASE in 1 BOTTLE (0093-1920-06)"
+      ]
+    },
+    {
+      "code": "SCG-B122156806793D79",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8665",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8665%22",
+      "packaging": [
+        "15 TABLET in 1 BLISTER PACK (0615-8665-05)",
+        "30 TABLET in 1 BLISTER PACK (0615-8665-39)"
+      ]
+    },
+    {
+      "code": "SCG-11E308443CFF450E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-3422",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-3422%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-3422-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (0093-3422-05)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE (0093-3422-10)"
+      ]
+    },
+    {
+      "code": "SCG-DE6383C2E83DAC66",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "27241-152",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2227241-152%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (27241-152-01)",
+        "90 TABLET in 1 BOTTLE (27241-152-90)"
+      ]
+    },
+    {
+      "code": "SCG-39EB828DF05AFCCA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0480-3528",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220480-3528%22",
+      "packaging": [
+        "500 TABLET, FILM COATED in 1 BOTTLE (0480-3528-05)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (0480-3528-56)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0480-3528-98)"
+      ]
+    },
+    {
+      "code": "SCG-76829467D44DE911",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "33342-409",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-409%22",
+      "packaging": [
+        "3 BLISTER PACK in 1 CARTON (33342-409-06)  / 10 TABLET, EXTENDED RELEASE in 1 BLISTER PACK (33342-409-66)",
+        "30 TABLET, EXTENDED RELEASE in 1 BOTTLE (33342-409-07)",
+        "60 TABLET, EXTENDED RELEASE in 1 BOTTLE (33342-409-09)",
+        "90 TABLET, EXTENDED RELEASE in 1 BOTTLE (33342-409-10)",
+        "500 TABLET, EXTENDED RELEASE in 1 BOTTLE (33342-409-15)"
+      ]
+    },
+    {
+      "code": "SCG-4A9DFC7AC54364CC",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "74157-011",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2274157-011%22",
+      "packaging": [
+        "118 mL in 1 BOTTLE (74157-011-01)"
+      ]
+    },
+    {
+      "code": "SCG-2BCEA665C999CD74",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-3975",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-3975%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE (50090-3975-0)",
+        "30 TABLET in 1 BOTTLE (50090-3975-1)"
+      ]
+    },
+    {
+      "code": "SCG-12C8AF82DB8BE48B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-4794",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-4794%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (50090-4794-0)"
+      ]
+    },
+    {
+      "code": "SCG-F5302A36D1A83951",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "24470-920",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224470-920%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (24470-920-60)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-831EB12F6C4EB47D",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "69482-600",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2269482-600%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (69482-600-60)  / 1 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-AD3AC098A0A9B8CD",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "46708-550",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2246708-550%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (46708-550-18)  / 118 mL in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (46708-550-59)  / 59 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-9759509CC3948761",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "10135-795",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2210135-795%22",
+      "packaging": [
+        "237 mL in 1 BOTTLE, GLASS (10135-795-71)"
+      ]
+    },
+    {
+      "code": "SCG-4205641BCAA659A7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "81279-117",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2281279-117%22",
+      "packaging": [
+        "60 TABLET in 1 BOTTLE (81279-117-60)"
+      ]
+    },
+    {
+      "code": "SCG-930869BB8A3D7B0B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "72603-212",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2272603-212%22",
+      "packaging": [
+        "100 mg in 1 BOTTLE (72603-212-01)"
+      ]
+    },
+    {
+      "code": "SCG-8C221BD2527EE785",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "24979-001",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224979-001%22",
+      "packaging": [
+        "30 CAPSULE, DELAYED RELEASE in 1 BOTTLE (24979-001-06)",
+        "90 CAPSULE, DELAYED RELEASE in 1 BOTTLE (24979-001-07)"
+      ]
+    },
+    {
+      "code": "SCG-935D5FA90D74E221",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "24979-002",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224979-002%22",
+      "packaging": [
+        "30 CAPSULE, DELAYED RELEASE in 1 BOTTLE (24979-002-06)",
+        "90 CAPSULE, DELAYED RELEASE in 1 BOTTLE (24979-002-07)"
+      ]
+    },
+    {
+      "code": "SCG-9DE75A5C9018D209",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-2085",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-2085%22",
+      "packaging": [
+        "30 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE, PLASTIC (0378-2085-93)"
+      ]
+    },
+    {
+      "code": "SCG-B55D2E5DA23048B1",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0113-0384",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-0384%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0113-0384-28)  / 148 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-39DAFB4D8B300B19",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "35916-0461",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2235916-0461%22",
+      "packaging": [
+        "20 CAPSULE, LIQUID FILLED in 1 BOTTLE (35916-0461-1)",
+        "1000 CAPSULE, LIQUID FILLED in 1 BAG (35916-0461-2)",
+        "2 POUCH in 1 BOX (35916-0461-3)  / 3000 CAPSULE, LIQUID FILLED in 1 POUCH",
+        "2 BAG in 1 BOX (35916-0461-4)  / 1500 CAPSULE, LIQUID FILLED in 1 BAG"
+      ]
+    },
+    {
+      "code": "SCG-184DE6FB2722FB86",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "55505-231",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2255505-231%22",
+      "packaging": [
+        "24 TABLET in 1 CARTON (55505-231-24)"
+      ]
+    },
+    {
+      "code": "SCG-B23D4243EE62193C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0480-9435",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220480-9435%22",
+      "packaging": [
+        "120 CAPSULE, LIQUID FILLED in 1 BOTTLE (0480-9435-89)"
+      ]
+    },
+    {
+      "code": "SCG-C1426EEE67B39238",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "24470-924",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224470-924%22",
+      "packaging": [
+        "60 TABLET in 1 BOTTLE (24470-924-60)"
+      ]
+    },
+    {
+      "code": "SCG-93D923015215C801",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "15370-180",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2215370-180%22",
+      "packaging": [
+        "1000 TABLET, FILM COATED in 1 BOTTLE (15370-180-10)",
+        "60 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (15370-180-60)"
+      ]
+    },
+    {
+      "code": "SCG-A0F617F08268B2CF",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50090-3316",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-3316%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (50090-3316-0)  / 150 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-EEB43E44C4D1410E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70518-4044",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270518-4044%22",
+      "packaging": [
+        "60 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (70518-4044-0)",
+        "30 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (70518-4044-1)"
+      ]
+    },
+    {
+      "code": "SCG-6CEEFDA5BABC3D08",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "60760-953",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2260760-953%22",
+      "packaging": [
+        "30 TABLET, EXTENDED RELEASE in 1 BOTTLE, PLASTIC (60760-953-30)"
+      ]
+    },
+    {
+      "code": "SCG-FE6BAC711F5615D1",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50228-484",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250228-484%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (50228-484-01)",
+        "500 TABLET in 1 BOTTLE (50228-484-05)",
+        "30 TABLET in 1 BOTTLE (50228-484-30)"
+      ]
+    },
+    {
+      "code": "SCG-BDC80DB4D7BCA065",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-0321",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0321%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-0321-01)"
+      ]
+    },
+    {
+      "code": "SCG-AA31ACC753B90746",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0187-2045",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220187-2045%22",
+      "packaging": [
+        "30 TABLET, EXTENDED RELEASE in 1 BOTTLE (0187-2045-30)",
+        "90 TABLET, EXTENDED RELEASE in 1 BOTTLE (0187-2045-90)"
+      ]
+    },
+    {
+      "code": "SCG-A158CA1FA184F065",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "41167-0067",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2241167-0067%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (41167-0067-0)  / 60 CAPSULE in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-263BD38B96A1D579",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "21130-596",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2221130-596%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (21130-596-01)  / 100 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (21130-596-20)  / 200 TABLET in 1 BOTTLE",
+        "365 TABLET in 1 BOTTLE (21130-596-35)"
+      ]
+    },
+    {
+      "code": "SCG-590209B7BAFFB459",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0536-1214",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220536-1214%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0536-1214-29)"
+      ]
+    },
+    {
+      "code": "SCG-42A5D23C20003205",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16103-399",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216103-399%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (16103-399-08)",
+        "1000 CAPSULE in 1 BOTTLE (16103-399-11)"
+      ]
+    },
+    {
+      "code": "SCG-F74D75CDC9A81882",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0132-0402",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220132-0402%22",
+      "packaging": [
+        "25 CAPSULE, LIQUID FILLED in 1 BOTTLE (0132-0402-25)"
+      ]
+    },
+    {
+      "code": "SCG-95A15A9C7A9182AC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-6750",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-6750%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0904-6750-60)"
+      ]
+    },
+    {
+      "code": "SCG-06FA351324BC700A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51655-350",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251655-350%22",
+      "packaging": [
+        "20 TABLET in 1 BOTTLE, PLASTIC (51655-350-20)"
+      ]
+    },
+    {
+      "code": "SCG-9F01A50E397C4618",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0527-1338",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220527-1338%22",
+      "packaging": [
+        "250 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0527-1338-25)",
+        "50 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0527-1338-50)"
+      ]
+    },
+    {
+      "code": "SCG-63B21AAAD6FD91F8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-0428",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-0428%22",
+      "packaging": [
+        "30 BLISTER PACK in 1 CARTON (0904-0428-04)  / 1 CAPSULE in 1 BLISTER PACK",
+        "50 BLISTER PACK in 1 CARTON (0904-0428-06)  / 1 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-EB22DA6BDE537984",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0597-0152",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0152%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0597-0152-07)  / 7 TABLET, FILM COATED in 1 BOTTLE",
+        "30 TABLET, FILM COATED in 1 BOTTLE (0597-0152-30)",
+        "30 BLISTER PACK in 1 CARTON (0597-0152-37)  / 1 TABLET, FILM COATED in 1 BLISTER PACK",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0597-0152-90)"
+      ]
+    },
+    {
+      "code": "SCG-C37262AA4927F0EA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0597-0168",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0168%22",
+      "packaging": [
+        "180 TABLET in 1 BOTTLE (0597-0168-18)",
+        "60 TABLET in 1 BOTTLE (0597-0168-60)",
+        "1 BOTTLE in 1 CARTON (0597-0168-66)  / 14 TABLET in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-94A717DF467E4764",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0597-0280",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0280%22",
+      "packaging": [
+        "30 TABLET, EXTENDED RELEASE in 1 BOTTLE (0597-0280-73)",
+        "90 TABLET, EXTENDED RELEASE in 1 BOTTLE (0597-0280-90)"
+      ]
+    },
+    {
+      "code": "SCG-398A7F21A3381DB3",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "31722-020",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2231722-020%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (31722-020-15)  / 150 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-998A87DFDC44D5E8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0187-0142",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220187-0142%22",
+      "packaging": [
+        "1000 TABLET in 1 BOTTLE (0187-0142-10)",
+        "30 TABLET in 1 BOTTLE (0187-0142-30)",
+        "90 TABLET in 1 BOTTLE (0187-0142-90)"
+      ]
+    },
+    {
+      "code": "SCG-A4D1FE2296B4D35A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0187-0140",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220187-0140%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (0187-0140-30)",
+        "90 TABLET in 1 BOTTLE (0187-0140-90)"
+      ]
+    },
+    {
+      "code": "SCG-D2A19E8654610E09",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-5571",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-5571%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-5571-01)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (0093-5571-56)"
+      ]
+    },
+    {
+      "code": "SCG-43C3AF13952DC610",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "24338-132",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224338-132%22",
+      "packaging": [
+        "100 mL in 1 BOTTLE (24338-132-13)"
+      ]
+    },
+    {
+      "code": "SCG-92FC1371B409BFE3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "24338-100",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2224338-100%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (24338-100-03)"
+      ]
+    },
+    {
+      "code": "SCG-3F3EB37BB2B711F6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-0651",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-0651%22",
+      "packaging": [
+        "3 BOTTLE in 1 CARTON (0113-0651-03)  / 14 CAPSULE, DELAYED RELEASE in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-2FE40050F560F5A0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "62175-820",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262175-820%22",
+      "packaging": [
+        "30 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (62175-820-32)",
+        "1000 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (62175-820-43)",
+        "90 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (62175-820-46)"
+      ]
+    },
+    {
+      "code": "SCG-7F281100746DDF8B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51316-563",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251316-563%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (51316-563-14)  / 14 TABLET, DELAYED RELEASE in 1 BOTTLE",
+        "3 BOTTLE in 1 CARTON (51316-563-42)  / 14 TABLET, DELAYED RELEASE in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-EAD4A57C3F43E410",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51672-4016",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251672-4016%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (51672-4016-1)"
+      ]
+    },
+    {
+      "code": "SCG-485FAC4D28CA3B7F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-8176",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-8176%22",
+      "packaging": [
+        "20 TABLET in 1 BOTTLE (50090-8176-1)",
+        "60 TABLET in 1 BOTTLE (50090-8176-5)"
+      ]
+    },
+    {
+      "code": "SCG-B42CB0D8408F1B6D",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42799-111",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242799-111%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (42799-111-01)"
+      ]
+    },
+    {
+      "code": "SCG-899494D6425E3B65",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "10135-787",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2210135-787%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (10135-787-05)",
+        "30 TABLET in 1 BOTTLE (10135-787-30)",
+        "90 TABLET in 1 BOTTLE (10135-787-90)"
+      ]
+    },
+    {
+      "code": "SCG-8464565A64A9B788",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "59651-835",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2259651-835%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (59651-835-30)",
+        "90 TABLET in 1 BOTTLE (59651-835-90)"
+      ]
+    },
+    {
+      "code": "SCG-1396D00515019F74",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0832-6045",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220832-6045%22",
+      "packaging": [
+        "100 mL in 1 BOTTLE (0832-6045-10)",
+        "150 mL in 1 BOTTLE (0832-6045-15)",
+        "50 mL in 1 BOTTLE (0832-6045-50)"
+      ]
+    },
+    {
+      "code": "SCG-D96E24D243F75731",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "21130-022",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2221130-022%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (21130-022-30)  / 30 TABLET in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-9EC83F5C9B0FCF5E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-0141",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-0141%22",
+      "packaging": [
+        "30 BLISTER PACK in 1 CARTON (0113-0141-65)  / 1 TABLET, FILM COATED in 1 BLISTER PACK",
+        "1 BOTTLE in 1 CARTON (0113-0141-75)  / 90 TABLET, FILM COATED in 1 BOTTLE (0113-0141-90)"
+      ]
+    },
+    {
+      "code": "SCG-13D76CF886D75D23",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "27437-110",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2227437-110%22",
+      "packaging": [
+        "30 CAPSULE in 1 BOTTLE (27437-110-06)"
+      ]
+    },
+    {
+      "code": "SCG-F19A9F19995A6093",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-4391",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-4391%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-4391-77)"
+      ]
+    },
+    {
+      "code": "SCG-205E16D8AD06B11C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-3066",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-3066%22",
+      "packaging": [
+        "500 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0378-3066-05)",
+        "90 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0378-3066-77)"
+      ]
+    },
+    {
+      "code": "SCG-110BFC225341C116",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "67091-386",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2267091-386%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (67091-386-15)  / 15 CAPSULE in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-FBA9EC0E7CD7A987",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-0784",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-0784%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (0363-0784-07)  / 5 TABLET in 1 BLISTER PACK",
+        "1 BOTTLE in 1 CARTON (0363-0784-15)  / 150 TABLET in 1 BOTTLE",
+        "180 TABLET in 1 BOTTLE (0363-0784-18)",
+        "3 BLISTER PACK in 1 CARTON (0363-0784-29)  / 5 TABLET in 1 BLISTER PACK",
+        "1 BOTTLE in 1 CARTON (0363-0784-30)  / 30 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-0784-40)  / 40 TABLET in 1 BOTTLE",
+        "2 BOTTLE in 1 CARTON (0363-0784-43)  / 30 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-0784-45)  / 45 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-0784-75)  / 70 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-0784-90)  / 90 TABLET in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-6449A850C794890E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-1847",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-1847%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0363-1847-39)  / 30 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-1847-49)  / 40 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-1847-75)  / 90 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0363-1847-95)  / 45 TABLET, FILM COATED in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-32F03187FBD7924D",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "16714-695",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-695%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (16714-695-01)  / 35 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-0298B8304B8F6733",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-6500",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-6500%22",
+      "packaging": [
+        "50 BLISTER PACK in 1 CARTON (0904-6500-06)  / 1 TABLET in 1 BLISTER PACK",
+        "100 BLISTER PACK in 1 CARTON (0904-6500-61)  / 1 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-32D4641B2C18741F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16714-692",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-692%22",
+      "packaging": [
+        "12 BLISTER PACK in 1 CARTON (16714-692-11)  / 1 TABLET in 1 BLISTER PACK (16714-692-10)"
+      ]
+    },
+    {
+      "code": "SCG-64F140B02613890D",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0134",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0134%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0168-0134-60)  / 60 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-161A12FD1BAAAC38",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-761",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-761%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (45802-761-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (45802-761-30)  / 30 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (45802-761-60)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-F3C1E38A5EFA71A0",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-0262",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0262%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0093-0262-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0093-0262-30)  / 30 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0093-0262-92)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-FDA6E7B1B83DC608",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0713-0631",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220713-0631%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0713-0631-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0713-0631-31)  / 30 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0713-0631-60)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-6B3639700B6F5006",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình hít",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50090-6053",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-6053%22",
+      "packaging": [
+        "1 INHALER in 1 CARTON (50090-6053-0)  / 120 AEROSOL, METERED in 1 INHALER"
+      ]
+    },
+    {
+      "code": "SCG-22CB8DD7074C0C25",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-441",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-441%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE (45802-441-02)"
+      ]
+    },
+    {
+      "code": "SCG-181EC7DAB03B223C",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình hít",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0173-0715",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220173-0715%22",
+      "packaging": [
+        "1 INHALER in 1 CARTON (0173-0715-20)  / 120 AEROSOL, METERED in 1 INHALER",
+        "1 INHALER in 1 CARTON (0173-0715-22)  / 60 AEROSOL, METERED in 1 INHALER"
+      ]
+    },
+    {
+      "code": "SCG-FE301500639B1609",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình hít",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0173-0716",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220173-0716%22",
+      "packaging": [
+        "1 INHALER in 1 CARTON (0173-0716-20)  / 120 AEROSOL, METERED in 1 INHALER",
+        "1 INHALER in 1 CARTON (0173-0716-22)  / 60 AEROSOL, METERED in 1 INHALER"
+      ]
+    },
+    {
+      "code": "SCG-2E29253D8974211E",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "69499-501",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2269499-501%22",
+      "packaging": [
+        "75 mL in 1 BOTTLE (69499-501-75)"
+      ]
+    },
+    {
+      "code": "SCG-1CCC5688FECBA5BF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8589",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8589%22",
+      "packaging": [
+        "15 TABLET in 1 BLISTER PACK (0615-8589-05)",
+        "7 TABLET in 1 BLISTER PACK (0615-8589-07)",
+        "30 TABLET in 1 BLISTER PACK (0615-8589-39)"
+      ]
+    },
+    {
+      "code": "SCG-66A7F957A470C2C5",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50742-394",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250742-394%22",
+      "packaging": [
+        "30 POUCH in 1 CARTON (50742-394-30)  / 1 VIAL, SINGLE-DOSE in 1 POUCH (50742-394-01)  / 2 mL in 1 VIAL, SINGLE-DOSE",
+        "60 POUCH in 1 CARTON (50742-394-60)  / 1 VIAL, SINGLE-DOSE in 1 POUCH / 2 mL in 1 VIAL, SINGLE-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-6DA15CE26A41D02B",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình hít",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0310-4600",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220310-4600%22",
+      "packaging": [
+        "120 AEROSOL, METERED in 1 INHALER (0310-4600-12)"
+      ]
+    },
+    {
+      "code": "SCG-9BC704484ACD12C9",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "17856-3294",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2217856-3294%22",
+      "packaging": [
+        "120 SYRINGE in 1 CASE (17856-3294-1)  / 3 mL in 1 SYRINGE"
+      ]
+    },
+    {
+      "code": "SCG-8D35C468217CB42C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0054-8297",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-8297%22",
+      "packaging": [
+        "10 BLISTER PACK in 1 CARTON (0054-8297-25)  / 10 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-5903A58F6E0CB772",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0480-3494",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220480-3494%22",
+      "packaging": [
+        "500 CAPSULE in 1 BOTTLE (0480-3494-05)"
+      ]
+    },
+    {
+      "code": "SCG-987F9DA0B763F418",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "74157-013",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2274157-013%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE (74157-013-90)"
+      ]
+    },
+    {
+      "code": "SCG-B5E4F289DA1E08B3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8332",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8332%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8332-39)"
+      ]
+    },
+    {
+      "code": "SCG-3070C6C842D2A1E8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8333",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8333%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8333-39)"
+      ]
+    },
+    {
+      "code": "SCG-59909654B7F322C6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0591-0461",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220591-0461%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (0591-0461-01)",
+        "500 TABLET in 1 BOTTLE, PLASTIC (0591-0461-05)",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (0591-0461-10)"
+      ]
+    },
+    {
+      "code": "SCG-A7DD5CEABF0B6CC6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16714-896",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-896%22",
+      "packaging": [
+        "100 TABLET, EXTENDED RELEASE in 1 BOTTLE (16714-896-01)",
+        "500 TABLET, EXTENDED RELEASE in 1 BOTTLE (16714-896-02)"
+      ]
+    },
+    {
+      "code": "SCG-1A4CEBD84AC96AA8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-8342",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-8342%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-8342-01)"
+      ]
+    },
+    {
+      "code": "SCG-FB57BCB1233CEC73",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "57237-023",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2257237-023%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (57237-023-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (57237-023-05)"
+      ]
+    },
+    {
+      "code": "SCG-38204C76F09EB718",
+      "dose_unit": "mL",
+      "dispensing_unit": "túi",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "55154-5780",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2255154-5780%22",
+      "packaging": [
+        "5 CUP, UNIT-DOSE in 1 BAG (55154-5780-5)  / 10 mL in 1 CUP, UNIT-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-D318F10E559A8CCA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-0570",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-0570%22",
+      "packaging": [
+        "14 TABLET in 1 BLISTER PACK (0363-0570-27)",
+        "28 TABLET in 1 BLISTER PACK (0363-0570-28)"
+      ]
+    },
+    {
+      "code": "SCG-DF3C9C9061E7E913",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8344",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8344%22",
+      "packaging": [
+        "15 CAPSULE in 1 BLISTER PACK (0615-8344-05)",
+        "30 CAPSULE in 1 BLISTER PACK (0615-8344-39)"
+      ]
+    },
+    {
+      "code": "SCG-D22165DA4A5EB68E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-6372",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-6372%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (50090-6372-0)",
+        "100 TABLET in 1 BOTTLE (50090-6372-2)",
+        "90 TABLET in 1 BOTTLE (50090-6372-3)"
+      ]
+    },
+    {
+      "code": "SCG-C8B1FE3AB0BA822A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0115-1697",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220115-1697%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (0115-1697-01)"
+      ]
+    },
+    {
+      "code": "SCG-C259201CF31AB27B",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "51672-4061",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251672-4061%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (51672-4061-2)  / 20 mL in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (51672-4061-4)  / 60 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-457D6473E3AEE5E0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "58602-843",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2258602-843%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (58602-843-12)  / 40 CAPSULE in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (58602-843-18)  / 80 CAPSULE in 1 BOTTLE",
+        "160 CAPSULE in 1 BOTTLE (58602-843-30)",
+        "180 CAPSULE in 1 BOTTLE (58602-843-32)",
+        "200 CAPSULE in 1 BOTTLE, PLASTIC (58602-843-34)",
+        "300 CAPSULE in 1 BOTTLE (58602-843-38)",
+        "1 BOTTLE, PLASTIC in 1 CARTON (58602-843-70)  / 40 CAPSULE in 1 BOTTLE, PLASTIC",
+        "1 BOTTLE, PLASTIC in 1 CARTON (58602-843-72)  / 80 CAPSULE in 1 BOTTLE, PLASTIC",
+        "1 BOTTLE in 1 CARTON (58602-843-73)  / 20 CAPSULE in 1 BOTTLE",
+        "160 CAPSULE in 1 BOTTLE, PLASTIC (58602-843-74)",
+        "300 CAPSULE in 1 BOTTLE, PLASTIC (58602-843-75)",
+        "2 BOTTLE in 1 CARTON (58602-843-79)  / 180 CAPSULE in 1 BOTTLE",
+        "180 CAPSULE in 1 BOTTLE, PLASTIC (58602-843-92)"
+      ]
+    },
+    {
+      "code": "SCG-E64308A1F1B88929",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0363-9611",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-9611%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (0363-9611-01)",
+        "50 TABLET in 1 BOTTLE, PLASTIC (0363-9611-05)",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (0363-9611-10)",
+        "300 TABLET in 1 BOTTLE, PLASTIC (0363-9611-31)",
+        "500 TABLET in 1 BOTTLE, PLASTIC (0363-9611-50)"
+      ]
+    },
+    {
+      "code": "SCG-B02062AE29649368",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "16571-875",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216571-875%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (16571-875-01)"
+      ]
+    },
+    {
+      "code": "SCG-DEF5F29F8F871843",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0228-2597",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220228-2597%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0228-2597-11)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE (0228-2597-96)"
+      ]
+    },
+    {
+      "code": "SCG-0C6026C0C1C21D00",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0378-7970",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-7970%22",
+      "packaging": [
+        "1 POUCH in 1 CARTON (0378-7970-52)  / 25 AMPULE in 1 POUCH (0378-7970-62)  / 2.5 mL in 1 AMPULE",
+        "30 POUCH in 1 CARTON (0378-7970-55)  / 1 AMPULE in 1 POUCH (0378-7970-31)  / 2.5 mL in 1 AMPULE",
+        "2 POUCH in 1 CARTON (0378-7970-91)  / 30 AMPULE in 1 POUCH / 2.5 mL in 1 AMPULE",
+        "1 POUCH in 1 CARTON (0378-7970-93)  / 30 AMPULE in 1 POUCH (0378-7970-64)  / 2.5 mL in 1 AMPULE"
+      ]
+    },
+    {
+      "code": "SCG-F0E9412432604C57",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "bình",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0597-0087",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0087%22",
+      "packaging": [
+        "1 CANISTER in 1 CARTON (0597-0087-17)  / 200 AEROSOL, METERED in 1 CANISTER"
+      ]
+    },
+    {
+      "code": "SCG-52238E85AC94D33B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "29300-213",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2229300-213%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE, PLASTIC (29300-213-05)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (29300-213-13)",
+        "90 TABLET in 1 BOTTLE, PLASTIC (29300-213-19)"
+      ]
+    },
+    {
+      "code": "SCG-1AE5B0D3A8D91319",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0024-5851",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220024-5851%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (0024-5851-30)"
+      ]
+    },
+    {
+      "code": "SCG-47C94EA7BAAED0A5",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "62175-106",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262175-106%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (62175-106-01)"
+      ]
+    },
+    {
+      "code": "SCG-E80B326CB5DE9703",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "11788-161",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211788-161%22",
+      "packaging": [
+        "100 TABLET, EXTENDED RELEASE in 1 BOTTLE (11788-161-01)"
+      ]
+    },
+    {
+      "code": "SCG-192847013D4BB9E7",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "85384-0002",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2285384-0002%22",
+      "packaging": [
+        "100 g in 1 TUBE (85384-0002-1)"
+      ]
+    },
+    {
+      "code": "SCG-497BAEC5BFE9BA06",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "35573-433",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2235573-433%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (35573-433-02)",
+        "30 TABLET in 1 BOTTLE (35573-433-30)"
+      ]
+    },
+    {
+      "code": "SCG-A908F77A9D34016C",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0116-4005",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220116-4005%22",
+      "packaging": [
+        "237 mL in 1 BOTTLE (0116-4005-08)",
+        "100 CASE in 1 CASE (0116-4005-10)  / 40 TRAY in 1 CASE (0116-4005-40)  / 10 CUP, UNIT-DOSE in 1 TRAY / 15 mL in 1 CUP, UNIT-DOSE (0116-4005-15)",
+        "100 CASE in 1 CASE (0116-4005-11)  / 40 TRAY in 1 CASE (0116-4005-41)  / 10 CUP, UNIT-DOSE in 1 TRAY / 30 mL in 1 CUP, UNIT-DOSE (0116-4005-30)",
+        "15 mL in 1 CUP, UNIT-DOSE (0116-4005-15)",
+        "473 mL in 1 BOTTLE (0116-4005-16)",
+        "30 mL in 1 CUP, UNIT-DOSE (0116-4005-30)",
+        "946 mL in 1 BOTTLE (0116-4005-32)"
+      ]
+    },
+    {
+      "code": "SCG-B0725E505485B8BD",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "69067-010",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2269067-010%22",
+      "packaging": [
+        "15 POUCH in 1 CARTON (69067-010-15)  / 10 g in 1 POUCH"
+      ]
+    },
+    {
+      "code": "SCG-47928205196DA324",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-8015",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-8015%22",
+      "packaging": [
+        "30 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE, PLASTIC (0378-8015-93)"
+      ]
+    },
+    {
+      "code": "SCG-84B4DD99474AC886",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-1114",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-1114%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0113-1114-01)  / 14 CAPSULE, DELAYED RELEASE in 1 BOTTLE",
+        "2 BOTTLE in 1 CARTON (0113-1114-02)  / 14 CAPSULE, DELAYED RELEASE in 1 BOTTLE",
+        "3 BOTTLE in 1 CARTON (0113-1114-03)  / 14 CAPSULE, DELAYED RELEASE in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-F37058D0CFB75814",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-4145",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-4145%22",
+      "packaging": [
+        "6 POUCH in 1 CARTON (0093-4145-56)  / 5 VIAL, SINGLE-DOSE in 1 POUCH (0093-4145-45)  / 3 mL in 1 VIAL, SINGLE-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-5B5E45B1577A1720",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-4146",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-4146%22",
+      "packaging": [
+        "6 POUCH in 1 CARTON (0093-4146-56)  / 5 VIAL, SINGLE-DOSE in 1 POUCH (0093-4146-45)  / 3 mL in 1 VIAL, SINGLE-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-2F63565FA5B48FBA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8565",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8565%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8565-39)"
+      ]
+    },
+    {
+      "code": "SCG-32AA6C6BA779F4A7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-7701",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-7701%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (0093-7701-98)"
+      ]
+    },
+    {
+      "code": "SCG-E9EB527CE13AA40C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "62135-655",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-655%22",
+      "packaging": [
+        "14 TABLET in 1 BOTTLE (62135-655-14)"
+      ]
+    },
+    {
+      "code": "SCG-25DE2861BBB7822E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-6351",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-6351%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-6351-61)  / 1 TABLET, FILM COATED in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-80DEF8F4E0241DC0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "82347-0005",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2282347-0005%22",
+      "packaging": [
+        "3 BLISTER PACK in 1 CARTON (82347-0005-4)  / 10 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-A871FD914D2EB28A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8573",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8573%22",
+      "packaging": [
+        "15 TABLET in 1 BLISTER PACK (0615-8573-05)",
+        "14 TABLET in 1 BLISTER PACK (0615-8573-14)",
+        "30 TABLET in 1 BLISTER PACK (0615-8573-39)"
+      ]
+    },
+    {
+      "code": "SCG-04E4156F57B165E0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0597-0140",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0140%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (0597-0140-30)",
+        "100 BLISTER PACK in 1 CARTON (0597-0140-61)  / 1 TABLET, FILM COATED in 1 BLISTER PACK",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0597-0140-90)"
+      ]
+    },
+    {
+      "code": "SCG-57A916EEC4860F52",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0597-0270",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0270%22",
+      "packaging": [
+        "60 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (0597-0270-73)",
+        "180 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (0597-0270-94)"
+      ]
+    },
+    {
+      "code": "SCG-8E10782F8207CB8D",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8254",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8254%22",
+      "packaging": [
+        "15 TABLET in 1 BLISTER PACK (0615-8254-05)",
+        "30 TABLET in 1 BLISTER PACK (0615-8254-39)"
+      ]
+    },
+    {
+      "code": "SCG-F3EF435F03AAACAC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "23155-876",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2223155-876%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (23155-876-01)",
+        "500 TABLET in 1 BOTTLE (23155-876-05)"
+      ]
+    },
+    {
+      "code": "SCG-53724AD3E15E2974",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-2100",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-2100%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE, PLASTIC (0378-2100-01)",
+        "500 CAPSULE in 1 BOTTLE, PLASTIC (0378-2100-05)"
+      ]
+    },
+    {
+      "code": "SCG-014D09F546D060D1",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "11822-0375",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211822-0375%22",
+      "packaging": [
+        "2 BLISTER PACK in 1 CARTON (11822-0375-3)  / 6 TABLET in 1 BLISTER PACK",
+        "4 BLISTER PACK in 1 CARTON (11822-0375-8)  / 6 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-3FCD7A42D1EB491A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-0612",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-0612%22",
+      "packaging": [
+        "10 BLISTER PACK in 1 CARTON (0113-0612-46)  / 1 TABLET in 1 BLISTER PACK",
+        "1 BOTTLE in 1 CARTON (0113-0612-65)  / 30 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0113-0612-75)  / 90 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0113-0612-78)  / 100 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0113-0612-87)  / 300 TABLET in 1 BOTTLE (0113-0612-00)",
+        "1 BOTTLE in 1 CARTON (0113-0612-88)  / 365 TABLET in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-4954F60E00A6F045",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "47682-118",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2247682-118%22",
+      "packaging": [
+        "1 TABLET, FILM COATED in 1 PACKET (47682-118-46)",
+        "50 PACKET in 1 BOX (47682-118-50)  / 1 TABLET, FILM COATED in 1 PACKET (47682-118-46)"
+      ]
+    },
+    {
+      "code": "SCG-39506BEE6E0B5B24",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "29300-146",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2229300-146%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (29300-146-01)",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (29300-146-10)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (29300-146-13)",
+        "90 TABLET in 1 BOTTLE, PLASTIC (29300-146-19)"
+      ]
+    },
+    {
+      "code": "SCG-2FF178DCD4BD2589",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-7960",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-7960%22",
+      "packaging": [
+        "15 TABLET, FILM COATED in 1 BLISTER PACK (0615-7960-05)",
+        "30 TABLET, FILM COATED in 1 BLISTER PACK (0615-7960-39)"
+      ]
+    },
+    {
+      "code": "SCG-1F46C20C6EF911A6",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0363-0649",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-0649%22",
+      "packaging": [
+        "355 mL in 1 BOTTLE (0363-0649-12)",
+        "769 mL in 1 BOTTLE (0363-0649-26)"
+      ]
+    },
+    {
+      "code": "SCG-F70030BC6E921323",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "67618-102",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2267618-102%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (67618-102-60)  / 60 CAPSULE in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-DDE94D7B43296D53",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50458-675",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250458-675%22",
+      "packaging": [
+        "200 TABLET, CHEWABLE in 1 BOTTLE (50458-675-20)"
+      ]
+    },
+    {
+      "code": "SCG-ADF7C7235D4E23FA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "68180-189",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2268180-189%22",
+      "packaging": [
+        "30 CAPSULE in 1 BOTTLE (68180-189-06)"
+      ]
+    },
+    {
+      "code": "SCG-EAB0691733B13BA7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8124",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8124%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8124-39)"
+      ]
+    },
+    {
+      "code": "SCG-B462F58C1465525F",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0037-0066",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220037-0066%22",
+      "packaging": [
+        "28 BOTTLE, DISPENSING in 1 CARTON (0037-0066-03)  / 60 mL in 1 BOTTLE, DISPENSING (0037-0066-06)",
+        "7 BOTTLE, DISPENSING in 1 CARTON (0037-0066-05)  / 60 mL in 1 BOTTLE, DISPENSING (0037-0066-06)"
+      ]
+    },
+    {
+      "code": "SCG-E84B05C586FD3E03",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "54092-189",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2254092-189%22",
+      "packaging": [
+        "240 CAPSULE in 1 BOTTLE (54092-189-81)"
+      ]
+    },
+    {
+      "code": "SCG-E6B25902089C713A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7164",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7164%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-7164-61)  / 1 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-014E842C7D0F1CE7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "33342-143",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-143%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (33342-143-10)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (33342-143-11)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE (33342-143-44)"
+      ]
+    },
+    {
+      "code": "SCG-8FDA13A6BB1CB783",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "43598-618",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2243598-618%22",
+      "packaging": [
+        "60 TABLET, FILM COATED, EXTENDED RELEASE in 1 BOTTLE (43598-618-60)"
+      ]
+    },
+    {
+      "code": "SCG-722BE12FA5C319FA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0832-6073",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220832-6073%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0832-6073-11)"
+      ]
+    },
+    {
+      "code": "SCG-FF7FA0CCF46AC473",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0832-6072",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220832-6072%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0832-6072-11)"
+      ]
+    },
+    {
+      "code": "SCG-833B381313418FC8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7057",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7057%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-7057-61)  / 1 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-049B8E4F1FB0F33E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "72245-873",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2272245-873%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (72245-873-10)"
+      ]
+    },
+    {
+      "code": "SCG-108C80E261D59E56",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0009-0073",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220009-0073%22",
+      "packaging": [
+        "50 TABLET in 1 BOTTLE (0009-0073-01)"
+      ]
+    },
+    {
+      "code": "SCG-4CCCD248B694BEDE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0009-0020",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220009-0020%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0009-0020-01)"
+      ]
+    },
+    {
+      "code": "SCG-6A4B3C4A31856B42",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0121-0576",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-0576%22",
+      "packaging": [
+        "473 mL in 1 BOTTLE (0121-0576-16)"
+      ]
+    },
+    {
+      "code": "SCG-41D1455C3F6309D6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-2203",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-2203%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-2203-01)",
+        "500 TABLET in 1 BOTTLE (0093-2203-05)",
+        "1000 TABLET in 1 BOTTLE (0093-2203-10)"
+      ]
+    },
+    {
+      "code": "SCG-EAEDF5E018181816",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "53401-012",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2253401-012%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE (53401-012-60)",
+        "180 TABLET in 1 BOTTLE (53401-012-80)"
+      ]
+    },
+    {
+      "code": "SCG-00A48DD2312E1DF3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-0047",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-0047%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0378-0047-01)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0378-0047-10)"
+      ]
+    },
+    {
+      "code": "SCG-77F5128DE3310FD9",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0025-1942",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220025-1942%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0025-1942-34)  / 1 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-996383B83D396ED2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "58657-739",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2258657-739%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (58657-739-01)",
+        "56 TABLET in 1 BOTTLE (58657-739-56)"
+      ]
+    },
+    {
+      "code": "SCG-B3270E37D18E6643",
+      "dose_unit": "g",
+      "dispensing_unit": "bình",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "11523-0133",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211523-0133%22",
+      "packaging": [
+        "133 g in 1 CAN (11523-0133-1)"
+      ]
+    },
+    {
+      "code": "SCG-F1A43E708824E85B",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "50268-503",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250268-503%22",
+      "packaging": [
+        "29.57 mL in 1 BOTTLE (50268-503-29)"
+      ]
+    },
+    {
+      "code": "SCG-267E017335F33E78",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-118",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-118%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (45802-118-46)  / 60 mL in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (45802-118-59)  / 30 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-E6C47DFC795BDCF0",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0713-0634",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220713-0634%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0713-0634-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0713-0634-37)  / 45 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-89F8352037FB0F95",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "13668-081",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2213668-081%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (13668-081-05)",
+        "30 TABLET in 1 BOTTLE (13668-081-30)",
+        "3200 TABLET in 1 BOTTLE (13668-081-32)",
+        "100 TABLET in 1 CARTON (13668-081-74)",
+        "90 TABLET in 1 BOTTLE (13668-081-90)"
+      ]
+    },
+    {
+      "code": "SCG-78330D29059CE473",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-5560",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-5560%22",
+      "packaging": [
+        "10 BLISTER PACK in 1 CARTON (0781-5560-13)  / 10 TABLET, FILM COATED in 1 BLISTER PACK (0781-5560-06)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (0781-5560-31)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0781-5560-92)"
+      ]
+    },
+    {
+      "code": "SCG-D342A485458267A9",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0093-1010",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-1010%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0093-1010-42)  / 22 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-D2C23081628EE857",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "16714-055",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216714-055%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (16714-055-01)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (16714-055-02)  / 30 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-22AD3476835FDC50",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "15370-170",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2215370-170%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (15370-170-10)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (15370-170-30)",
+        "60 TABLET in 1 BOTTLE, PLASTIC (15370-170-60)",
+        "1 BLISTER PACK in 1 CARTON (15370-170-99)  / 2 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-719627AB594B8692",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "79739-7078",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2279739-7078%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (79739-7078-1)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (79739-7078-3)",
+        "60 TABLET, FILM COATED in 1 BOTTLE (79739-7078-6)"
+      ]
+    },
+    {
+      "code": "SCG-F8158D2BDAAE8D98",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0280-0112",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220280-0112%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0280-0112-01)  / 175 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0280-0112-02)  / 24 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0280-0112-03)  / 50 TABLET in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0280-0112-04)  / 90 TABLET in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-B7BD5CD456596643",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0113-0901",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-0901%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0113-0901-62)  / 24 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0113-0901-71)  / 50 TABLET, FILM COATED in 1 BOTTLE",
+        "1 BOTTLE in 1 CARTON (0113-0901-75)  / 90 TABLET, FILM COATED in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-22EE65D971D813FE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7499",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7499%22",
+      "packaging": [
+        "30 BLISTER PACK in 1 CARTON (0904-7499-04)  / 1 TABLET in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-95E9060B0645D280",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0456-1410",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220456-1410%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0456-1410-01)",
+        "30 TABLET in 1 BOTTLE (0456-1410-30)",
+        "100 TABLET in 1 BOX, UNIT-DOSE (0456-1410-63)",
+        "90 TABLET in 1 BOTTLE (0456-1410-90)"
+      ]
+    },
+    {
+      "code": "SCG-3B50221A0A5A84CC",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-7229",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-7229%22",
+      "packaging": [
+        "100 BLISTER PACK in 1 CARTON (0904-7229-61)  / 1 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-027996186AFC5F6D",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "46708-732",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2246708-732%22",
+      "packaging": [
+        "100 TABLET, EXTENDED RELEASE in 1 BOTTLE (46708-732-31)",
+        "300 TABLET, EXTENDED RELEASE in 1 BOTTLE (46708-732-63)",
+        "1000 TABLET, EXTENDED RELEASE in 1 BOTTLE (46708-732-91)"
+      ]
+    },
+    {
+      "code": "SCG-A924317DBA95B419",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "16571-888",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2216571-888%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (16571-888-06)  / 60 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-EB61C95C0376997B",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0115-1645",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220115-1645%22",
+      "packaging": [
+        "100 CAPSULE in 1 BOTTLE (0115-1645-01)",
+        "1000 CAPSULE in 1 BOTTLE (0115-1645-03)"
+      ]
+    },
+    {
+      "code": "SCG-4AAC771137FA19AF",
+      "dose_unit": "g",
+      "dispensing_unit": null,
+      "legacy_unit": "g",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0281-0326",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220281-0326%22",
+      "packaging": [
+        "48 PACKET in 1 BOX (0281-0326-08)  / 1 g in 1 PACKET",
+        "30 g in 1 TUBE (0281-0326-30)",
+        "60 g in 1 TUBE (0281-0326-60)"
+      ]
+    },
+    {
+      "code": "SCG-917DBA0ACA9AC782",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0713-0564",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220713-0564%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0713-0564-31)  / 30 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-9FC643FCB47FB5BF",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "62135-813",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-813%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE (62135-813-46)",
+        "473 mL in 1 BOTTLE (62135-813-47)"
+      ]
+    },
+    {
+      "code": "SCG-2021CA75B3FB50B5",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-0983",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-0983%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (0093-0983-01)"
+      ]
+    },
+    {
+      "code": "SCG-55AC0BF388D3CEB9",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "71209-097",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2271209-097%22",
+      "packaging": [
+        "50 TABLET, FILM COATED in 1 BOTTLE (71209-097-02)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (71209-097-05)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (71209-097-10)"
+      ]
+    },
+    {
+      "code": "SCG-7090F505F1D05ECA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "71209-098",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2271209-098%22",
+      "packaging": [
+        "50 TABLET, FILM COATED in 1 BOTTLE (71209-098-02)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (71209-098-05)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (71209-098-10)"
+      ]
+    },
+    {
+      "code": "SCG-91A6D155C8F3AA84",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "33342-179",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-179%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (33342-179-07)",
+        "90 TABLET in 1 BOTTLE (33342-179-10)",
+        "10 BLISTER PACK in 1 CARTON (33342-179-12)  / 10 TABLET in 1 BLISTER PACK",
+        "1000 TABLET in 1 BOTTLE (33342-179-44)"
+      ]
+    },
+    {
+      "code": "SCG-69BB8017FDB107E2",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0713-0861",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220713-0861%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0713-0861-30)"
+      ]
+    },
+    {
+      "code": "SCG-906108DEB1B52EA5",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51407-814",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251407-814%22",
+      "packaging": [
+        "100 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (51407-814-01)",
+        "500 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (51407-814-05)",
+        "30 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (51407-814-30)",
+        "90 CAPSULE, DELAYED RELEASE PELLETS in 1 BOTTLE (51407-814-90)"
+      ]
+    },
+    {
+      "code": "SCG-F439B0F0F82A90A6",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0781-2785",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220781-2785%22",
+      "packaging": [
+        "100 CAPSULE, DELAYED RELEASE in 1 BOTTLE (0781-2785-01)",
+        "1000 CAPSULE, DELAYED RELEASE in 1 BOTTLE (0781-2785-10)",
+        "30 CAPSULE, DELAYED RELEASE in 1 BOTTLE (0781-2785-31)"
+      ]
+    },
+    {
+      "code": "SCG-535991C5615ED447",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "51407-003",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251407-003%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (51407-003-05)",
+        "30 TABLET in 1 BOTTLE (51407-003-30)"
+      ]
+    },
+    {
+      "code": "SCG-F8F7560211B14209",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "55111-155",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2255111-155%22",
+      "packaging": [
+        "500 TABLET, FILM COATED in 1 BOTTLE (55111-155-05)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (55111-155-30)",
+        "10 BLISTER PACK in 1 CARTON (55111-155-78)  / 10 TABLET, FILM COATED in 1 BLISTER PACK (55111-155-79)"
+      ]
+    },
+    {
+      "code": "SCG-FA1135998AA54947",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0527-5137",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220527-5137%22",
+      "packaging": [
+        "1 BOTTLE, PLASTIC in 1 CARTON (0527-5137-62)  / 60 mL in 1 BOTTLE, PLASTIC"
+      ]
+    },
+    {
+      "code": "SCG-3C51F2D6109A495A",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0004-0802",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220004-0802%22",
+      "packaging": [
+        "1 BLISTER PACK in 1 CARTON (0004-0802-85)  / 10 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-F0835B9D2765A40E",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "63824-120",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2263824-120%22",
+      "packaging": [
+        "1 BOTTLE, PUMP in 1 CARTON (63824-120-11)  / 22 mL in 1 BOTTLE, PUMP"
+      ]
+    },
+    {
+      "code": "SCG-7FA0E1593687FF82",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "51672-1405",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2251672-1405%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (51672-1405-2)  / 30 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (51672-1405-3)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-860373424E07ACDD",
+      "dose_unit": "mL",
+      "dispensing_unit": "gói",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "69097-531",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2269097-531%22",
+      "packaging": [
+        "30 PACKET in 1 CARTON (69097-531-53)  / 1 SUSPENSION in 1 PACKET (69097-531-31)"
+      ]
+    },
+    {
+      "code": "SCG-2BE2A1525F7C7D82",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70756-018",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270756-018%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (70756-018-51)",
+        "90 TABLET in 1 BOTTLE (70756-018-90)"
+      ]
+    },
+    {
+      "code": "SCG-544E0EB841FA7E24",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "65862-286",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2265862-286%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (65862-286-01)"
+      ]
+    },
+    {
+      "code": "SCG-56A620D27856210D",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "65862-287",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2265862-287%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (65862-287-01)"
+      ]
+    },
+    {
+      "code": "SCG-0916F6F4F87CDA71",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "43598-481",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2243598-481%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (43598-481-60)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-0C4F7239386C031F",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0113-1910",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220113-1910%22",
+      "packaging": [
+        "1 BOTTLE in 1 CARTON (0113-1910-16)  / 59 mL in 1 BOTTLE"
+      ]
+    },
+    {
+      "code": "SCG-2F534D58F43C35C8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-7271",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-7271%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (0093-7271-05)",
+        "30 TABLET in 1 BOTTLE (0093-7271-56)",
+        "90 TABLET in 1 BOTTLE (0093-7271-98)"
+      ]
+    },
+    {
+      "code": "SCG-503CAAF019A9B6F7",
+      "dose_unit": "g",
+      "dispensing_unit": "chai",
+      "legacy_unit": "chai",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "68001-505",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2268001-505%22",
+      "packaging": [
+        "238 g in 1 BOTTLE (68001-505-55)",
+        "510 g in 1 BOTTLE (68001-505-69)"
+      ]
+    },
+    {
+      "code": "SCG-7C7F74B3D79E0116",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8618",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8618%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8618-39)"
+      ]
+    },
+    {
+      "code": "SCG-0384A49A652C2E22",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "62135-847",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2262135-847%22",
+      "packaging": [
+        "90 TABLET, FILM COATED in 1 BOTTLE (62135-847-90)"
+      ]
+    },
+    {
+      "code": "SCG-3FED4D6650AC065C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42658-160",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242658-160%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (42658-160-05)"
+      ]
+    },
+    {
+      "code": "SCG-BB541BCCF6DFA2D0",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0121-1100",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-1100%22",
+      "packaging": [
+        "5 mL in 1 BOTTLE (0121-1100-04)"
+      ]
+    },
+    {
+      "code": "SCG-B616534B4EDCCFF1",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0054-3722",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-3722%22",
+      "packaging": [
+        "120 mL in 1 BOTTLE (0054-3722-50)",
+        "500 mL in 1 BOTTLE (0054-3722-63)"
+      ]
+    },
+    {
+      "code": "SCG-33617FD68CEE12A0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0054-4741",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220054-4741%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE, PLASTIC (0054-4741-25)",
+        "1000 TABLET in 1 BOTTLE, PLASTIC (0054-4741-31)"
+      ]
+    },
+    {
+      "code": "SCG-71705F173D2CB1A7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0480-9242",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220480-9242%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0480-9242-01)"
+      ]
+    },
+    {
+      "code": "SCG-FF0963F58363A71C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "11673-509",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2211673-509%22",
+      "packaging": [
+        "160 CAPSULE in 1 BOTTLE (11673-509-87)"
+      ]
+    },
+    {
+      "code": "SCG-46FB99A85D20BE58",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "13668-107",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2213668-107%22",
+      "packaging": [
+        "30 TABLET, DELAYED RELEASE in 1 BOTTLE (13668-107-30)",
+        "90 TABLET, DELAYED RELEASE in 1 BOTTLE (13668-107-90)"
+      ]
+    },
+    {
+      "code": "SCG-F2240A89E26AB156",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "33342-248",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-248%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (33342-248-11)",
+        "1000 TABLET in 1 BOTTLE (33342-248-44)"
+      ]
+    },
+    {
+      "code": "SCG-F940CBE97D9C5CC3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "33342-249",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2233342-249%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (33342-249-11)",
+        "1000 TABLET in 1 BOTTLE (33342-249-44)"
+      ]
+    },
+    {
+      "code": "SCG-42CD84F7ADD7F21C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42571-345",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242571-345%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (42571-345-05)",
+        "30 TABLET in 1 BOTTLE (42571-345-30)",
+        "60 TABLET in 1 BOTTLE (42571-345-60)"
+      ]
+    },
+    {
+      "code": "SCG-2FA79F0F6439E85D",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "14445-148",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2214445-148%22",
+      "packaging": [
+        "10 BLISTER PACK in 1 CARTON (14445-148-10)  / 10 TABLET, FILM COATED in 1 BLISTER PACK (14445-148-02)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (14445-148-30)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (14445-148-90)"
+      ]
+    },
+    {
+      "code": "SCG-1FA7BC8C3CAD39A9",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "50090-7430",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2250090-7430%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (50090-7430-0)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (50090-7430-1)",
+        "100 TABLET, FILM COATED in 1 BOTTLE (50090-7430-2)"
+      ]
+    },
+    {
+      "code": "SCG-9D287B57887F2AFE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "13668-721",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2213668-721%22",
+      "packaging": [
+        "500 TABLET in 1 BOTTLE (13668-721-05)",
+        "1000 TABLET in 1 BOTTLE (13668-721-10)",
+        "90 TABLET in 1 BOTTLE (13668-721-90)"
+      ]
+    },
+    {
+      "code": "SCG-4365813E6E36D3A3",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "65862-825",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2265862-825%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE (65862-825-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE (65862-825-05)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (65862-825-30)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (65862-825-90)"
+      ]
+    },
+    {
+      "code": "SCG-D26F9402E59057DB",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "64724-1016",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2264724-1016%22",
+      "packaging": [
+        "250 mL in 1 BOTTLE (64724-1016-2)",
+        "1000 mL in 1 BOTTLE (64724-1016-3)"
+      ]
+    },
+    {
+      "code": "SCG-6789600B2240179A",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "45802-040",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2245802-040%22",
+      "packaging": [
+        "118 mL in 1 BOTTLE (45802-040-64)"
+      ]
+    },
+    {
+      "code": "SCG-3ABDC47BC9689421",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70000-0477",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270000-0477%22",
+      "packaging": [
+        "2 POUCH in 1 CARTON (70000-0477-1)  / 12 TABLET in 1 POUCH"
+      ]
+    },
+    {
+      "code": "SCG-25D7D5D90C987F41",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "67618-120",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2267618-120%22",
+      "packaging": [
+        "36 TABLET, FILM COATED in 1 BOTTLE (67618-120-06)",
+        "1 BLISTER PACK in 1 CARTON (67618-120-12)  / 12 TABLET, FILM COATED in 1 BLISTER PACK",
+        "2 CARTON in 1 PACKAGE (67618-120-72)  / 1 BOTTLE in 1 CARTON / 36 TABLET, FILM COATED in 1 BOTTLE",
+        "72 TABLET, FILM COATED in 1 BOTTLE (67618-120-73)"
+      ]
+    },
+    {
+      "code": "SCG-7CECC2BF14729C7F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-7992",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-7992%22",
+      "packaging": [
+        "15 TABLET, FILM COATED in 1 BLISTER PACK (0615-7992-05)",
+        "30 TABLET, FILM COATED in 1 BLISTER PACK (0615-7992-39)"
+      ]
+    },
+    {
+      "code": "SCG-44FD204BF4F29E1E",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "70710-1242",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270710-1242%22",
+      "packaging": [
+        "30 TABLET in 1 BOTTLE (70710-1242-3)",
+        "90 TABLET in 1 BOTTLE (70710-1242-9)"
+      ]
+    },
+    {
+      "code": "SCG-8434F5C878BF89A7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0006-0277",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220006-0277%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 DOSE PACK (0006-0277-02)",
+        "2 BLISTER PACK in 1 CARTON (0006-0277-14)  / 7 TABLET, FILM COATED in 1 BLISTER PACK",
+        "100 BLISTER PACK in 1 CARTON (0006-0277-28)  / 1 TABLET, FILM COATED in 1 BLISTER PACK (0006-0277-01)",
+        "30 TABLET, FILM COATED in 1 BOTTLE (0006-0277-31)",
+        "30 TABLET, FILM COATED in 1 DOSE PACK (0006-0277-33)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0006-0277-54)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE (0006-0277-82)"
+      ]
+    },
+    {
+      "code": "SCG-D60922E61A683AAF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "53746-515",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2253746-515%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (53746-515-01)",
+        "500 TABLET in 1 BOTTLE (53746-515-05)",
+        "1000 TABLET in 1 BOTTLE (53746-515-10)",
+        "30 TABLET in 1 BOTTLE (53746-515-30)",
+        "60 TABLET in 1 BOTTLE (53746-515-60)",
+        "90 TABLET in 1 BOTTLE (53746-515-90)"
+      ]
+    },
+    {
+      "code": "SCG-8C6F9D595C18C24C",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-0437",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-0437%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0378-0437-01)"
+      ]
+    },
+    {
+      "code": "SCG-16796B955116AC4B",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0121-0974",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-0974%22",
+      "packaging": [
+        "10 TRAY in 1 TRAY (0121-0974-00)  / 10 CUP, UNIT-DOSE in 1 TRAY / 10 mL in 1 CUP, UNIT-DOSE (0121-0974-10)",
+        "4 TRAY in 1 CASE (0121-0974-40)  / 10 CUP, UNIT-DOSE in 1 TRAY / 10 mL in 1 CUP, UNIT-DOSE (0121-0974-10)",
+        "5 PACKAGE in 1 TRAY (0121-0974-50)  / 10 CUP, UNIT-DOSE in 1 PACKAGE / 10 mL in 1 CUP, UNIT-DOSE (0121-0974-10)",
+        "3 TRAY in 1 CASE (0121-0974-94)  / 10 CUP, UNIT-DOSE in 1 TRAY / 10 mL in 1 CUP, UNIT-DOSE (0121-0974-10)"
+      ]
+    },
+    {
+      "code": "SCG-916E17155814FCE1",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-2210",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-2210%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-2210-01)",
+        "500 TABLET in 1 BOTTLE (0093-2210-05)",
+        "90 TABLET in 1 BOTTLE (0093-2210-98)"
+      ]
+    },
+    {
+      "code": "SCG-734E3A623E57D278",
+      "dose_unit": "mL",
+      "dispensing_unit": null,
+      "legacy_unit": "mL",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0121-0853",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220121-0853%22",
+      "packaging": [
+        "10 CUP, UNIT-DOSE in 1 TRAY (0121-0853-20)  / 20 mL in 1 CUP, UNIT-DOSE"
+      ]
+    },
+    {
+      "code": "SCG-AD0C85FCB5EA0ABA",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "42291-758",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2242291-758%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (42291-758-01)",
+        "500 TABLET in 1 BOTTLE (42291-758-50)"
+      ]
+    },
+    {
+      "code": "SCG-92D32A5CE896B3DE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-2920",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-2920%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-2920-77)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (0378-2920-93)"
+      ]
+    },
+    {
+      "code": "SCG-2D58C78BA6C3C6CE",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0378-2921",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220378-2921%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE, PLASTIC (0378-2921-77)",
+        "30 TABLET in 1 BOTTLE, PLASTIC (0378-2921-93)"
+      ]
+    },
+    {
+      "code": "SCG-7FF3DD557374CAFA",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0363-2080",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220363-2080%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0363-2080-01)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0363-2080-02)  / 30 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-627A928655710E97",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "71205-152",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2271205-152%22",
+      "packaging": [
+        "15 TABLET in 1 BOTTLE (71205-152-15)",
+        "30 TABLET in 1 BOTTLE (71205-152-30)",
+        "35 TABLET in 1 BOTTLE (71205-152-35)",
+        "45 TABLET in 1 BOTTLE (71205-152-45)",
+        "60 TABLET in 1 BOTTLE (71205-152-60)",
+        "90 TABLET in 1 BOTTLE (71205-152-90)"
+      ]
+    },
+    {
+      "code": "SCG-23FE8C409DDBF59D",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "ống",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0597-0160",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0160%22",
+      "packaging": [
+        "1 CARTRIDGE in 1 CARTON (0597-0160-28)  / 28 SPRAY, METERED in 1 CARTRIDGE",
+        "1 CARTRIDGE in 1 CARTON (0597-0160-61)  / 60 SPRAY, METERED in 1 CARTRIDGE"
+      ]
+    },
+    {
+      "code": "SCG-51E88B2A81E654C2",
+      "dose_unit": "liều xịt",
+      "dispensing_unit": "ống",
+      "legacy_unit": "liều xịt",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0597-0100",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220597-0100%22",
+      "packaging": [
+        "1 CARTRIDGE in 1 CARTON (0597-0100-28)  / 28 SPRAY, METERED in 1 CARTRIDGE",
+        "1 CARTRIDGE in 1 CARTON (0597-0100-51)  / 10 SPRAY, METERED in 1 CARTRIDGE",
+        "1 CARTRIDGE in 1 CARTON (0597-0100-61)  / 60 SPRAY, METERED in 1 CARTRIDGE"
+      ]
+    },
+    {
+      "code": "SCG-CA56F84654CFD8D7",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "46708-491",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2246708-491%22",
+      "packaging": [
+        "80 BLISTER PACK in 1 CARTON (46708-491-08)  / 8 CAPSULE in 1 BLISTER PACK",
+        "30 CAPSULE in 1 BOTTLE (46708-491-30)",
+        "150 CAPSULE in 1 BOTTLE (46708-491-41)",
+        "1000 CAPSULE in 1 BOTTLE (46708-491-91)"
+      ]
+    },
+    {
+      "code": "SCG-451E733BE3F4F294",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0615-8468",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220615-8468%22",
+      "packaging": [
+        "30 TABLET in 1 BLISTER PACK (0615-8468-39)"
+      ]
+    },
+    {
+      "code": "SCG-ECEC0E2B356D5AB4",
+      "dose_unit": "g",
+      "dispensing_unit": null,
+      "legacy_unit": "g",
+      "reason": "Cần rà soát: nhiều loại bao gói hoặc loại chưa đối chiếu.",
+      "product_ndc": "0187-5150",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220187-5150%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0187-5150-02)  / 2 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0187-5150-20)  / 20 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0187-5150-40)  / 40 g in 1 TUBE",
+        "1 BOTTLE, PUMP in 1 CARTON (0187-5150-44)  / 44 g in 1 BOTTLE, PUMP",
+        "1 TUBE in 1 CARTON (0187-5150-60)  / 60 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-7E1D0C262B8A29F8",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0904-6867",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220904-6867%22",
+      "packaging": [
+        "30 BLISTER PACK in 1 CARTON (0904-6867-04)  / 1 CAPSULE in 1 BLISTER PACK"
+      ]
+    },
+    {
+      "code": "SCG-8D6F41777EE0155A",
+      "dose_unit": "g",
+      "dispensing_unit": "tuýp",
+      "legacy_unit": "g",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "0168-0003",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220168-0003%22",
+      "packaging": [
+        "1 TUBE in 1 CARTON (0168-0003-15)  / 15 g in 1 TUBE",
+        "1 TUBE in 1 CARTON (0168-0003-80)  / 80 g in 1 TUBE"
+      ]
+    },
+    {
+      "code": "SCG-85870F93B77ADCB4",
+      "dose_unit": "mL",
+      "dispensing_unit": "chai",
+      "legacy_unit": "mL",
+      "reason": "Bao gói nguồn có một loại chứa trực tiếp.",
+      "product_ndc": "70752-129",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2270752-129%22",
+      "packaging": [
+        "60 mL in 1 BOTTLE, WITH APPLICATOR (70752-129-05)"
+      ]
+    },
+    {
+      "code": "SCG-43943E1389AE2F1F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "40032-330",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2240032-330%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (40032-330-24)"
+      ]
+    },
+    {
+      "code": "SCG-672D8ECF8BAF0623",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "49483-691",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2249483-691%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (49483-691-01)",
+        "30 TABLET in 1 BOTTLE (49483-691-03)",
+        "10 TABLET in 1 BLISTER PACK (49483-691-04)",
+        "500 TABLET in 1 BOTTLE (49483-691-50)"
+      ]
+    },
+    {
+      "code": "SCG-4BA77017EE8425CF",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0173-0565",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220173-0565%22",
+      "packaging": [
+        "30 TABLET, FILM COATED in 1 BOTTLE (0173-0565-04)",
+        "90 TABLET, FILM COATED in 1 BOTTLE (0173-0565-10)"
+      ]
+    },
+    {
+      "code": "SCG-5D8B9089C3CDCA19",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0078-1252",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220078-1252%22",
+      "packaging": [
+        "90 TABLET in 1 BOTTLE (0078-1252-34)"
+      ]
+    },
+    {
+      "code": "SCG-D3BF49819B14FB57",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "29300-234",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2229300-234%22",
+      "packaging": [
+        "1000 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (29300-234-10)",
+        "30 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (29300-234-13)",
+        "90 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (29300-234-19)"
+      ]
+    },
+    {
+      "code": "SCG-A690E211D4C7A098",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "23155-486",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%2223155-486%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (23155-486-01)",
+        "500 TABLET in 1 BOTTLE (23155-486-05)"
+      ]
+    },
+    {
+      "code": "SCG-548B87E9BA91379F",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0591-0345",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220591-0345%22",
+      "packaging": [
+        "100 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0591-0345-01)",
+        "500 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0591-0345-05)",
+        "1000 TABLET, FILM COATED in 1 BOTTLE, PLASTIC (0591-0345-10)"
+      ]
+    },
+    {
+      "code": "SCG-351DAC5DCB38DB43",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-1712",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-1712%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-1712-01)",
+        "1000 TABLET in 1 BOTTLE (0093-1712-10)"
+      ]
+    },
+    {
+      "code": "SCG-8ECD31A915CEE5B0",
+      "dose_unit": "viên",
+      "dispensing_unit": "viên",
+      "legacy_unit": "viên",
+      "reason": "Chủ dự án chốt cấp phát theo viên.",
+      "product_ndc": "0093-1720",
+      "source_url": "https://api.fda.gov/drug/ndc.json?search=product_ndc%3A%220093-1720%22",
+      "packaging": [
+        "100 TABLET in 1 BOTTLE (0093-1720-01)"
+      ]
+    }
+  ]
+}

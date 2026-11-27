@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button'
 import EncounterClinical from './EncounterClinical'
 import EncounterPatientHeader from './EncounterPatientHeader'
 import EncounterInvoices from './EncounterInvoices'
+import EncounterPrescriptions from '../prescription/EncounterPrescriptions'
 import PatientEncounterHistory from './PatientEncounterHistory'
 import { getEncounterWorklist, getEncounter, startEncounter, savePatientHistory, savePatientAllergy } from '../../services/encounterApi'
 
@@ -202,7 +203,9 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
       {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-14 rounded-xl border px-2 py-3 text-xs font-semibold sm:text-sm ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white text-clinical-muted hover:bg-suncare-50'}`}>{label}</button>)}
     </div>
     {/* P24 adds a real CLS tab here; P26 actions stay separate from note saving. */}
-    <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} sidebar={sidebar} invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />} />
+    <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} sidebar={sidebar}
+      prescriptions={<EncounterPrescriptions key={encounterId} encounterId={encounterId} active={activeSection === 'treatment'} writable={data.editable && item.status === 'IN_PROGRESS'} onSessionExpired={onSessionExpired} allergies={activeAllergies} />}
+      invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />} />
     {/* P23 completion belongs to an explicit future command, never the save action. */}
   </div>
 }

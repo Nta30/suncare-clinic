@@ -36,6 +36,8 @@ Mọi chuyển trạng thái kiểm tra lại dưới khóa, có event/audit tro
 
 ClinicalOrder hết hạn không có nghĩa kết quả bệnh lý hết giá trị; hạn ở đây chỉ là hạn thực hiện dịch vụ theo yêu cầu đồ án. Bản sửa kết quả không mở lại Order/Encounter đã hoàn tất. Tạo ClinicalReview mới để ghi bác sĩ đọc bản sửa.
 
+P22.UI.validation: UI gọi DRAFT là “Chưa phát hành”, ISSUED là “Đã phát hành”. “Chưa lưu/Đã lưu/Có thay đổi chưa lưu” là trạng thái dữ liệu trên giao diện, không phải enum mới. Mở vùng soạn chưa tạo đơn trong CSDL; lần lưu đầu tạo đơn có thuốc nguyên tử. Hủy kê đơn chưa lưu chỉ bỏ nội dung local; đã lưu DRAFT thì DELETE có rowversion/idempotency. ISSUED không hủy/sửa.
+
 ## Quyền và phạm vi dữ liệu
 
 Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff của tài khoản; với bệnh nhân là patient_id. Trưởng khoa luôn có cả role `DOCTOR` và `DEPARTMENT_HEAD`. Hai role mở quyền hành động; `DepartmentHeadAssignment` còn hiệu lực giới hạn quyền theo khoa và nhiệm kỳ. Admin quản trị cấu hình không mặc nhiên được sửa hồ sơ y tế.
@@ -55,6 +57,8 @@ Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff c
 | Xử lý hoàn tiền | Xem tiến độ của mình | — | — | — | Mặc định v1, cần xác nhận vận hành | Audit |
 | Phân lịch/công bố | — | Xem của mình | Xem của mình | Trong khoa được giao | — | Quản trị danh mục, không tự có quyền trưởng khoa |
 | Giá/danh mục/role | — | — | — | — | — | Có |
+| Danh mục thuốc (P22.a) | — | — | — | — | — | CATALOG_MANAGE xem/tạo/sửa/ngừng sử dụng; không sửa snapshot đơn thuốc |
+| API đơn thuốc (P22.b.1) | — | Đọc danh mục active; xem đơn của mình; tạo/lưu/phát hành/bỏ DRAFT khi Encounter IN_PROGRESS | — | Theo role DOCTOR và bác sĩ phụ trách | — | Không mặc nhiên có quyền kê đơn |
 | Danh mục chất gây dị ứng | — | Chọn chất có sẵn hoặc ghi chú chất khác trong lượt khám phụ trách | — | Theo quyền DOCTOR của lượt khám phụ trách | — | CATALOG_MANAGE tạo/sửa/ngừng áp dụng mã và tên; không tự có quyền sửa dị ứng bệnh nhân |
 | CSV | — | Lượt khám mình | — | Lịch/lượt khám/CLS/workload khoa | Hóa đơn/thu/hoàn | Thống kê toàn cơ sở |
 
