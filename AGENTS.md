@@ -11,7 +11,8 @@
 - `frontend/src/` contains the React JavaScript UI; keep API calls in `services/`, imported images in `assets/`, and global styles in `index.css`. Static public assets belong in `frontend/public/`.
 - `backend/src/main/java/com/suncare/clinic/` contains Spring Boot code, including `common/controller/HealthController.java`. Organize new business functionality by module.
 - `backend/src/main/resources/` holds configuration and Flyway SQL migrations in `db/migration/`; backend tests live in `backend/src/test/java/`.
-- `docs/` contains project handoffs, the single implementation ledger at `docs/implementation/PROGRESS.md`, and `database/SCHEMA_PLAN.md`. Check implementation against the relevant documents and update `PROGRESS.md` after significant milestones; do not create additional project-state ledgers.
+- `docs/` contains project handoffs, the single implementation ledger for Backend/DB/Web at `docs/implementation/PROGRESS.md` (`P00`–`P47`), and `database/SCHEMA_PLAN.md`. Check implementation against the relevant documents and update `PROGRESS.md` after significant milestones; do not create additional project-state ledgers for Backend/Web.
+- `android/` contains the Kotlin + Jetpack Compose Android app; track Android-only progress separately in `android/ANDROID_PROGRESS.md` (`A00`–`Axx`) without duplicating Backend/DB status from `docs/implementation/PROGRESS.md`.
 
 ## Build, Test, and Development Commands
 Run commands from the indicated directory, not the repository root.
