@@ -2,6 +2,8 @@ package com.suncare.clinic.modules.encounter.controller;
 
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.encounter.dto.EncounterStartResponse;
+import com.suncare.clinic.modules.encounter.dto.EncounterCompleteRequest;
+import com.suncare.clinic.modules.encounter.dto.EncounterCompleteResponse;
 import com.suncare.clinic.modules.encounter.dto.EncounterStartRequest;
 import jakarta.validation.Valid;
 import com.suncare.clinic.modules.encounter.service.EncounterService;
@@ -39,6 +41,13 @@ public class EncounterController {
     public EncounterStartResponse start(@AuthenticationPrincipal CurrentAccountResponse account,
             @PathVariable long encounterId, @Valid @RequestBody EncounterStartRequest request) {
         return service.start(account, encounterId);
+    }
+
+    @PostMapping("/{encounterId}/complete")
+    public EncounterCompleteResponse complete(
+            @AuthenticationPrincipal CurrentAccountResponse account, @PathVariable long encounterId,
+            @Valid @RequestBody EncounterCompleteRequest request) {
+        return service.complete(account, encounterId);
     }
 
     @GetMapping

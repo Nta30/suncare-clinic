@@ -37,6 +37,7 @@ async function request(path = '', method = 'GET', data, idempotencyKey, signal) 
   if (!response.ok) {
     const error = new Error(body?.message || `Không xử lý được yêu cầu (HTTP ${response.status}).`)
     error.status = response.status
+    error.code = body?.code
     error.fieldErrors = body?.fieldErrors || {}
     throw error
   }
@@ -57,6 +58,10 @@ export function getEncounter(id) {
 
 export function startEncounter(id) {
   return request(`/${id}/start`, 'POST', { presenceConfirmed: true })
+}
+
+export function completeEncounter(id) {
+  return request(`/${id}/complete`, 'POST', { completionConfirmed: true })
 }
 
 export function savePatientHistory(encounterId, itemId, data) {

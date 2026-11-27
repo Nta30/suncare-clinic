@@ -1,10 +1,11 @@
-import { cloneElement, useEffect, useId, useRef, useState } from 'react'
+import { cloneElement, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronRight, faNotesMedical, faRotateRight } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronRight, faCircleCheck, faNotesMedical, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
 import EncounterClinical from './EncounterClinical'
 import EncounterPatientHeader from './EncounterPatientHeader'
 import EncounterInvoices from './EncounterInvoices'
+import EncounterCompletion from './EncounterCompletion'
 import EncounterPrescriptions from '../prescription/EncounterPrescriptions'
 import PatientEncounterHistory from './PatientEncounterHistory'
 import { getEncounterWorklist, getEncounter, startEncounter, savePatientHistory, savePatientAllergy } from '../../services/encounterApi'
@@ -14,6 +15,17 @@ const historyTypes = { PERSONAL: 'Bản thân', FAMILY: 'Gia đình', SURGERY: '
 const severities = { UNKNOWN: 'Chưa xác định', MILD: 'Nhẹ', MODERATE: 'Vừa', SEVERE: 'Nặng' }
 const statuses = { PLANNED: 'Chưa bắt đầu', IN_PROGRESS: 'Đang khám', WAITING_CLS: 'Chờ cận lâm sàng', COMPLETED: 'Đã hoàn tất', CANCELLED: 'Đã hủy', NO_SHOW: 'Vắng mặt' }
 const encounterSections = [['clinical', 'Khám lâm sàng'], ['treatment', 'Chẩn đoán và điều trị'], ['invoices', 'Viện phí']]
+const completionBlockLabels = {
+  history: 'Tiền sử bệnh lý đang sửa: lưu hoặc bỏ nội dung.',
+  allergy: 'Tiền sử dị ứng đang sửa: lưu hoặc bỏ nội dung.',
+  notes: 'Ghi chú khám chưa lưu: chọn “Lưu hồ sơ khám”.',
+  vitals: 'Sinh hiệu đang soạn: lưu lần đo hoặc bỏ số đo chưa lưu.',
+  'diagnosis-PRELIMINARY': 'Chẩn đoán sơ bộ đang soạn: lưu hoặc chọn “Bỏ chỉnh sửa” trong Khám lâm sàng.',
+  'diagnosis-FINAL': 'Chẩn đoán xác định đang soạn: lưu hoặc chọn “Bỏ chỉnh sửa” trong Chẩn đoán và điều trị.',
+  prescription: 'Đơn thuốc đang soạn hoặc chờ xác minh: kiểm tra mục Đơn thuốc ngoại trú.',
+  invoice: 'Hóa đơn đang được xử lý: chờ thao tác kết thúc.',
+  'clinical-request': 'Dữ liệu khám đang tải, đang lưu hoặc tải lỗi: kiểm tra thông báo và thử lại dữ liệu khám.',
+}
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Saigon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const time = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
 const dateTime = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Saigon', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -104,7 +116,7 @@ function HistorySection({ kind, items, editable, busy, onSave, onDirtyChange, al
   </section>
 }
 
-function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
+function EncounterPanel({ encounterId, onSessionExpired, onChanged, onGuardChange, onCompleted }) {
   const [activeSection, setActiveSection] = useState('clinical')
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
@@ -113,8 +125,20 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
   const [message, setMessage] = useState('')
   const [present, setPresent] = useState(false)
   const [dirty, setDirty] = useState({})
+  const [completionLocked, setCompletionLocked] = useState(false)
+  const messageRef = useRef(null)
   const hasUnsaved = Object.values(dirty).some(Boolean)
-  function onDirtyChange(kind, value) { setDirty((previous) => ({ ...previous, [kind]: value })) }
+  const onDirtyChange = useCallback((kind, value) => {
+    setDirty((previous) => previous[kind] === value ? previous : { ...previous, [kind]: value })
+  }, [])
+  useEffect(() => { onGuardChange(hasUnsaved || busy || completionLocked) }, [hasUnsaved, busy, completionLocked, onGuardChange])
+  const sectionIndex = encounterSections.findIndex(([code]) => code === activeSection)
+  function moveSection(offset) {
+    const next = encounterSections[sectionIndex + offset]
+    if (!next || completionLocked) return
+    setActiveSection(next[0])
+    window.requestAnimationFrame(() => document.getElementById(`encounter-tab-${next[0]}`)?.focus())
+  }
   function navigateSection(event, index) {
     let next
     if (event.key === 'ArrowRight') next = (index + 1) % encounterSections.length
@@ -198,15 +222,17 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged }) {
       {!data.editable && <p className='text-xs text-clinical-muted'>Lượt khám chỉ đọc.</p>}
     </EncounterPatientHeader>
     {actionError && <ErrorBox message={actionError} />}
-    {message && <p role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success'>{message}</p>}
+    {message && <p ref={messageRef} tabIndex={-1} role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success'>{message}</p>}
     <div role='tablist' aria-label='Các mục trong lượt khám' className='grid grid-cols-3 gap-2'>
       {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-14 rounded-xl border px-2 py-3 text-xs font-semibold sm:text-sm ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white text-clinical-muted hover:bg-suncare-50'}`}>{label}</button>)}
     </div>
     {/* P24 adds a real CLS tab here; P26 actions stay separate from note saving. */}
-    <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} sidebar={sidebar}
-      prescriptions={<EncounterPrescriptions key={encounterId} encounterId={encounterId} active={activeSection === 'treatment'} writable={data.editable && item.status === 'IN_PROGRESS'} onSessionExpired={onSessionExpired} allergies={activeAllergies} />}
-      invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} />} />
-    {/* P23 completion belongs to an explicit future command, never the save action. */}
+      <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} locked={completionLocked} sidebar={sidebar} onGuardChange={onDirtyChange}
+        footerProps={{ sections: encounterSections, onMove: moveSection, completion: <EncounterCompletion encounterId={encounterId} patientName={item.patientName} encounterCode={item.encounterCode} encounterStatus={item.status}
+          blockers={[...Object.entries(dirty).filter(([, value]) => value).map(([kind]) => completionBlockLabels[kind] || 'Có nội dung đang soạn.'), ...(busy ? ['Tiền sử/dị ứng đang lưu: chờ thao tác kết thúc.'] : [])]}
+          onLockChange={setCompletionLocked} onCompleted={onCompleted} onSessionExpired={onSessionExpired} /> }}
+        prescriptions={<EncounterPrescriptions key={encounterId} encounterId={encounterId} active={activeSection === 'treatment'} writable={data.editable && item.status === 'IN_PROGRESS'} onSessionExpired={onSessionExpired} allergies={activeAllergies} onGuardChange={onDirtyChange} />}
+        invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} onGuardChange={onDirtyChange} />} />
   </div>
 }
 export default function DoctorEncounters({ onSessionExpired }) {
@@ -215,6 +241,20 @@ export default function DoctorEncounters({ onSessionExpired }) {
   const [state, setState] = useState({ loading: true, data: [] })
   const [reload, setReload] = useState(0)
   const [selected, setSelected] = useState(null)
+  const [guarded, setGuarded] = useState(false)
+  const [toast, setToast] = useState('')
+  useEffect(() => {
+    if (!toast) return undefined
+    const timer = window.setTimeout(() => setToast(''), 8000)
+    return () => window.clearTimeout(timer)
+  }, [toast])
+  function completed(result) {
+    setSelected(null)
+    setGuarded(false)
+    setToast(`Đã hoàn tất lượt khám lúc ${dateTime(result.completedAt)}.`)
+    refresh()
+  }
+  const completionToast = toast && <div role='status' className='fixed right-4 top-4 z-50 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl border border-clinical-success/30 bg-white px-4 py-3 text-sm font-semibold text-clinical-success shadow-lg'><FontAwesomeIcon icon={faCircleCheck} aria-hidden='true' />{toast}</div>
   const searchTimer = useRef(null)
   useEffect(() => () => window.clearTimeout(searchTimer.current), [])
   useEffect(() => {
@@ -257,11 +297,12 @@ export default function DoctorEncounters({ onSessionExpired }) {
   }
   if (selected != null) {
     return <section className='w-full space-y-4 text-clinical-ink' aria-label='Chi tiết lượt khám'>
-      <Button onClick={() => setSelected(null)}><FontAwesomeIcon icon={faArrowLeft} aria-hidden='true' />Quay lại danh sách lượt khám</Button>
-      <EncounterPanel key={selected} encounterId={selected} onSessionExpired={onSessionExpired} onChanged={refresh} />
+      <Button disabled={guarded} onClick={() => setSelected(null)}><FontAwesomeIcon icon={faArrowLeft} aria-hidden='true' />Quay lại danh sách lượt khám</Button>
+      <EncounterPanel key={selected} encounterId={selected} onSessionExpired={onSessionExpired} onChanged={refresh} onGuardChange={setGuarded} onCompleted={completed} />
     </section>
   }
   return <section className='w-full space-y-5 text-clinical-ink' aria-labelledby='encounter-page-title'>
+    {completionToast}
     <header><h1 id='encounter-page-title' className='flex items-center gap-2 text-2xl font-bold'><FontAwesomeIcon icon={faNotesMedical} className='text-clinical-leaf' />Danh sách lượt khám trực tiếp</h1><p className='mt-1 text-sm text-clinical-muted'>Chọn Chi tiết để xem hồ sơ và thực hiện khám.</p></header>
     <form onSubmit={(event) => { event.preventDefault(); applyFilters(filters) }} className='space-y-3 rounded-xl border border-clinical-border bg-white p-4' aria-label='Tìm và lọc lượt khám'>
       <div className='grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(15rem,1fr)_auto]'>

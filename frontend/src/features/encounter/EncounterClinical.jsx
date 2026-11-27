@@ -1,7 +1,11 @@
 import { cloneElement, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleCheck, faXmark } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
 import DiagnosisLookup from './DiagnosisLookup'
 import SymptomMultiSelect from './SymptomMultiSelect'
+import EncounterFooter from './EncounterFooter'
 import { getEncounterClinical, saveEncounterNotes, recordVitalSign, saveDiagnosis } from '../../services/encounterApi'
 
 const inputClass = 'mt-2 min-h-11 w-full min-w-0 rounded-lg border border-clinical-border-strong bg-white px-3 py-2 text-sm disabled:bg-clinical-canvas'
@@ -26,12 +30,17 @@ function useCommandKey() {
   return [getKey, () => { pending.current = null }]
 }
 
-function Vitals({ data, disabled, perform, encounterId, errors }) {
+function Vitals({ data, disabled, perform, encounterId, errors, onGuardChange }) {
   const initial = () => ({ measuredAt: localNow(), ...Object.fromEntries(vitalFields.map(([name]) => [name, ''])) })
   const [form, setForm] = useState(initial)
   const [error, setError] = useState('')
   const [key, resetKey] = useCommandKey()
   const latest = data.vitals[0]
+  const dirty = vitalFields.some(([name]) => form[name] !== '')
+  useEffect(() => {
+    onGuardChange?.('vitals', dirty)
+    return () => onGuardChange?.('vitals', false)
+  }, [dirty, onGuardChange])
   async function submit(event) {
     event.preventDefault()
     const body = { measuredAt: `${form.measuredAt}+07:00`, ...Object.fromEntries(vitalFields.map(([name]) => [name, form[name] === '' ? null : Number(form[name])])) }
@@ -48,7 +57,7 @@ function Vitals({ data, disabled, perform, encounterId, errors }) {
         <form onSubmit={submit} className='mt-4 space-y-3'><fieldset disabled={disabled} className='space-y-3'>
           <Field label='Thời điểm đo (giờ Việt Nam) *' error={errors.measuredAt}><input type='datetime-local' step='1' required value={form.measuredAt} onChange={(event) => setForm({ ...form, measuredAt: event.target.value })} className={inputClass} /></Field>
           <div className='grid grid-cols-2 gap-3'>{vitalFields.map(([name, label, step, max]) => <Field key={name} label={label} error={errors[name]}><input type='number' min={step} max={max} step={step} value={form[name]} onChange={(event) => setForm({ ...form, [name]: event.target.value })} className={inputClass} aria-invalid={Boolean(errors[name])} /></Field>)}</div>
-          <Button type='submit' variant='primary'>Lưu lần đo</Button>
+          <div className='flex flex-wrap gap-2'><Button type='submit' variant='primary'>Lưu lần đo</Button><Button onClick={() => { setForm(initial()); setError('') }}>Bỏ số đo chưa lưu</Button></div>
         </fieldset>{error && <p role='alert' className='text-sm text-clinical-danger'>{error}</p>}</form>
       </details>
       <details className='encounter-fold'><summary className='cursor-pointer text-sm font-semibold'>Các lần đo trước ({data.vitals.length})</summary><ul className='mt-3 space-y-3 text-sm'>{data.vitals.map((item) => <li key={item.id} className='border-t border-clinical-border pt-2'><p className='font-semibold'>{showTime(item.measuredAt)}</p>{vitalFields.filter(([name]) => item[name] != null).map(([name, label]) => <p key={name}>{label}: {item[name]}</p>)}</li>)}</ul></details>
@@ -56,13 +65,18 @@ function Vitals({ data, disabled, perform, encounterId, errors }) {
   </details>
 }
 
-function DiagnosisEditor({ type, data, disabled, encounterId, perform, errors, onSessionExpired }) {
+function DiagnosisEditor({ type, data, disabled, encounterId, perform, errors, onSessionExpired, onGuardChange }) {
   const initial = { diagnosisConceptId: null, description: '', diagnosisType: type, isPrimary: false }
   const [form, setForm] = useState(initial)
   const [editing, setEditing] = useState(null)
   const [concept, setConcept] = useState(null)
   const [error, setError] = useState('')
   const [key, resetKey] = useCommandKey()
+  const dirty = Boolean(editing || form.description || form.diagnosisConceptId || form.isPrimary)
+  useEffect(() => {
+    onGuardChange?.(`diagnosis-${type}`, dirty)
+    return () => onGuardChange?.(`diagnosis-${type}`, false)
+  }, [dirty, type, onGuardChange])
   function clear() { setEditing(null); setForm(initial); setConcept(null); setError('') }
   function edit(item) {
     setEditing(item)
@@ -89,19 +103,22 @@ function DiagnosisEditor({ type, data, disabled, encounterId, perform, errors, o
       {editing && <Field label='Phân loại chẩn đoán'><select className={inputClass} value={form.diagnosisType} onChange={(event) => setForm({ ...form, diagnosisType: event.target.value })}><option value='PRELIMINARY'>Sơ bộ</option><option value='FINAL'>Xác định</option></select></Field>}
       <label className='flex min-h-11 items-center gap-2 text-sm'><input type='checkbox' disabled={concept != null && !concept.primaryAllowed} checked={form.isPrimary} onChange={(event) => setForm({ ...form, isPrimary: event.target.checked })} className='h-4 w-4 accent-suncare-700' />Chẩn đoán chính</label>
       {editing?.diagnosisCode && !editing.diagnosisConceptId && <p className='text-sm text-clinical-warning'>Mã cũ: {editing.diagnosisCode}. Cần chọn lại mã từ danh mục nếu lưu chẩn đoán xác định.</p>}
-      <div className='flex flex-wrap gap-2'><Button type='submit' variant='primary'>{editing ? 'Lưu chẩn đoán' : 'Thêm chẩn đoán'}</Button>{editing && <Button onClick={clear}>Bỏ chỉnh sửa</Button>}</div>
+      <div className='flex flex-wrap gap-2'><Button type='submit' variant='primary'>{editing ? 'Lưu chẩn đoán' : 'Thêm chẩn đoán'}</Button>{dirty && <Button onClick={clear}>Bỏ chỉnh sửa</Button>}</div>
     </fieldset></form>
     {error && <p role='alert' className='text-sm text-clinical-danger'>{error}</p>}
     {items.length === 0 ? <p className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>Chưa ghi nhận {title.toLowerCase()}.</p> : <ul className='divide-y divide-clinical-border'>{items.map((item) => <li key={item.id} className='flex flex-wrap items-start justify-between gap-3 py-3'><div className='min-w-0 flex-1'><p className='whitespace-pre-wrap break-words font-semibold'>{item.description}</p><p className='mt-1 text-sm'>{item.diagnosisCode || 'Chưa chọn mã'} · {item.isPrimary ? 'Bệnh chính' : 'Bệnh kèm theo'}</p></div>{data.editable && <Button disabled={disabled} onClick={() => edit(item)}>Sửa</Button>}</li>)}</ul>}
   </section>
 }
 
-function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onRefresh }) {
+function ClinicalWorkspace({ data, encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onGuardChange }) {
   const [notes, setNotes] = useState(() => Object.fromEntries(noteFields.map(([name]) => [name, data.notes[name] || ''])))
   const [savedNotes, setSavedNotes] = useState(data.notes)
   const [symptoms, setSymptoms] = useState(data.notes.symptoms || [])
-  const [savedAt, setSavedAt] = useState(null)
   const dirty = noteFields.some(([name]) => notes[name] !== (savedNotes[name] || '')) || JSON.stringify(symptoms) !== JSON.stringify(savedNotes.symptoms || [])
+  useEffect(() => {
+    onGuardChange?.('notes', dirty)
+    return () => onGuardChange?.('notes', false)
+  }, [dirty, onGuardChange])
   useEffect(() => {
     if (!dirty) return undefined
     const warn = (event) => { event.preventDefault(); event.returnValue = '' }
@@ -125,20 +142,20 @@ function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, pres
       setSavedNotes(result.notes)
       setNotes(Object.fromEntries(noteFields.map(([name]) => [name, result.notes[name] || ''])))
       setSymptoms(result.notes.symptoms || [])
-      setSavedAt(new Date().toISOString())
     }
   }
   return <>
+    <fieldset disabled={locked} className='min-w-0'>
     <div className='encounter-columns grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)]'>
-      <aside className='order-2 min-w-0 space-y-3 lg:order-1' aria-label='Thông tin lâm sàng liên tục'><Vitals data={data} disabled={disabled} perform={perform} encounterId={encounterId} errors={fields('vitals')} />{sidebar}</aside>
+      <aside className='order-2 min-w-0 space-y-3 lg:order-1' aria-label='Thông tin lâm sàng liên tục'><Vitals data={data} disabled={disabled} perform={perform} encounterId={encounterId} errors={fields('vitals')} onGuardChange={onGuardChange} />{sidebar}</aside>
       <div className='order-1 min-w-0 space-y-4 lg:order-2'>
         <div id='encounter-panel-clinical' role='tabpanel' aria-labelledby='encounter-tab-clinical' hidden={section !== 'clinical'} className='space-y-4'>
           <section className={box} aria-label='Hỏi bệnh'><h3 className='border-b border-clinical-border pb-3 font-bold'>Hỏi bệnh</h3>{noteField('chiefComplaint')}<SymptomMultiSelect value={symptoms} onChange={setSymptoms} disabled={disabled} onSessionExpired={onSessionExpired} />{fields('notes').symptoms && <p role='alert' className='text-sm text-clinical-danger'>{fields('notes').symptoms}</p>}{noteField('historyOfPresentIllness')}<p className='text-xs text-clinical-muted'>Bệnh sử ghi nhận thời điểm khởi phát, diễn biến, đặc điểm triệu chứng và điều trị trước đó. Chọn “Lưu hồ sơ khám” để lưu thay đổi.</p></section>
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Khám thực thể</h3>{noteField('examinationNote')}</section>
-          <DiagnosisEditor type='PRELIMINARY' {...{ data, encounterId, disabled, perform, onSessionExpired }} errors={fields('diagnosis')} />
+          <DiagnosisEditor type='PRELIMINARY' {...{ data, encounterId, disabled, perform, onSessionExpired, onGuardChange }} errors={fields('diagnosis')} />
         </div>
         <div id='encounter-panel-treatment' role='tabpanel' aria-labelledby='encounter-tab-treatment' hidden={section !== 'treatment'} className='space-y-4'>
-          <DiagnosisEditor type='FINAL' {...{ data, encounterId, disabled, perform, onSessionExpired }} errors={fields('diagnosis')} />
+          <DiagnosisEditor type='FINAL' {...{ data, encounterId, disabled, perform, onSessionExpired, onGuardChange }} errors={fields('diagnosis')} />
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Hướng xử trí và điều trị</h3>{noteField('treatmentPlan')}</section>
           {prescriptions}
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Tư vấn và hẹn tái khám</h3>{noteField('followupNote')}<p className='text-xs text-clinical-muted'>Ghi dặn dò và đề nghị tái khám; không tạo lịch hẹn mới.</p></section>
@@ -146,14 +163,14 @@ function ClinicalWorkspace({ data, encounterId, section, sidebar, invoices, pres
         <div id='encounter-panel-invoices' role='tabpanel' aria-labelledby='encounter-tab-invoices' hidden={section !== 'invoices'}>{invoices}</div>
       </div>
     </div>
-    <footer role='region' className='sticky bottom-0 z-30 -mx-2 flex flex-wrap items-center justify-between gap-3 border-t border-clinical-border bg-white/95 p-4 shadow-[0_-4px_16px_rgb(0_0_0/0.04)] backdrop-blur-sm' aria-label='Lưu hồ sơ khám'>
-      <div className='min-w-0 text-sm'><p role='status' className='font-semibold'>{busy ? 'Đang lưu…' : dirty ? 'Ghi chú khám chưa lưu' : 'Ghi chú khám đã đồng bộ'}</p><p className='mt-1 text-xs text-clinical-muted'>{savedAt ? `Lưu ghi chú gần nhất: ${showTime(savedAt)}` : 'Chưa có lần lưu ghi chú trong phiên này.'}</p><p className='mt-1 max-w-2xl text-xs text-clinical-muted'>Lưu ghi chú khám; sinh hiệu, tiền sử, dị ứng, chẩn đoán và đơn thuốc lưu riêng.</p></div>
-      <div className='flex flex-wrap gap-2'><Button disabled={Boolean(busy)} onClick={() => { if (window.confirm('Tải lại sẽ bỏ các nội dung khám chưa lưu. Tiếp tục?')) onRefresh() }}>Tải lại dữ liệu khám</Button><form id='encounter-notes-form' onSubmit={saveNotes}><Button type='submit' variant='primary' disabled={disabled || !dirty}>Lưu hồ sơ khám</Button></form></div>
-    </footer>
+    <form id='encounter-notes-form' onSubmit={saveNotes} />
+    </fieldset>
+    <EncounterFooter {...footerProps} section={section} locked={locked} saving={busy === 'notes'} saveDisabled={disabled}
+      saveReason={locked ? 'Hồ sơ đang khóa để kiểm tra hoặc xác minh hoàn tất lượt khám.' : busy ? 'Đang xử lý dữ liệu khám, vui lòng chờ.' : !data.editable ? 'Hồ sơ chỉ đọc; hiện không được phép lưu.' : 'Lưu ghi chú khám, bệnh sử, khám thực thể, hướng điều trị và tư vấn.'} />
   </>
 }
 
-export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', sidebar, invoices, prescriptions }) {
+export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', footerProps, locked, sidebar, invoices, prescriptions, onGuardChange }) {
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState('')
@@ -161,6 +178,15 @@ export default function EncounterClinical({ encounterId, onSessionExpired, secti
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
   const commandBusy = useRef(false)
+  useEffect(() => {
+    if (!message) return undefined
+    const timer = window.setTimeout(() => setMessage(''), 8000)
+    return () => window.clearTimeout(timer)
+  }, [message])
+  useEffect(() => {
+    onGuardChange?.('clinical-request', Boolean(busy || state.loading || state.error))
+    return () => onGuardChange?.('clinical-request', false)
+  }, [busy, state.loading, state.error, onGuardChange])
   useEffect(() => {
     let active = true
     getEncounterClinical(encounterId).then((data) => { if (active) setState({ data }) }).catch((failure) => {
@@ -178,16 +204,19 @@ export default function EncounterClinical({ encounterId, onSessionExpired, secti
     try { const data = await operation(); setState({ data }); setMessage(data.replayed ? 'Yêu cầu đã được lưu trước đó; không tạo bản ghi trùng.' : success); return true }
     catch (failure) {
       if (failure.status === 401) onSessionExpired(failure.message)
-      else { setError(failure.status === 409 ? `${failure.message} Nội dung nhập được giữ lại; tải lại dữ liệu khám để lấy phiên bản mới.` : failure.message); setErrors({ kind, fields: failure.fieldErrors || {} }) }
+      else { setError(failure.status === 409 ? `${failure.message} Nội dung nhập được giữ lại; đọc lại bản mới nếu cần.` : failure.message); setErrors({ kind, fields: failure.fieldErrors || {}, conflict: failure.status === 409 }) }
       return false
     } finally { commandBusy.current = false; setBusy('') }
   }
   if (state.loading) return <p role='status' className='p-4'>Đang tải hồ sơ lâm sàng...</p>
   if (state.error) return <div className={box}><p role='alert' className='text-clinical-danger'>{state.error}</p><Button onClick={refresh}>Thử lại dữ liệu khám</Button></div>
   return <div className='min-w-0 space-y-4'>
-    {error && <p role='alert' className='rounded-lg border border-clinical-danger/40 bg-white p-3 text-sm text-clinical-danger'>{error}</p>}
-    {message && <p role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm text-clinical-success'>{message}</p>}
+    {error && <div role='alert' className='space-y-2 rounded-lg border border-clinical-danger/40 bg-white p-3 text-sm text-clinical-danger'><p>{error}</p>{errors.conflict && <Button disabled={Boolean(busy) || locked} onClick={() => { if (window.confirm('Đọc lại sẽ bỏ nội dung khám chưa lưu. Tiếp tục?')) refresh() }}>Đọc lại bản mới</Button>}</div>}
+    {message && createPortal(<div className='fixed right-4 top-4 z-50 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success shadow-lg'>
+      <p role='status' className='flex min-w-0 items-center gap-2'><FontAwesomeIcon icon={faCircleCheck} aria-hidden='true' /><span>{message}</span></p>
+      <Button onClick={() => setMessage('')} aria-label='Đóng thông báo lưu thành công' className='shrink-0 border-transparent px-3'><FontAwesomeIcon icon={faXmark} aria-hidden='true' /></Button>
+    </div>, document.body)}
     {!state.data.editable && <p className='text-sm text-clinical-muted'>Hồ sơ chỉ đọc. Chỉ được ghi nhận khi lượt khám đang diễn ra.</p>}
-    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors }} onRefresh={refresh} />
+    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onGuardChange }} />
   </div>
 }

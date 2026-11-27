@@ -8,7 +8,7 @@ const issuedTime = (value) => new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia
 const paymentStatuses = { NOT_DUE: 'Chưa phát hành', NOT_APPLICABLE: 'Không áp dụng', UNPAID: 'Chưa thanh toán', PARTIAL: 'Chưa thanh toán đủ', PAID: 'Đã thanh toán' }
 const statuses = { DRAFT: 'Bản nháp', ISSUED: 'Đã phát hành', VOID: 'Đã hủy nháp' }
 
-export default function EncounterInvoices({ encounterId, active, writable, onSessionExpired }) {
+export default function EncounterInvoices({ encounterId, active, writable, onSessionExpired, onGuardChange }) {
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState('')
@@ -18,6 +18,10 @@ export default function EncounterInvoices({ encounterId, active, writable, onSes
   const commands = useRef({})
   const busyRef = useRef(false)
   const reads = useRef(0)
+  useEffect(() => {
+    onGuardChange?.('invoice', Boolean(busy))
+    return () => onGuardChange?.('invoice', false)
+  }, [busy, onGuardChange])
   useEffect(() => {
     if (!active) return undefined
     let current = true

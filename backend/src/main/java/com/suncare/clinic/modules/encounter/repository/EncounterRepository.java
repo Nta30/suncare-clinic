@@ -1,6 +1,7 @@
 package com.suncare.clinic.modules.encounter.repository;
 
 import com.suncare.clinic.modules.encounter.dto.EncounterStartResponse;
+import com.suncare.clinic.modules.encounter.dto.EncounterCompleteResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -94,4 +95,75 @@ public class EncounterRepository {
     }
 
     public record Appointment(long patientId, String status, String visitMode) {}
+
+    public boolean hasOrders(long encounterId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WITH (UPDLOCK,HOLDLOCK) WHERE encounter_id=?",
+                Integer.class, encounterId) > 0;
+    }
+
+    public boolean hasFinalDiagnosis(long encounterId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Diagnosis WITH (UPDLOCK,HOLDLOCK) WHERE encounter_id=? AND diagnosis_type='FINAL'",
+                Integer.class, encounterId) > 0;
+    }
+
+    public boolean hasDraftPrescription(long encounterId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Prescription WITH (UPDLOCK,HOLDLOCK) WHERE encounter_id=? AND status='DRAFT'",
+                Integer.class, encounterId) > 0;
+    }
+
+    public boolean billingSettled(long encounterId) {
+        var invoices = jdbc.query("SELECT id,status FROM dbo.Invoice WITH (UPDLOCK,HOLDLOCK) WHERE encounter_id=? ORDER BY id",
+                (rs, n) -> new Invoice(rs.getLong("id"), rs.getString("status")), encounterId);
+        boolean examination = false;
+        for (var invoice : invoices) {
+            if ("VOID".equals(invoice.status())) continue;
+            if (!"ISSUED".equals(invoice.status())) return false;
+            var lines = jdbc.query("""
+                    SELECT l.id,l.line_type,l.amount,
+                        COALESCE((SELECT SUM(pa.amount) FROM dbo.PaymentAllocation pa WITH (UPDLOCK,HOLDLOCK)
+                                  WHERE pa.invoice_line_id=l.id),0) AS allocated
+                    FROM dbo.InvoiceLine l WITH (UPDLOCK,HOLDLOCK)
+                    WHERE l.invoice_id=? AND l.status='ACTIVE' ORDER BY l.id
+                    """, (rs, n) -> new PaidLine(rs.getString("line_type"),
+                    rs.getBigDecimal("amount"), rs.getBigDecimal("allocated")), invoice.id());
+            for (var line : lines) {
+                if (line.amount().compareTo(line.allocated()) != 0) return false;
+                if ("EXAMINATION".equals(line.type())) examination = true;
+            }
+        }
+        return examination;
+    }
+
+    public void complete(long encounterId, long appointmentId, long actorId) {
+        jdbc.update("""
+                UPDATE dbo.Encounter SET status='COMPLETED',completed_at=SYSUTCDATETIME(),updated_at=SYSUTCDATETIME()
+                WHERE id=? AND status='IN_PROGRESS'
+                """, encounterId);
+        jdbc.update("UPDATE dbo.Appointment SET status='COMPLETED',updated_at=SYSUTCDATETIME() WHERE id=? AND status='BOOKED'", appointmentId);
+        jdbc.update("""
+                INSERT dbo.EncounterEvent(encounter_id,from_status,to_status,actor_id,occurred_at)
+                VALUES (?,'IN_PROGRESS','COMPLETED',?,SYSUTCDATETIME())
+                """, encounterId, actorId);
+        jdbc.update("""
+                INSERT dbo.AppointmentEvent(appointment_id,event_type,actor_id,occurred_at)
+                VALUES (?,'COMPLETED',?,SYSUTCDATETIME())
+                """, appointmentId, actorId);
+    }
+
+    public void auditCompletion(long encounterId, long actorId) {
+        jdbc.update("""
+                INSERT dbo.AuditEvent(actor_id,actor_type,action,entity_type,entity_id,occurred_at,correlation_id)
+                VALUES (?,'USER','ENCOUNTER_COMPLETED','Encounter',?,SYSUTCDATETIME(),?)
+                """, actorId, encounterId, UUID.randomUUID().toString());
+    }
+
+    public EncounterCompleteResponse completionResult(long encounterId, boolean replayed) {
+        return jdbc.queryForObject("""
+                SELECT status,CONVERT(varchar(23),completed_at,126)+'Z' AS completed_at FROM dbo.Encounter WHERE id=?
+                """, (rs, n) -> new EncounterCompleteResponse(
+                encounterId, rs.getString("status"), rs.getString("completed_at"), replayed), encounterId);
+    }
+
+    private record Invoice(long id, String status) {}
+    private record PaidLine(String type, java.math.BigDecimal amount, java.math.BigDecimal allocated) {}
 }

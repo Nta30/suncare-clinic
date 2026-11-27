@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/appointments/onsite/**").hasRole("PATIENT")
                         .requestMatchers(HttpMethod.GET, "/api/patient/appointments", "/api/patient/appointments/**").hasRole("PATIENT")
                         .requestMatchers(HttpMethod.GET, "/api/doctor/appointments", "/api/doctor/appointments/**").hasRole("DOCTOR")
-                        .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/start").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/start", "/api/doctor/encounters/*/complete").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/api/doctor/encounters", "/api/doctor/encounters/*").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.POST, "/api/doctor/encounters/*/histories", "/api/doctor/encounters/*/allergies").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/doctor/encounters/*/histories/*", "/api/doctor/encounters/*/allergies/*").hasRole("DOCTOR")

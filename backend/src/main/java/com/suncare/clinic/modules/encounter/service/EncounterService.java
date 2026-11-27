@@ -3,6 +3,7 @@ package com.suncare.clinic.modules.encounter.service;
 import com.suncare.clinic.common.exception.ApiException;
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.encounter.dto.EncounterStartResponse;
+import com.suncare.clinic.modules.encounter.dto.EncounterCompleteResponse;
 import com.suncare.clinic.modules.encounter.repository.EncounterRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -45,5 +46,39 @@ public class EncounterService {
 
     private ApiException notFound() {
         return new ApiException(HttpStatus.NOT_FOUND, "ENCOUNTER_NOT_FOUND", "Không tìm thấy lượt khám.");
+    }
+
+    @Transactional
+    public EncounterCompleteResponse complete(
+            CurrentAccountResponse account, long encounterId) {
+        if (!account.roles().contains("DOCTOR") || account.staffId() == null)
+            throw new AccessDeniedException("Chỉ bác sĩ phụ trách được hoàn tất lượt khám.");
+        Long appointmentId = repository.appointmentId(encounterId);
+        if (appointmentId == null) throw notFound();
+        // Cùng thứ tự khóa với ghi chẩn đoán, đơn thuốc và lập hóa đơn.
+        var appointment = repository.lockAppointment(appointmentId, account.staffId());
+        if (appointment == null) throw notFound();
+        String state = repository.lockStatus(encounterId);
+        if (!"ONSITE".equals(appointment.visitMode()))
+            throw conflict("ENCOUNTER_MODE_NOT_SUPPORTED", "Bước này chỉ hỗ trợ khám trực tiếp.");
+        if ("COMPLETED".equals(state) && "COMPLETED".equals(appointment.status()))
+            return repository.completionResult(encounterId, true);
+        if (!"IN_PROGRESS".equals(state) || !"BOOKED".equals(appointment.status()))
+            throw conflict("ENCOUNTER_NOT_IN_PROGRESS", "Chỉ hoàn tất lượt khám đang diễn ra.");
+        if (repository.hasOrders(encounterId))
+            throw conflict("ENCOUNTER_CLS_NOT_SUPPORTED", "Lượt khám có chỉ định CLS cần quy trình đánh giá kết quả trước khi hoàn tất.");
+        if (!repository.hasFinalDiagnosis(encounterId))
+            throw conflict("FINAL_DIAGNOSIS_REQUIRED", "Cần chẩn đoán xác định trước khi hoàn tất.");
+        if (repository.hasDraftPrescription(encounterId))
+            throw conflict("DRAFT_PRESCRIPTION_EXISTS", "Hãy phát hành hoặc bỏ đơn thuốc nháp trước khi hoàn tất.");
+        if (!repository.billingSettled(encounterId))
+            throw conflict("ENCOUNTER_OUTSTANDING", "Cần phát hành hóa đơn phí khám và thu đủ từng dòng trước khi hoàn tất.");
+        repository.complete(encounterId, appointmentId, account.accountId());
+        repository.auditCompletion(encounterId, account.accountId());
+        return repository.completionResult(encounterId, false);
+    }
+
+    private ApiException conflict(String code, String message) {
+        return new ApiException(HttpStatus.CONFLICT, code, message);
     }
 }

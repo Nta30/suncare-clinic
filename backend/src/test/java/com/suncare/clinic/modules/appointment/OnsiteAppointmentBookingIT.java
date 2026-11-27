@@ -179,6 +179,9 @@ class OnsiteAppointmentBookingIT {
         reset(prescriptionRepository);
         if (prefix == null) return;
 
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE action='ENCOUNTER_COMPLETED' AND actor_id IN (?,?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.ClinicalOrder WHERE code=?", prefix + "CLS");
+
         jdbc.update("DELETE FROM dbo.CommandReceipt WHERE resource_type='Prescription' AND account_id IN (?,?)", accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
         jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type='Prescription' AND actor_id IN (?,?)",accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
         jdbc.update("DELETE FROM dbo.PrescriptionItem WHERE prescription_id IN (SELECT p.id FROM dbo.Prescription p JOIN dbo.Encounter e ON e.id=p.encounter_id JOIN dbo.Appointment a ON a.id=e.appointment_id WHERE a.patient_id IN (?,?))",patientOneId,patientTwoId);
@@ -1186,6 +1189,163 @@ class OnsiteAppointmentBookingIT {
         long appointmentId = jdbc.queryForObject("SELECT id FROM dbo.Appointment WHERE code=?", Long.class, prefix + suffix);
         return jdbc.queryForObject("INSERT INTO dbo.Encounter(code,appointment_id,status,started_at,completed_at) OUTPUT INSERTED.id VALUES (?,?,?,SYSUTCDATETIME(),CASE WHEN ?='COMPLETED' THEN SYSUTCDATETIME() ELSE NULL END)", Long.class,
                 prefix + "E" + suffix, appointmentId, state, state);
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder completeRequest(long encounterId) {
+        return post("/api/doctor/encounters/" + encounterId + "/complete")
+                .header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"completionConfirmed\":true}");
+    }
+
+    private void completionDiagnosis(long encounterId) throws Exception {
+        mvc.perform(post("/api/doctor/encounters/" + encounterId + "/clinical/diagnoses")
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "final")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of(
+                        "diagnosisConceptId", diagnosisConceptId, "description", "Chẩn đoán test P23",
+                        "diagnosisType", "FINAL", "isPrimary", true))))
+                .andExpect(status().isOk());
+    }
+
+    private long completionReady() throws Exception {
+        long invoiceId = cashInvoice(true);
+        long encounterId = jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?", Long.class, invoiceId);
+        completionDiagnosis(encounterId);
+        mvc.perform(cashRequest(invoiceId, cashierToken(), prefix + "paid", "{\"amount\":500000}"))
+                .andExpect(status().isOk());
+        return encounterId;
+    }
+
+    @Test
+    void completionWithoutPrescriptionIsAtomicAndRetryDoesNotDuplicateEvents() throws Exception {
+        long encounterId = completionReady();
+        var first = json.readTree(mvc.perform(completeRequest(encounterId)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED")).andExpect(jsonPath("$.replayed").value(false))
+                .andReturn().getResponse().getContentAsString());
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true))
+                .andExpect(jsonPath("$.completedAt").value(first.get("completedAt").asText()));
+        assertEquals("COMPLETED", jdbc.queryForObject("SELECT a.status FROM dbo.Appointment a JOIN dbo.Encounter e ON e.appointment_id=a.id WHERE e.id=?", String.class, encounterId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterEvent WHERE encounter_id=? AND to_status='COMPLETED'", Integer.class, encounterId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AppointmentEvent WHERE appointment_id=(SELECT appointment_id FROM dbo.Encounter WHERE id=?) AND event_type='COMPLETED'", Integer.class, encounterId));
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='Encounter' AND entity_id=? AND action='ENCOUNTER_COMPLETED'", Integer.class, encounterId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Prescription WHERE encounter_id=?", Integer.class, encounterId));
+        mvc.perform(post("/api/doctor/encounters/" + encounterId + "/clinical/diagnoses")
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "after")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of(
+                        "diagnosisConceptId", diagnosisConceptId, "description", "After completion", "diagnosisType", "FINAL", "isPrimary", false))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void completionRejectsMissingFinalUnpaidPartialAllocationDraftAndCls() throws Exception {
+        long invoiceId = cashInvoice(true);
+        long encounterId = jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?", Long.class, invoiceId);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("FINAL_DIAGNOSIS_REQUIRED"));
+        completionDiagnosis(encounterId);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ENCOUNTER_OUTSTANDING"));
+        mvc.perform(cashRequest(invoiceId, cashierToken(), prefix + "paid", "{\"amount\":500000}" )).andExpect(status().isOk());
+        jdbc.update("UPDATE dbo.PaymentAllocation SET amount=200000 WHERE invoice_line_id IN (SELECT id FROM dbo.InvoiceLine WHERE invoice_id=?)", invoiceId);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ENCOUNTER_OUTSTANDING"));
+        jdbc.update("UPDATE dbo.PaymentAllocation SET amount=500000 WHERE invoice_line_id IN (SELECT id FROM dbo.InvoiceLine WHERE invoice_id=?)", invoiceId);
+        var draft = prescriptionCreate(encounterId, prefix + "draft");
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("DRAFT_PRESCRIPTION_EXISTS"));
+        mvc.perform(delete(prescriptionPath(encounterId) + "/" + draft.get("id").asLong())
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "discard")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("version", draft.get("version").asText()))))
+                .andExpect(status().isOk());
+        jdbc.update("INSERT dbo.ClinicalOrder(code,encounter_id,service_id,performing_department_id,ordered_by,indication,status) VALUES (?,?,?,?,?,N'Fixture CLS','PENDING_PAYMENT')",
+                prefix + "CLS", encounterId, serviceId, departmentId, accountIdForStaff(doctorOneId));
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ENCOUNTER_CLS_NOT_SUPPORTED"));
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM dbo.Encounter WHERE id=?", String.class, encounterId));
+        jdbc.update("DELETE dbo.ClinicalOrder WHERE encounter_id=?", encounterId);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isOk());
+    }
+
+    @Test
+    void completionChecksOwnershipInputStateAndRoleOnEveryRetry() throws Exception {
+        long encounterId = bookEncounterForStart("plannedcomplete");
+        String path = "/api/doctor/encounters/" + encounterId + "/complete";
+        mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content("{\"completionConfirmed\":true}")).andExpect(status().isUnauthorized());
+        mvc.perform(post(path).header("Authorization", "Bearer " + patientOneToken).contentType(MediaType.APPLICATION_JSON).content("{\"completionConfirmed\":true}")).andExpect(status().isForbidden());
+        mvc.perform(post(path).header("Authorization", "Bearer " + doctorTwoToken).contentType(MediaType.APPLICATION_JSON).content("{\"completionConfirmed\":true}")).andExpect(status().isNotFound());
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict());
+        for (String body : java.util.List.of("{}", "{\"completionConfirmed\":false}", "{\"completionConfirmed\":true,\"status\":\"COMPLETED\"}"))
+            mvc.perform(post(path).header("Authorization", "Bearer " + doctorToken).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        mvc.perform(completeRequest(Long.MAX_VALUE)).andExpect(status().isNotFound());
+        jdbc.update("DELETE dbo.AccountRole WHERE account_id=?", accountIdForStaff(doctorOneId));
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void completionRollsBackBothStatesAndEventsWhenAuditFails() throws Exception {
+        long encounterId = completionReady();
+        doThrow(new IllegalStateException("P23 audit failure")).when(encounterRepository).auditCompletion(anyLong(), anyLong());
+        assertThrows(Exception.class, () -> mvc.perform(completeRequest(encounterId)));
+        assertEquals("IN_PROGRESS", jdbc.queryForObject("SELECT status FROM dbo.Encounter WHERE id=?", String.class, encounterId));
+        assertEquals("BOOKED", jdbc.queryForObject("SELECT a.status FROM dbo.Appointment a JOIN dbo.Encounter e ON e.appointment_id=a.id WHERE e.id=?", String.class, encounterId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterEvent WHERE encounter_id=? AND to_status='COMPLETED'", Integer.class, encounterId));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AppointmentEvent WHERE appointment_id=(SELECT appointment_id FROM dbo.Encounter WHERE id=?) AND event_type='COMPLETED'", Integer.class, encounterId));
+        reset(encounterRepository);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isOk());
+    }
+
+    @Test
+    void completionRequiresIssuedExaminationAndAllowsIssuedPrescription() throws Exception {
+        long encounterId = startedEncounter("nofee");
+        completionDiagnosis(encounterId);
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ENCOUNTER_OUTSTANDING"));
+        String invoices = "/api/doctor/encounters/" + encounterId + "/invoices";
+        var draft = json.readTree(mvc.perform(post(invoices).header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "fee")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isConflict());
+        mvc.perform(post(invoices + "/" + draft.get("id").asLong() + "/issue").header("Authorization", "Bearer " + doctorToken)
+                .header("Idempotency-Key", prefix + "feeissue").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(java.util.Map.of("version", draft.get("version").asText())))).andExpect(status().isOk());
+        mvc.perform(cashRequest(draft.get("id").asLong(), cashierToken(), prefix + "paid", "{\"amount\":500000}")).andExpect(status().isOk());
+        var rx = prescriptionCreate(encounterId, prefix + "rx");
+        mvc.perform(post(prescriptionPath(encounterId) + "/" + rx.get("id").asLong() + "/issue")
+                .header("Authorization", "Bearer " + doctorToken).header("Idempotency-Key", prefix + "rxissue")
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("version", rx.get("version").asText()))))
+                .andExpect(status().isOk());
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isOk());
+        mvc.perform(post("/api/doctor/encounters/" + encounterId + "/complete")
+                .header("Authorization", "Bearer " + doctorTwoToken).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"completionConfirmed\":true}")).andExpect(status().isNotFound());
+        jdbc.update("UPDATE dbo.Account SET status='LOCKED' WHERE id=?", accountIdForStaff(doctorOneId));
+        mvc.perform(completeRequest(encounterId)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void completionConcurrentRetryUsesIndependentSqlSessions() throws Exception {
+        long encounterId = completionReady();
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch go = new CountDownLatch(1);
+        var sessions = java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            sessions.add(jdbc.queryForObject("SELECT @@SPID", Integer.class));
+            ready.countDown();
+            if (!go.await(15, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("P23 barrier timeout");
+            return invocation.callRealMethod();
+        }).when(encounterRepository).appointmentId(encounterId);
+        try {
+            var first = pool.submit(() -> mvc.perform(completeRequest(encounterId)).andReturn());
+            var second = pool.submit(() -> mvc.perform(completeRequest(encounterId)).andReturn());
+            assertTrue(ready.await(15, java.util.concurrent.TimeUnit.SECONDS));
+            go.countDown();
+            var a = first.get(30, java.util.concurrent.TimeUnit.SECONDS).getResponse();
+            var b = second.get(30, java.util.concurrent.TimeUnit.SECONDS).getResponse();
+            assertEquals(200, a.getStatus());
+            assertEquals(200, b.getStatus());
+            assertEquals(2, sessions.size());
+            assertTrue(json.readTree(a.getContentAsString()).get("replayed").asBoolean()
+                    != json.readTree(b.getContentAsString()).get("replayed").asBoolean());
+            assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.EncounterEvent WHERE encounter_id=? AND to_status='COMPLETED'", Integer.class, encounterId));
+        } finally {
+            go.countDown();
+            pool.shutdownNow();
+            reset(encounterRepository);
+        }
     }
 
     private long startedEncounter(String suffix) throws Exception {

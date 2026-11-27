@@ -26,7 +26,7 @@ const formSignature = (form, version) => JSON.stringify({
 })
 
 
-export default function EncounterPrescriptions({ encounterId, active, writable, onSessionExpired, allergies = [] }) {
+export default function EncounterPrescriptions({ encounterId, active, writable, onSessionExpired, allergies = [], onGuardChange }) {
   const [state, setState] = useState({ loading: true, drugs: [], document: null })
   const [form, setForm] = useState(() => toForm(null))
   const [reload, setReload] = useState(0)
@@ -48,6 +48,11 @@ export default function EncounterPrescriptions({ encounterId, active, writable, 
   const listDirty = draft && (!document || formSignature(form, document.version) !== formSignature(toFormWithoutIds(document), document.version))
 
   const dirty = Boolean(editor) || listDirty
+
+  useEffect(() => {
+    onGuardChange?.('prescription', Boolean(dirty || busy || pending))
+    return () => onGuardChange?.('prescription', false)
+  }, [dirty, busy, pending, onGuardChange])
 
   useEffect(() => {
     alive.current = true
