@@ -108,6 +108,10 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
   const suppressCalendarClickRef = useRef(false)
 
   const selectedSchedule = schedules.find((schedule) => String(schedule.id) === String(selectedScheduleId))
+  const isLab = baseOptions.departments.find((item) => String(item.id) === String(selectedSchedule?.departmentId))?.departmentType === 'LAB'
+  const staffRole = isLab ? 'LAB_STAFF' : 'DOCTOR'
+  const staffLabel = isLab ? 'Nhân viên CLS' : 'Bác sĩ'
+  const modeLabel = (mode) => mode === 'LAB' ? 'Cận lâm sàng' : mode === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'
   const selectedDepartment = baseOptions.departments.find((item) => String(item.id) === String(draftForm.departmentId))
   const draftDateBounds = selectedDepartment ? getScheduleDateBounds(selectedDepartment) : null
   const noFullDayInTerm = Boolean(draftDateBounds?.earliestStart && draftDateBounds.latestEnd
@@ -126,10 +130,10 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
   const busyStaffIds = useMemo(() => new Set(assignmentsOverlappingSelection.map((item) => String(item.staffId))), [assignmentsOverlappingSelection])
   const busyRoomIds = useMemo(() => new Set(assignmentsOverlappingSelection.map((item) => String(item.roomId))), [assignmentsOverlappingSelection])
   const roomsForSelectedMode = activeSlot
-    ? scheduleOptions.rooms.filter((room) => room.roomType === (activeSlot.mode === 'ONLINE' ? 'ONLINE' : 'CONSULTATION'))
+    ? scheduleOptions.rooms.filter((room) => room.roomType === (isLab ? 'LAB' : activeSlot.mode === 'ONLINE' ? 'ONLINE' : 'CONSULTATION'))
     : []
   const eligibleRooms = activeSlot
-    ? roomsForSelectedMode.filter((room) => !busyRoomIds.has(String(room.id)))
+    ? roomsForSelectedMode.filter((room) => isLab || !busyRoomIds.has(String(room.id)))
     : []
   const eligibleSpecialties = selectedStaff
     ? scheduleOptions.specialties.filter((specialty) => selectedStaff.specialties.some((item) => item.id === specialty.id))
@@ -180,13 +184,13 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
     const query = staffSearch.trim().toLocaleLowerCase('vi')
     return scheduleOptions.staff.filter((staff) => {
       const matchesText = !query || `${staff.code} ${staff.name}`.toLocaleLowerCase('vi').includes(query)
-      const isDoctor = staff.roles.includes('DOCTOR')
-      const matchesSpecialty = !specialtyFilter || staff.specialties.some((item) => String(item.id) === specialtyFilter)
-      return isDoctor && !busyStaffIds.has(String(staff.id)) && matchesText && matchesSpecialty
+      const hasRequiredRole = staff.roles.includes(staffRole)
+      const matchesSpecialty = isLab || !specialtyFilter || staff.specialties.some((item) => String(item.id) === specialtyFilter)
+      return hasRequiredRole && !busyStaffIds.has(String(staff.id)) && matchesText && matchesSpecialty
     })
-  }, [busyStaffIds, scheduleOptions.staff, specialtyFilter, staffSearch])
-  const hasAvailableDoctors = scheduleOptions.staff.some((staff) =>
-    staff.roles.includes('DOCTOR') && !busyStaffIds.has(String(staff.id)))
+  }, [busyStaffIds, scheduleOptions.staff, specialtyFilter, staffSearch, staffRole, isLab])
+  const hasAvailableStaff = scheduleOptions.staff.some((staff) =>
+    staff.roles.includes(staffRole) && !busyStaffIds.has(String(staff.id)))
 
   const handleApiFailure = useCallback((failure) => {
     if (failure.status === 401) {
@@ -488,11 +492,11 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
     setActionError('')
     setSuccess('')
     if (!selectedSchedule || !selectedStaff || !activeSlot) return
-    if (!assignmentForm.roomId || !assignmentForm.specialtyId) {
-      setActionError('Hãy chọn chuyên khoa và phòng trước khi lưu.')
+    if (!assignmentForm.roomId || (!isLab && !assignmentForm.specialtyId)) {
+      setActionError(isLab ? 'Hãy chọn phòng thực hiện trước khi lưu.' : 'Hãy chọn chuyên khoa và phòng trước khi lưu.')
       return
     }
-    if (!eligibleSpecialties.some((item) => String(item.id) === assignmentForm.specialtyId)) {
+    if (!isLab && !eligibleSpecialties.some((item) => String(item.id) === assignmentForm.specialtyId)) {
       setActionError('Chuyên khoa đã chọn không thuộc bác sĩ này.')
       return
     }
@@ -502,12 +506,11 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
     }
     const assignmentMode = selectedWorkSlots[0].mode
     if (selectedWorkSlots.some((slot) => slot.mode !== assignmentMode)) {
-      setActionError('Một lần lưu chỉ nhận các ô cùng hình thức Trực tiếp hoặc Trực tuyến.')
+      setActionError('Một lần lưu chỉ nhận các ô cùng một hình thức phân công.')
       return
     }
-    const isOnline = assignmentMode === 'ONLINE'
     const capacity = Number(assignmentForm.capacity)
-    if (!isOnline && (!Number.isInteger(capacity) || capacity < 1)) {
+    if (assignmentMode === 'ONSITE' && (!Number.isInteger(capacity) || capacity < 1)) {
       setActionError('Sức chứa phải là số nguyên lớn hơn 0.')
       return
     }
@@ -517,10 +520,10 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
       const assignment = {
         staffId: selectedStaff.id,
         roomId: Number(assignmentForm.roomId),
-        specialtyId: Number(assignmentForm.specialtyId),
+        ...(isLab ? {} : { specialtyId: Number(assignmentForm.specialtyId) }),
         workSlots: selectedWorkSlots.map(({ workDate, shiftId }) => ({ workDate, shiftId })),
         mode: assignmentMode,
-        ...(isOnline ? {} : { capacity }),
+        ...(assignmentMode === 'ONSITE' ? { capacity } : {}),
       }
       const assignmentCount = selectedWorkSlots.length
       const updated = await addHeadScheduleAssignment(selectedSchedule.id, assignment)
@@ -564,7 +567,9 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
     try {
       const published = await publishHeadSchedule(selectedSchedule.id)
       setIsConfirmingPublish(false)
-      setSuccess('Đợt lịch đã được công bố. Các slot trực tuyến đã sẵn sàng theo giờ đã phân công.')
+      setSuccess(isLab
+        ? 'Đợt lịch LAB đã được công bố. Nhân viên CLS có thể xem lịch trực được phân công.'
+        : 'Đợt lịch đã được công bố. Các slot trực tuyến đã sẵn sàng theo giờ đã phân công.')
       await loadWorkspace(String(published.id))
     } catch (failure) {
       handleApiFailure(failure)
@@ -576,13 +581,12 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
 
   const weekStartDate = weekStart || (selectedSchedule ? mondayOf(selectedSchedule.periodStart) : todayInSaigon())
   const visibleDays = Array.from({ length: 6 }, (_, index) => addDays(weekStartDate, index))
-  const sessionRows = ['ONSITE', 'ONLINE'].flatMap((mode) => [
+  const sessionRows = (isLab ? ['LAB'] : ['ONSITE', 'ONLINE']).flatMap((mode) => [
     { shiftCode: 'MORNING', label: 'Buổi sáng' },
     { shiftCode: 'AFTERNOON', label: 'Buổi chiều' },
   ].map((session) => {
     const shift = scheduleOptions.shifts.find((item) => item.code === session.shiftCode)
-    const modeLabel = mode === 'ONSITE' ? 'Trực tiếp' : 'Trực tuyến'
-    return { ...session, code: `${mode}_${session.shiftCode}`, mode, modeLabel, shift }
+    return { ...session, code: `${mode}_${session.shiftCode}`, mode, modeLabel: modeLabel(mode), shift }
   }))
   const firstWeek = selectedSchedule ? mondayOf(selectedSchedule.periodStart) : weekStartDate
   const lastWeek = selectedSchedule ? mondayOf(selectedSchedule.periodEnd) : weekStartDate
@@ -684,7 +688,7 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
             </nav>}
         </section>
 
-        <form onSubmit={submitDraft} className='grid gap-3 rounded-2xl border border-clinical-border bg-white p-4 sm:grid-cols-2'>
+        <form noValidate onSubmit={submitDraft} className='grid gap-3 rounded-2xl border border-clinical-border bg-white p-4 sm:grid-cols-2'>
           <h2 className='font-bold text-clinical-ink sm:col-span-2'>Tạo đợt phân lịch mới</h2>
           <label className='text-sm font-semibold sm:col-span-2'>Khoa
             <select required value={draftForm.departmentId} onChange={(event) => setDraftForm({ departmentId: event.target.value, periodStart: '', periodEnd: '' })} className={`${field} mt-1`}>
@@ -697,7 +701,7 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
               <p>Đợt lịch tính theo ngày trọn vẹn: ngày bắt đầu sớm nhất {displayDate(draftDateBounds.earliestStart, { day: '2-digit', month: '2-digit', year: 'numeric' })}; ngày kết thúc muộn nhất {draftDateBounds.latestEnd ? displayDate(draftDateBounds.latestEnd, { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'không giới hạn'}.</p>}
           </div>}
           {!loadingWorkspace && !optionsError && baseOptions.departments.length === 0 &&
-            <p role='status' className='text-sm text-clinical-muted sm:col-span-2'>Tài khoản chưa có nhiệm kỳ trưởng khoa hiệu lực tại khoa khám nào. Quản trị viên cần kiểm tra phân công và thời hạn.</p>}
+            <p role='status' className='text-sm text-clinical-muted sm:col-span-2'>Tài khoản chưa có nhiệm kỳ trưởng khoa hiệu lực tại khoa nào. Quản trị viên cần kiểm tra phân công và thời hạn.</p>}
           <label className='text-xs font-semibold text-clinical-muted'>Từ ngày
             <input required type='date' min={draftDateBounds?.earliestStart || undefined} max={draftDateBounds?.latestEnd || undefined} value={draftForm.periodStart} onChange={(event) => setDraftForm({ ...draftForm, periodStart: event.target.value, periodEnd: '' })} className={`${field} mt-1`} />
           </label>
@@ -716,6 +720,14 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
         <div className='rounded-xl border border-dashed border-clinical-border bg-white p-5 text-center text-sm text-clinical-muted'>Tạo một đợt nháp để bắt đầu thêm phân công theo ngày.</div>}
 
       {selectedSchedule && <section className='space-y-4' aria-label='Thời khóa biểu phân công'>
+        {isLab && assignments.some((item) => !item.shiftId) && <section className='rounded-xl border border-clinical-border bg-white p-4'>
+          <h2 className='font-semibold'>Phân công theo khung giờ riêng</h2>
+          <p className='mt-2 text-sm text-clinical-muted'>Các phân công đã có được giữ nguyên giờ làm. Phân công mới sử dụng ca sáng hoặc chiều đã cấu hình.</p>
+          <div className='mt-3 overflow-x-auto'><table className='w-full min-w-[38rem] text-left text-sm'>
+            <thead><tr><th className='p-2'>Nhân viên CLS</th><th className='p-2'>Phòng</th><th className='p-2'>Bắt đầu</th><th className='p-2'>Kết thúc</th></tr></thead>
+            <tbody>{assignments.filter((item) => !item.shiftId).map((item) => <tr key={item.id} className='border-t border-clinical-border'><td className='p-2'>{item.staffName}</td><td className='p-2'>{item.roomCode} · {item.roomName}</td><td className='p-2'>{displayDateTime(item.startsAt)}</td><td className='p-2'>{displayDateTime(item.endsAt)}</td></tr>)}</tbody>
+          </table></div>
+        </section>}
         <div className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-clinical-border bg-white p-4'>
           <div>
             <h2 className='font-bold text-clinical-ink'>{selectedSchedule.departmentName}</h2>
@@ -732,7 +744,7 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
 
         {isConfirmingPublish && editable && <section className='rounded-xl border border-suncare-200 bg-suncare-50 p-4' aria-label='Xác nhận công bố lịch'>
           <h3 className='font-bold text-clinical-ink'>Công bố đợt lịch này?</h3>
-          <p className='mt-1 text-sm text-clinical-muted'>Lịch sẽ chuyển sang chỉ xem. Hệ thống kiểm tra lại bác sĩ, phòng, chuyên khoa, giá và xung đột; các khung ONLINE sẽ sinh slot 20 phút.</p>
+          <p className='mt-1 text-sm text-clinical-muted'>{isLab ? 'Lịch sẽ chuyển sang chỉ xem. Kiểm tra nhân viên, phòng và ca trực trước khi công bố.' : 'Lịch sẽ chuyển sang chỉ xem. Hệ thống kiểm tra lại bác sĩ, phòng, chuyên khoa, giá và xung đột; các khung ONLINE sẽ sinh slot 20 phút.'}</p>
           <div className='mt-3 flex flex-wrap gap-2'>
             <Button disabled={busy} onClick={() => setIsConfirmingPublish(false)}>Giữ bản nháp</Button>
             <Button variant='primary' disabled={busy || Boolean(assignmentError) || Boolean(accessFailure)} onClick={() => void confirmPublish()}>{busy ? 'Đang công bố…' : 'Xác nhận công bố'}</Button>
@@ -750,10 +762,10 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
 
         {sessionRows.some((session) => !session.shift) && <p role='status' className='rounded-xl border border-clinical-border bg-white p-3 text-sm text-clinical-muted'>Chưa cấu hình đủ ca sáng và ca chiều. Hãy kiểm tra danh mục ca làm việc.</p>}
         {selectedWorkSlots.length > 1 && <div className='flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-suncare-200 bg-suncare-50 p-3 sm:p-4'>
-          <p role='status' className='text-sm font-semibold text-clinical-ink'>Đã chọn {selectedWorkSlots.length} ô · {selectedWorkDates.length} ngày · {selectedMode === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'} · {displayDate(selectedWorkDates[0])}–{displayDate(selectedWorkDates[selectedWorkDates.length - 1])}<span className='mt-1 block text-xs font-normal text-clinical-muted'>Giữ lựa chọn khi chuyển tuần; dùng Ctrl/⌘-bấm hoặc Ctrl/⌘-kéo để cộng thêm ô.</span></p>
+          <p role='status' className='text-sm font-semibold text-clinical-ink'>Đã chọn {selectedWorkSlots.length} ô · {selectedWorkDates.length} ngày · {modeLabel(selectedMode)} · {displayDate(selectedWorkDates[0])}–{displayDate(selectedWorkDates[selectedWorkDates.length - 1])}<span className='mt-1 block text-xs font-normal text-clinical-muted'>Giữ lựa chọn khi chuyển tuần; dùng Ctrl/⌘-bấm hoặc Ctrl/⌘-kéo để cộng thêm ô.</span></p>
           <div className='flex flex-wrap gap-2'>
             <Button onClick={clearCalendarSelection}>Bỏ chọn</Button>
-            {editable && <Button onClick={openAssignmentForm} variant='primary' disabled={busy || loadingSchedule}><FontAwesomeIcon icon={faPlus} /> Phân công bác sĩ</Button>}
+            {editable && <Button onClick={openAssignmentForm} variant='primary' disabled={busy || loadingSchedule}><FontAwesomeIcon icon={faPlus} /> Phân công {staffLabel.toLocaleLowerCase('vi')}</Button>}
           </div>
         </div>}
         <div
@@ -807,7 +819,7 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
                       {!inRange ? <span className='text-xs text-clinical-muted'>Ngoài đợt lịch</span> : !session.shift ? <span className='text-xs text-clinical-muted'>Chưa cấu hình ca</span> :
                         <span className='flex h-full flex-col'>
                           <span className='flex items-center justify-between gap-2'>
-                            <span className='text-xs font-semibold text-clinical-ink'>{slotAssignments.length ? slotAssignments.length + (isOnlineSession ? ' khung online' : ' bác sĩ') : editable ? 'Chưa phân công' : 'Trống'}</span>
+                            <span className='text-xs font-semibold text-clinical-ink'>{slotAssignments.length ? slotAssignments.length + (isLab ? ' nhân viên CLS' : isOnlineSession ? ' khung online' : ' bác sĩ') : editable ? 'Chưa phân công' : 'Trống'}</span>
                             {isSelectionCell ? <span className='text-xs font-bold text-suncare-800'>Đã chọn</span> : isActive && <span className='text-xs font-bold text-suncare-800'>Đang xem</span>}
                           </span>
                           {slotAssignments.length > 0 ? <span className='mt-2 space-y-1'>
@@ -816,7 +828,7 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
                               <span className='block truncate text-[11px] text-clinical-muted'>Phòng {assignment.roomCode} · {assignment.roomName}{isOnlineSession ? ` · ${assignment.localStart.slice(0, 5)}–${assignment.localEnd.slice(0, 5)}` : ''}</span>
                             </span>)}
                             {slotAssignments.length > 2 && <span className='block px-1 text-xs text-clinical-muted'>và {slotAssignments.length - 2} người khác</span>}
-                          </span> : <span className='mt-2 text-xs text-clinical-muted'>{editable ? 'Bấm để phân công bác sĩ' : 'Chưa có phân công'}</span>}
+                          </span> : <span className='mt-2 text-xs text-clinical-muted'>{editable ? 'Bấm để phân công' : 'Chưa có phân công'}</span>}
                         </span>}
                     </button>
                   </td>
@@ -835,24 +847,24 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
               <p className='mt-1 text-sm text-clinical-muted'>{displayDate(activeSlot.workDate, { day: 'numeric', month: 'long', year: 'numeric' })}{activeSlot.mode === 'ONLINE' ? ' · Giờ được chọn khi thêm phân công' : ` · ${activeSlot.localStart.slice(0, 5)}–${activeSlot.localEnd.slice(0, 5)}`}</p>
             </div>
             <div className='flex flex-wrap gap-2'>
-              {editable && !isAddingAssignment && <Button onClick={openAssignmentForm} variant='primary' disabled={busy || loadingSchedule}><FontAwesomeIcon icon={faPlus} /> {activeSlot.mode === 'ONLINE' ? 'Thêm bác sĩ trực tuyến' : 'Thêm bác sĩ'}</Button>}
+              {editable && !isAddingAssignment && <Button onClick={openAssignmentForm} variant='primary' disabled={busy || loadingSchedule}><FontAwesomeIcon icon={faPlus} /> {isLab ? 'Thêm nhân viên CLS' : activeSlot.mode === 'ONLINE' ? 'Thêm bác sĩ trực tuyến' : 'Thêm bác sĩ'}</Button>}
               <Button onClick={clearCalendarSelection} aria-label='Đóng chi tiết ca'><FontAwesomeIcon icon={faXmark} /> Bỏ chọn ca</Button>
             </div>
           </header>
 
           <div>
             <h4 className='mb-2 font-semibold text-clinical-ink'>Phân công hiện có · {displayDate(activeSlot.workDate)} · {activeSlot.shiftName} <span className='font-normal text-clinical-muted'>({activeSlotAssignments.length})</span></h4>
-            {activeSlotAssignments.length === 0 ? <p className='rounded-xl border border-dashed border-clinical-border bg-clinical-canvas/50 p-4 text-sm text-clinical-muted'>{editable ? 'Ca này chưa có bác sĩ. Chọn “Thêm bác sĩ” để bắt đầu phân công.' : 'Ca này chưa có phân công.'}</p> :
+            {activeSlotAssignments.length === 0 ? <p className='rounded-xl border border-dashed border-clinical-border bg-clinical-canvas/50 p-4 text-sm text-clinical-muted'>{editable ? 'Ca này chưa có nhân viên. Chọn Thêm để phân công.' : 'Ca này chưa có phân công.'}</p> :
               <div className='overflow-x-auto rounded-xl border border-clinical-border'>
                 <table className='w-full min-w-[48rem] text-left text-sm'>
                   <thead className='bg-suncare-50 text-xs text-clinical-muted'><tr>
-                    <th scope='col' className='px-3 py-2.5'>Bác sĩ</th><th scope='col' className='px-3 py-2.5'>Chuyên khoa</th><th scope='col' className='px-3 py-2.5'>Phòng · giờ</th><th scope='col' className='px-3 py-2.5'>Sức chứa</th><th scope='col' className='px-3 py-2.5 text-right'>Thao tác</th>
+                    <th scope='col' className='px-3 py-2.5'>{staffLabel}</th>{!isLab && <th scope='col' className='px-3 py-2.5'>Chuyên khoa</th>}<th scope='col' className='px-3 py-2.5'>Phòng · giờ</th>{!isLab && <th scope='col' className='px-3 py-2.5'>Sức chứa</th>}<th scope='col' className='px-3 py-2.5 text-right'>Thao tác</th>
                   </tr></thead>
                   <tbody className='divide-y divide-clinical-border'>{activeSlotAssignments.map((assignment) => <tr key={assignment.id}>
                     <td className='px-3 py-3'><span className='block font-semibold text-clinical-ink'>{assignment.staffName}</span><span className='mt-0.5 block font-mono text-xs text-clinical-muted'>{assignment.staffCode}</span></td>
-                    <td className='px-3 py-3'>{assignment.specialtyName}</td>
+                    {!isLab && <td className='px-3 py-3'>{assignment.specialtyName}</td>}
                     <td className='px-3 py-3'><span className='block'>{assignment.roomCode} · {assignment.roomName}</span><span className='mt-0.5 block text-xs text-clinical-muted'>{assignment.localStart.slice(0, 5)}–{assignment.localEnd.slice(0, 5)}</span></td>
-                    <td className='px-3 py-3'>{assignment.capacity ?? '—'}</td>
+                    {!isLab && <td className='px-3 py-3'>{assignment.capacity ?? '—'}</td>}
                     <td className='px-3 py-3 text-right'>{editable && <button type='button' disabled={busy} onClick={() => void deleteAssignment(assignment.id)} className='inline-flex min-h-9 items-center gap-2 rounded-lg px-2 font-semibold text-clinical-danger underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinical-danger disabled:opacity-50'><FontAwesomeIcon icon={faTrashCan} /> Gỡ khỏi bản nháp</button>}</td>
                   </tr>)}</tbody>
                 </table>
@@ -861,11 +873,11 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
 
           {isAddingAssignment && editable && <div className='space-y-4 border-t border-clinical-border pt-4'>
             <div className='flex flex-wrap items-center justify-between gap-3'>
-              <div><h4 className='font-bold text-clinical-ink'>{activeSlot.mode === 'ONLINE' ? 'Thêm bác sĩ trực tuyến' : 'Thêm bác sĩ trực tiếp'}</h4><p className='mt-1 text-xs text-clinical-muted'>Đang chọn {selectedWorkSlots.length} ca trên {selectedWorkDates.length} ngày. Giờ làm lấy từ ca quản trị viên đã cấu hình.</p></div>
+              <div><h4 className='font-bold text-clinical-ink'>{isLab ? 'Thêm nhân viên CLS' : activeSlot.mode === 'ONLINE' ? 'Thêm bác sĩ trực tuyến' : 'Thêm bác sĩ trực tiếp'}</h4><p className='mt-1 text-xs text-clinical-muted'>Đang chọn {selectedWorkSlots.length} ca trên {selectedWorkDates.length} ngày. Giờ làm lấy từ ca quản trị viên đã cấu hình.</p></div>
               <Button onClick={cancelAssignmentForm}><FontAwesomeIcon icon={faXmark} /> Hủy thao tác</Button>
             </div>
             <div className='rounded-xl border border-clinical-border bg-clinical-canvas/60 p-3'>
-              <p className='text-sm font-semibold text-clinical-ink'>{selectedMode === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'} · {selectedWorkDates.length} ngày · {selectedWorkSlots.length} ca được chọn</p>
+              <p className='text-sm font-semibold text-clinical-ink'>{modeLabel(selectedMode)} · {selectedWorkDates.length} ngày · {selectedWorkSlots.length} ca được chọn</p>
               <ul className='mt-2 grid max-h-40 gap-1 overflow-y-auto text-xs text-clinical-muted sm:grid-cols-2'>
                 {[...selectedWorkSlots].sort((first, second) => first.workDate.localeCompare(second.workDate)
                   || ['MORNING', 'AFTERNOON'].indexOf(first.shiftCode) - ['MORNING', 'AFTERNOON'].indexOf(second.shiftCode))
@@ -876,39 +888,39 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
               <p className='mt-2 text-xs text-clinical-muted'>Muốn sửa vùng chọn, hủy thao tác rồi chọn lại trên lịch. Các ô đã chọn được giữ khi chuyển tuần.</p>
             </div>
             <div className='grid gap-3 sm:grid-cols-2'>
-              <label className='text-xs font-semibold text-clinical-muted'>Tìm bác sĩ theo mã hoặc tên
+              <label className='text-xs font-semibold text-clinical-muted'>Tìm nhân viên theo mã hoặc tên
                 <input value={staffSearch} onChange={(event) => setStaffSearch(event.target.value)} placeholder='Nhập mã hoặc tên' className={field + ' mt-1'} />
               </label>
-              <label className='text-xs font-semibold text-clinical-muted'>Lọc chuyên khoa
+              {!isLab && <label className='text-xs font-semibold text-clinical-muted'>Lọc chuyên khoa
                 <select value={specialtyFilter} onChange={(event) => setSpecialtyFilter(event.target.value)} className={field + ' mt-1'}>
                   <option value=''>Tất cả chuyên khoa</option>{scheduleOptions.specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.name}</option>)}
                 </select>
-              </label>
+              </label>}
             </div>
-            {loadingSchedule ? <p role='status' className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>Đang tải bác sĩ…</p> : scheduleOptions.staff.length === 0 ?
-              <p className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>Khoa chưa có bác sĩ đang hoạt động để phân lịch.</p> : filteredStaff.length === 0 ?
-                <p className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>{hasAvailableDoctors ? 'Không có bác sĩ khớp bộ lọc.' : 'Các bác sĩ đã có phân công chồng giờ trong ô đã chọn.'}</p> :
+            {loadingSchedule ? <p role='status' className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>Đang tải nhân viên…</p> : scheduleOptions.staff.length === 0 ?
+              <p className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>Khoa chưa có nhân viên đang hoạt động để phân lịch.</p> : filteredStaff.length === 0 ?
+                <p className='rounded-lg bg-clinical-canvas p-3 text-sm text-clinical-muted'>{hasAvailableStaff ? 'Không có nhân viên khớp bộ lọc.' : 'Không có nhân viên đúng vai trò còn trống trong ô đã chọn.'}</p> :
                   <div className='max-h-64 overflow-auto rounded-xl border border-clinical-border'>
                     <table className='w-full min-w-[34rem] text-left text-sm'>
-                      <thead className='sticky top-0 bg-suncare-50 text-xs text-clinical-muted'><tr><th scope='col' className='px-3 py-2'>Bác sĩ</th><th scope='col' className='px-3 py-2'>Chuyên khoa</th><th scope='col' className='px-3 py-2 text-right'>Chọn</th></tr></thead>
+                      <thead className='sticky top-0 bg-suncare-50 text-xs text-clinical-muted'><tr><th scope='col' className='px-3 py-2'>{staffLabel}</th>{!isLab && <th scope='col' className='px-3 py-2'>Chuyên khoa</th>}<th scope='col' className='px-3 py-2 text-right'>Chọn</th></tr></thead>
                       <tbody className='divide-y divide-clinical-border'>{filteredStaff.map((staff) => <tr key={staff.id} className={String(selectedStaffId) === String(staff.id) ? 'bg-suncare-50' : ''}>
                         <td className='px-3 py-2.5'><span className='block font-semibold text-clinical-ink'>{staff.name}</span><span className='mt-0.5 block font-mono text-xs text-clinical-muted'>{staff.code}</span></td>
-                        <td className='px-3 py-2.5 text-clinical-muted'>{staff.specialties.map((item) => item.name).join(', ') || 'Chưa gán chuyên khoa'}</td>
+                        {!isLab && <td className='px-3 py-2.5 text-clinical-muted'>{staff.specialties.map((item) => item.name).join(', ') || 'Chưa gán chuyên khoa'}</td>}
                         <td className='px-3 py-2.5 text-right'><button type='button' disabled={busy || loadingSchedule} aria-pressed={String(selectedStaffId) === String(staff.id)} onClick={() => selectStaff(staff)} className='min-h-9 rounded-lg px-3 font-semibold text-suncare-700 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-suncare-700 disabled:opacity-50'>{String(selectedStaffId) === String(staff.id) ? 'Đã chọn' : 'Chọn'}</button></td>
                       </tr>)}</tbody>
                     </table>
                   </div>}
 
-            {selectedStaff && <form onSubmit={submitAssignment} className='grid gap-3 border-t border-clinical-border pt-4 sm:grid-cols-2 xl:grid-cols-4'>
+            {selectedStaff && <form noValidate onSubmit={submitAssignment} className='grid gap-3 border-t border-clinical-border pt-4 sm:grid-cols-2 xl:grid-cols-4'>
               <div className='sm:col-span-2 xl:col-span-4'>
                 <h5 className='font-semibold text-clinical-ink'>Thông tin phân công</h5>
-                <p className='mt-1 text-xs text-clinical-muted'>Bác sĩ: {selectedStaff.name} · {selectedStaff.code}</p>
+                <p className='mt-1 text-xs text-clinical-muted'>{staffLabel}: {selectedStaff.name} · {selectedStaff.code}</p>
               </div>
-              <label className='text-xs font-semibold text-clinical-muted'>Chuyên khoa
+              {!isLab && <label className='text-xs font-semibold text-clinical-muted'>Chuyên khoa
                 <select required value={assignmentForm.specialtyId} onChange={(event) => setAssignmentForm({ ...assignmentForm, specialtyId: event.target.value })} className={field + ' mt-1'}>
                   <option value=''>Chọn chuyên khoa</option>{eligibleSpecialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.name}</option>)}
                 </select>
-              </label>
+              </label>}
               <label className='text-xs font-semibold text-clinical-muted'>Phòng
                 <select required value={assignmentForm.roomId} onChange={(event) => setAssignmentForm({ ...assignmentForm, roomId: event.target.value })} className={field + ' mt-1'}>
                   {eligibleRooms.length === 0
@@ -920,12 +932,12 @@ export default function DepartmentScheduleManagement({ account, onSessionExpired
                 <input required type='number' min='1' step='1' value={assignmentForm.capacity} onChange={(event) => setAssignmentForm({ ...assignmentForm, capacity: event.target.value })} className={field + ' mt-1'} />
               </label>}
               <div className='flex flex-wrap items-end gap-2'>
-                <Button type='submit' variant='primary' disabled={busy || selectedWorkSlots.length === 0 || !assignmentForm.roomId || !assignmentForm.specialtyId || !eligibleSpecialties.length}>
+                <Button type='submit' variant='primary' disabled={busy || selectedWorkSlots.length === 0 || !assignmentForm.roomId || (!isLab && (!assignmentForm.specialtyId || !eligibleSpecialties.length))}>
                   <FontAwesomeIcon icon={faPlus} /> {busy ? 'Đang lưu…' : 'Lưu phân công'}
                 </Button>
                 <Button onClick={cancelAssignmentForm}>Hủy</Button>
               </div>
-              {!eligibleSpecialties.length && <p role='alert' className='text-xs text-clinical-danger sm:col-span-2 xl:col-span-4'>Bác sĩ chưa có chuyên khoa đang hoạt động liên kết với khoa này.</p>}
+              {!isLab && !eligibleSpecialties.length && <p role='alert' className='text-xs text-clinical-danger sm:col-span-2 xl:col-span-4'>Bác sĩ chưa có chuyên khoa đang hoạt động liên kết với khoa này.</p>}
             </form>}
           </div>}
         </section>}

@@ -9,7 +9,7 @@ public record ScheduleOptionsResponse(
         List<SpecialtyOption> specialties,
         List<ShiftOption> shifts
 ) {
-    public record DepartmentOption(long id, String code, String name, String validFrom, String validTo) { }
+    public record DepartmentOption(long id, String code, String name, String validFrom, String validTo, String departmentType) { }
     public record StaffOption(long id, String code, String name, List<String> roles,
                               List<SpecialtyOption> specialties) { }
     public record RoomOption(long id, String code, String name, String roomType) { }

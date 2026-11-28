@@ -12,7 +12,7 @@ import java.util.List;
 public record WorkAssignmentCreateRequest(
         @NotNull Long staffId,
         @NotNull Long roomId,
-        @NotNull Long specialtyId,
+        @Positive Long specialtyId,
         Long shiftId,
         LocalDate workDate,
         @Positive Integer capacity,

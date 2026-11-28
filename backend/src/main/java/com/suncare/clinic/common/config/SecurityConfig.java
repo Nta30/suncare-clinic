@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/cashier/invoices", "/api/cashier/invoices/*", "/api/cashier/invoices/*/detail").hasRole("CASHIER")
                         .requestMatchers(HttpMethod.POST, "/api/cashier/invoices/*/cash-payments").hasRole("CASHIER")
                         .requestMatchers("/api/auth/me", "/api/auth/logout").authenticated()
+                        .requestMatchers("/api/lab/**").hasRole("LAB_STAFF")
                         .requestMatchers("/api/accounts/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/admin/staff").hasAuthority("ACCOUNT_MANAGE")
                         .requestMatchers("/api/admin/staff/**").hasAuthority("ACCOUNT_MANAGE")

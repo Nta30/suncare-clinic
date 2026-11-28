@@ -77,8 +77,8 @@ public class StaffAssignmentService {
         requireManager(actor);
         validPeriod(request.validFrom(), request.validTo());
         if (!repository.lockStaff(request.staffId()) || !repository.activeStaff(request.staffId())
-                || !"CLINICAL".equals(repository.lockDepartment(request.departmentId()))) {
-            throw bad("Trưởng khoa cần là nhân viên đang hoạt động của khoa khám.");
+                || !List.of("CLINICAL", "LAB").contains(java.util.Objects.toString(repository.lockDepartment(request.departmentId()), ""))) {
+            throw bad("Trưởng khoa cần là nhân viên đang hoạt động của khoa khám hoặc khoa cận lâm sàng.");
         }
         if (!repository.hasRole(request.staffId(), "DOCTOR")) throw bad("Trưởng khoa phải đồng thời có vai trò bác sĩ.");
         if (!repository.hasRole(request.staffId(), "DEPARTMENT_HEAD")) throw bad("Nhân viên chưa có vai trò trưởng khoa.");

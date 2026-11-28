@@ -95,7 +95,7 @@ function AssignmentForm({ form, kind, staff, departments, specialties, assignmen
           <label className='text-sm font-semibold'>Khoa
             <select required name='departmentId' value={form.departmentId} onChange={onChange} className={inputClass}>
               <option value=''>Chọn khoa</option>
-              {departments.filter((item) => item.isActive && (kind !== 'head' || item.departmentType === 'CLINICAL')).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              {departments.filter((item) => item.isActive && (kind !== 'head' || ['CLINICAL', 'LAB'].includes(item.departmentType))).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </label>
           <label className='text-sm font-semibold'>Bắt đầu · giờ Việt Nam

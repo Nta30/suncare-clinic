@@ -28,6 +28,21 @@ public class WorkScheduleRepository {
         this.jdbc = jdbc;
     }
 
+    // One clinic: serialize schedule mutations before taking schedule/resource rows.
+    // This avoids cross-draft deadlocks while publication rechecks all overlapping schedules.
+    // JDBC starts SQL transactions lazily; Spring still owns the final commit/rollback.
+    public void lockMutation() {
+        Integer result=jdbc.queryForObject("""
+                DECLARE @result int;
+                IF @@TRANCOUNT=0 BEGIN TRANSACTION;
+                EXEC @result=sys.sp_getapplock @Resource=?,
+                    @LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
+                SELECT @result;
+                """,Integer.class,"suncare:work-schedule-mutation");
+        if(result==null || result<0) throw new com.suncare.clinic.common.exception.ApiException(
+                org.springframework.http.HttpStatus.CONFLICT,"SCHEDULE_BUSY","Lịch đang được cập nhật. Hãy tải lại và thử lại.");
+    }
+
     public List<WorkScheduleResponse> listForHead(long staffId) {
         return jdbc.query("""
                 SELECT ws.id, ws.department_id, d.name AS department_name, ws.period_start, ws.period_end,
@@ -66,24 +81,37 @@ public class WorkScheduleRepository {
         return count != null && count > 0;
     }
 
-    public boolean clinicalDepartment(long departmentId) {
-        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Department WHERE id = ? AND is_active = 1 AND department_type = 'CLINICAL'", Integer.class, departmentId);
+    public boolean schedulableDepartment(long departmentId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Department WHERE id = ? AND is_active = 1 AND department_type IN ('CLINICAL','LAB')", Integer.class, departmentId);
         return count != null && count > 0;
+    }
+
+    public String departmentType(long departmentId) {
+        return jdbc.query("SELECT department_type FROM dbo.Department WHERE id=? AND is_active=1",
+                (rs,n)->rs.getString(1),departmentId).stream().findFirst().orElse("");
+    }
+
+    public boolean labRoomSupportsService(long roomId) {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM dbo.RoomService rs WITH (HOLDLOCK)
+                JOIN dbo.Service s WITH (HOLDLOCK) ON s.id=rs.service_id
+                WHERE rs.room_id=? AND rs.is_active=1 AND s.is_active=1 AND s.service_type='CLS'
+                """,Integer.class,roomId)>0;
     }
 
     public List<ScheduleOptionsResponse.DepartmentOption> headDepartments(long staffId) {
         return jdbc.query("""
-                SELECT d.id, d.code, d.name,
+                SELECT d.id, d.code, d.name, d.department_type,
                        CONVERT(varchar(23), h.valid_from, 126) AS valid_from,
                        CONVERT(varchar(23), h.valid_to, 126) AS valid_to
                 FROM dbo.DepartmentHeadAssignment h
                 JOIN dbo.Department d ON d.id = h.department_id
                 WHERE h.staff_id = ? AND h.valid_from <= SYSUTCDATETIME()
                   AND (h.valid_to IS NULL OR h.valid_to > SYSUTCDATETIME())
-                  AND d.is_active = 1 AND d.department_type = 'CLINICAL'
+                  AND d.is_active = 1 AND d.department_type IN ('CLINICAL','LAB')
                 ORDER BY d.name
                 """, (rs, rowNum) -> new ScheduleOptionsResponse.DepartmentOption(rs.getLong("id"), rs.getString("code"),
-                rs.getString("name"), rs.getString("valid_from"), rs.getString("valid_to")), staffId);
+                rs.getString("name"), rs.getString("valid_from"), rs.getString("valid_to"), rs.getString("department_type")), staffId);
     }
 
     public HeadTerm currentHeadTerm(long staffId, long departmentId) {
@@ -145,7 +173,9 @@ public class WorkScheduleRepository {
     public List<ScheduleOptionsResponse.RoomOption> roomOptions(long departmentId) {
         return jdbc.query("""
                 SELECT id, code, name, room_type FROM dbo.Room
-                WHERE department_id = ? AND room_type IN ('CONSULTATION', 'ONLINE') AND is_active = 1
+                WHERE department_id = ? AND room_type IN ('CONSULTATION', 'ONLINE', 'LAB') AND is_active = 1
+                  AND (room_type<>'LAB' OR EXISTS (SELECT 1 FROM dbo.RoomService rs JOIN dbo.Service s ON s.id=rs.service_id
+                    WHERE rs.room_id=dbo.Room.id AND rs.is_active=1 AND s.is_active=1 AND s.service_type='CLS'))
                 ORDER BY room_type, code
                 """, (rs, rowNum) -> new ScheduleOptionsResponse.RoomOption(rs.getLong("id"), rs.getString("code"),
                 rs.getString("name"), rs.getString("room_type")), departmentId);
@@ -378,14 +408,14 @@ public class WorkScheduleRepository {
                 FROM dbo.WorkAssignment wa
                 JOIN dbo.Staff st ON st.id = wa.staff_id
                 JOIN dbo.Room r ON r.id = wa.room_id
-                JOIN dbo.Specialty sp ON sp.id = wa.specialty_id
+                LEFT JOIN dbo.Specialty sp ON sp.id = wa.specialty_id
                 LEFT JOIN dbo.ShiftDefinition sh ON sh.id = wa.shift_id
                 WHERE wa.schedule_id = ?
                 ORDER BY wa.work_date, wa.starts_at, st.code
                 """, (rs, rowNum) -> new WorkAssignmentResponse(rs.getLong("id"), rs.getLong("schedule_id"),
                 rs.getString("mode"), rs.getLong("staff_id"), rs.getString("staff_code"), rs.getString("staff_name"),
                 rs.getLong("room_id"), rs.getString("room_code"), rs.getString("room_name"),
-                rs.getLong("specialty_id"), rs.getString("specialty_name"), rs.getObject("shift_id", Long.class),
+                rs.getObject("specialty_id", Long.class), rs.getString("specialty_name"), rs.getObject("shift_id", Long.class),
                 rs.getString("shift_code"), rs.getString("shift_name"), rs.getString("local_start"), rs.getString("local_end"),
                 rs.getString("work_date"), rs.getString("starts_at"), rs.getString("ends_at"), rs.getObject("capacity", Integer.class),
                 Base64.getEncoder().encodeToString(rs.getBytes("version"))), scheduleId);

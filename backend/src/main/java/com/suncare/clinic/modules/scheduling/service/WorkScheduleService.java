@@ -44,7 +44,7 @@ public class WorkScheduleService {
         if (departmentId == null) {
             return new ScheduleOptionsResponse(departments, List.of(), List.of(), List.of(), repository.activeShiftOptions());
         }
-        if (!repository.currentHeadOf(account.staffId(), departmentId) || !repository.clinicalDepartment(departmentId)) {
+        if (!repository.currentHeadOf(account.staffId(), departmentId) || !repository.schedulableDepartment(departmentId)) {
             throw forbidden("DEPARTMENT_SCOPE", "Bạn chỉ có thể xem dữ liệu trong khoa đang phụ trách.");
         }
         return new ScheduleOptionsResponse(departments, repository.staffOptions(departmentId),
@@ -54,10 +54,11 @@ public class WorkScheduleService {
     @Transactional
     public WorkScheduleResponse createDraft(CurrentAccountResponse account, DraftScheduleRequest request) {
         requireSchedulePermission(account);
+        repository.lockMutation();
         if (request.periodEnd().isBefore(request.periodStart())) {
             throw bad("INVALID_PERIOD", "Ngày kết thúc phải từ ngày bắt đầu trở đi.");
         }
-        if (!repository.clinicalDepartment(request.departmentId())
+        if (!repository.schedulableDepartment(request.departmentId())
                 || !repository.currentHeadOf(account.staffId(), request.departmentId())) {
             throw forbidden("DEPARTMENT_SCOPE", "Bạn chưa có nhiệm kỳ trưởng khoa đang hiệu lực tại khoa đã chọn. Hãy nhờ quản trị viên kiểm tra phân công khoa và thời hạn nhiệm kỳ.");
         }
@@ -80,11 +81,15 @@ public class WorkScheduleService {
     public List<WorkAssignmentResponse> addAssignment(CurrentAccountResponse account, long scheduleId,
                                                       WorkAssignmentCreateRequest request) {
         requireSchedulePermission(account);
+        repository.lockMutation();
         WorkScheduleRepository.ScheduleIdentity schedule = lockEditableSchedule(account, scheduleId);
         String mode = request.mode() == null ? "ONSITE" : request.mode();
-        if (!List.of("ONSITE", "ONLINE").contains(mode)) {
-            throw bad("INVALID_ASSIGNMENT_MODE", "Chỉ hỗ trợ ONSITE và ONLINE.");
+        boolean lab = "LAB".equals(repository.departmentType(schedule.departmentId()));
+        if (!(lab ? "LAB".equals(mode) : List.of("ONSITE", "ONLINE").contains(mode))) {
+            throw bad("INVALID_ASSIGNMENT_MODE", "Khoa CLS chỉ nhận phân công LAB; khoa khám nhận ONSITE/ONLINE.");
         }
+        if (lab && (request.specialtyId()!=null || request.capacity()!=null))
+            throw bad("INVALID_LAB_ASSIGNMENT", "Phân công LAB không nhận chuyên khoa hoặc sức chứa.");
         List<AssignmentSlot> selectedSlots = resolveWorkSlots(request);
         List<LocalDate> workDates = selectedSlots.stream().map(AssignmentSlot::workDate).distinct().toList();
         List<Long> shiftIds = selectedSlots.stream().map(AssignmentSlot::shiftId).distinct().toList();
@@ -113,17 +118,17 @@ public class WorkScheduleService {
                 throw bad("STAFF_OUTSIDE_DEPARTMENT", "Bác sĩ phải đang thuộc khoa vào tất cả ngày được chọn.");
             }
         }
-        if (!repository.hasRole(staff.id(), "DOCTOR")) {
-            throw bad("INVALID_STAFF_ROLE", "Lịch chỉ có thể phân công cho bác sĩ.");
+        if (!repository.hasRole(staff.id(), lab ? "LAB_STAFF" : "DOCTOR")) {
+            throw bad("INVALID_STAFF_ROLE", "Nhân viên cần có vai trò phù hợp: LAB_STAFF cho khoa CLS, DOCTOR cho khoa khám.");
         }
-        if (!repository.hasSpecialty(staff.id(), schedule.departmentId(), request.specialtyId())) {
+        if (!lab && (request.specialtyId()==null || !repository.hasSpecialty(staff.id(), schedule.departmentId(), request.specialtyId()))) {
             throw bad("INVALID_SPECIALTY", "Bác sĩ phải được phân chuyên khoa và khoa phải liên kết chuyên khoa đó.");
         }
 
         WorkScheduleRepository.RoomIdentity room = repository.lockRoom(request.roomId());
-        String expectedRoomType = "ONSITE".equals(mode) ? "CONSULTATION" : "ONLINE";
+        String expectedRoomType = "LAB".equals(mode) ? "LAB" : "ONSITE".equals(mode) ? "CONSULTATION" : "ONLINE";
         if (room == null || !room.active() || room.departmentId() != schedule.departmentId()
-                || !expectedRoomType.equals(room.type())) {
+                || !expectedRoomType.equals(room.type()) || ("LAB".equals(mode) && !repository.labRoomSupportsService(room.id()))) {
             throw bad("INVALID_ROOM", "Phòng phải đang hoạt động, thuộc khoa và đúng loại theo hình thức phân công.");
         }
         Map<Long, WorkScheduleRepository.ShiftIdentity> shifts = new LinkedHashMap<>();
@@ -146,9 +151,9 @@ public class WorkScheduleService {
             LocalDateTime startsAt = date.atTime(LocalTime.parse(shift.localStart())).minusHours(7);
             LocalDateTime endsAt = date.atTime(LocalTime.parse(shift.localEnd())).minusHours(7);
             if (repository.staffConflict(scheduleId, staff.id(), startsAt, endsAt)) {
-                throw conflict("STAFF_TIME_CONFLICT", "Bác sĩ đã có phân công giao thời gian trong đợt lịch này.");
+                throw conflict("STAFF_TIME_CONFLICT", "Nhân viên đã có phân công giao thời gian trong đợt này hoặc lịch đã công bố.");
             }
-            if (repository.roomConflict(scheduleId, room.id(), startsAt, endsAt)) {
+            if (!lab && repository.roomConflict(scheduleId, room.id(), startsAt, endsAt)) {
                 throw conflict("ROOM_TIME_CONFLICT", "Phòng đã có phân công giao thời gian trong đợt lịch này.");
             }
 
@@ -216,10 +221,11 @@ public class WorkScheduleService {
     @Transactional
     public WorkScheduleResponse publish(CurrentAccountResponse account, long scheduleId) {
         requireSchedulePermission(account);
+        repository.lockMutation();
         WorkScheduleRepository.ScheduleIdentity schedule = repository.lockSchedule(scheduleId);
         if (schedule == null) throw missing("SCHEDULE_NOT_FOUND", "Không tìm thấy đợt lịch.");
         if (!repository.currentHeadOf(account.staffId(), schedule.departmentId())
-                || !repository.clinicalDepartment(schedule.departmentId())) {
+                || !repository.schedulableDepartment(schedule.departmentId())) {
             throw forbidden("DEPARTMENT_SCOPE", "Chỉ trưởng khoa đang phụ trách mới được công bố lịch của khoa hiện tại.");
         }
         if (!repository.headCoversPeriod(account.staffId(), schedule.departmentId(), schedule.periodStart(), schedule.periodEnd())) {
@@ -253,7 +259,8 @@ public class WorkScheduleService {
     private void validateAssignmentForPublish(WorkScheduleRepository.ScheduleIdentity schedule,
                                               WorkScheduleRepository.AssignmentIdentity assignment) {
         String mode = assignment.mode();
-        if (!List.of("ONSITE", "ONLINE").contains(mode)
+        boolean lab = "LAB".equals(repository.departmentType(schedule.departmentId()));
+        if (!(lab ? "LAB".equals(mode) : List.of("ONSITE", "ONLINE").contains(mode))
                 || assignment.workDate().isBefore(schedule.periodStart())
                 || assignment.workDate().isAfter(schedule.periodEnd())
                 || assignment.workDate().getDayOfWeek().getValue() == 7) {
@@ -263,19 +270,19 @@ public class WorkScheduleService {
         WorkScheduleRepository.StaffIdentity staff = repository.staff(assignment.staffId());
         if (staff == null || !staff.active()
                 || !repository.hasDepartmentMembership(staff.id(), schedule.departmentId(), assignment.workDate())
-                || !repository.hasRole(staff.id(), "DOCTOR")) {
-            throw conflict("INVALID_STAFF", "Bác sĩ trong phân công không còn hoạt động hoặc không thuộc khoa vào ngày làm việc.");
+                || !repository.hasRole(staff.id(), lab ? "LAB_STAFF" : "DOCTOR")) {
+            throw conflict("INVALID_STAFF", "Nhân viên không còn đúng vai trò, đang hoạt động hoặc thuộc khoa vào ngày làm việc.");
         }
-        if (assignment.specialtyId() == null
-                || !repository.hasSpecialty(staff.id(), schedule.departmentId(), assignment.specialtyId())) {
+        if (!lab && (assignment.specialtyId() == null
+                || !repository.hasSpecialty(staff.id(), schedule.departmentId(), assignment.specialtyId()))) {
             throw conflict("INVALID_SPECIALTY", "Chuyên khoa của phân công không còn hợp lệ trong khoa.");
         }
 
         WorkScheduleRepository.RoomIdentity room = assignment.roomId() == null
                 ? null : repository.lockRoom(assignment.roomId());
-        String expectedRoomType = "ONSITE".equals(mode) ? "CONSULTATION" : "ONLINE";
+        String expectedRoomType = "LAB".equals(mode) ? "LAB" : "ONSITE".equals(mode) ? "CONSULTATION" : "ONLINE";
         if (room == null || !room.active() || room.departmentId() != schedule.departmentId()
-                || !expectedRoomType.equals(room.type())) {
+                || !expectedRoomType.equals(room.type()) || ("LAB".equals(mode) && !repository.labRoomSupportsService(room.id()))) {
             throw conflict("INVALID_ROOM", "Phòng trong phân công không còn hoạt động hoặc không đúng loại.");
         }
 
@@ -300,7 +307,9 @@ public class WorkScheduleService {
             throw conflict("INVALID_SHIFT_TIME", "Thời gian phân công không còn khớp với ca đã cấu hình.");
         }
 
-        if (!repository.hasExaminationPrice(staff.id(), assignment.specialtyId(), mode,
+        if (lab && assignment.specialtyId()!=null)
+            throw conflict("INVALID_LAB_ASSIGNMENT", "Phân công LAB không có chuyên khoa.");
+        if (!lab && !repository.hasExaminationPrice(staff.id(), assignment.specialtyId(), mode,
                 assignment.startsAt(), assignment.endsAt())) {
             throw conflict("EXAMINATION_PRICE_UNAVAILABLE", "Bác sĩ chưa có giá khám đang hiệu lực cho toàn bộ khung giờ đã phân công.");
         }
@@ -323,6 +332,7 @@ public class WorkScheduleService {
     @Transactional
     public List<WorkAssignmentResponse> removeAssignment(CurrentAccountResponse account, long scheduleId, long assignmentId) {
         requireSchedulePermission(account);
+        repository.lockMutation();
         lockEditableSchedule(account, scheduleId);
         if (repository.deleteAssignment(scheduleId, assignmentId) != 1) {
             throw missing("ASSIGNMENT_NOT_FOUND", "Không tìm thấy phân công trong đợt lịch này.");
@@ -336,7 +346,7 @@ public class WorkScheduleService {
         WorkScheduleRepository.ScheduleIdentity schedule = repository.lockSchedule(scheduleId);
         if (schedule == null) throw missing("SCHEDULE_NOT_FOUND", "Không tìm thấy đợt lịch.");
         if (!repository.currentHeadOf(account.staffId(), schedule.departmentId())
-                || !repository.clinicalDepartment(schedule.departmentId())) {
+                || !repository.schedulableDepartment(schedule.departmentId())) {
             throw forbidden("DEPARTMENT_SCOPE", "Chỉ trưởng khoa đang phụ trách mới được sửa lịch của khoa hiện tại.");
         }
         if (!repository.headCoversPeriod(account.staffId(), schedule.departmentId(), schedule.periodStart(), schedule.periodEnd())) {
@@ -350,7 +360,7 @@ public class WorkScheduleService {
         WorkScheduleRepository.ScheduleIdentity schedule = repository.lockSchedule(scheduleId);
         if (schedule == null) throw missing("SCHEDULE_NOT_FOUND", "Không tìm thấy đợt lịch.");
         if (!repository.currentHeadOf(account.staffId(), schedule.departmentId())
-                || !repository.clinicalDepartment(schedule.departmentId())) {
+                || !repository.schedulableDepartment(schedule.departmentId())) {
             throw forbidden("DEPARTMENT_SCOPE", "Chỉ trưởng khoa đang phụ trách mới được xem lịch sử của khoa này.");
         }
     }

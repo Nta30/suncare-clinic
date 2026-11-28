@@ -15,10 +15,12 @@ const DepartmentScheduleManagement = lazy(() => import('./features/scheduling/De
 const StaffAssignments = lazy(() => import('./features/organization/StaffAssignments'))
 const OnsiteAppointmentSearch = lazy(() => import('./features/appointment/OnsiteAppointmentSearch'))
 const AppointmentSchedule = lazy(() => import('./features/appointment/AppointmentSchedule'))
+const LabTimetable = lazy(() => import('./features/clinical/LabTimetable'))
 const DoctorTimetable = lazy(() => import('./features/appointment/DoctorTimetable'))
 const DoctorEncounters = lazy(() => import('./features/encounter/DoctorEncounters'))
 const AllergenManagement = lazy(() => import('./features/encounter/AllergenManagement'))
 const DrugManagement = lazy(() => import('./features/prescription/DrugManagement'))
+const LabWorkspace = lazy(() => import('./features/clinical/LabWorkspace'))
 const CashierPayments = lazy(() => import('./features/billing/CashierPayments'))
 
 const roleLabels = {
@@ -29,7 +31,7 @@ const roleLabels = {
 const plannedLinks = [
   { title: 'Lịch khám được giao', icon: faCalendarCheck, roles: ['DOCTOR', 'DEPARTMENT_HEAD'], mode: 'doctor-appointments' },
   { title: 'Khám trực tiếp', icon: faClipboard, roles: ['DOCTOR'], mode: 'doctor-encounters' },
-  { title: 'Khám và kết quả', icon: faClipboard, roles: ['LAB_STAFF'] },
+  { title: 'Tiếp nhận cận lâm sàng', icon: faClipboard, roles: ['LAB_STAFF'], mode: 'lab-workspace' },
   { title: 'Thu phí', icon: faMoneyBill, roles: ['CASHIER'], mode: 'cashier-payments', description: 'Tra cứu hóa đơn và xác nhận thanh toán tiền mặt' },
   { title: 'Quản trị', icon: faGear, roles: ['SYSTEM_ADMIN'] },
 ]
@@ -56,7 +58,7 @@ function App() {
     if (!token) return
     let active = true
     getCurrentAccount(token).then((current) => {
-      if (active) { setAccount(current); setAuthState('signedIn') }
+      if (active) { setAccount(current); setAuthState('signedIn'); if (current.roles.includes('LAB_STAFF')) setMode('lab-workspace') }
     }).catch((error) => {
       if (!active) return
       if (error.status === 401) {
@@ -77,6 +79,7 @@ function App() {
     setAuthClosing(true)
     await new Promise((resolve) => window.setTimeout(resolve, 180))
     setAccount(current)
+    if (current.roles.includes('LAB_STAFF')) setMode('lab-workspace')
     setAuthState('signedIn')
     setAuthError('')
     setAuthClosing(false)
@@ -186,10 +189,12 @@ function App() {
                 <button onClick={() => setMode('onsite-search')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Tìm lịch khám</button>}
               {account?.roles.includes('PATIENT') &&
                 <button onClick={() => setMode('patient-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch hẹn của tôi</button>}
-              {account?.roles.includes('DOCTOR') &&
-                <button onClick={() => setMode('doctor-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch được giao</button>}
+              {account?.roles.some((role) => ['DOCTOR', 'LAB_STAFF'].includes(role)) &&
+                <button onClick={() => setMode(account.roles.includes('LAB_STAFF') ? 'lab-timetable' : 'doctor-appointments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Lịch được giao</button>}
               {account?.roles.includes('DOCTOR') &&
                 <button onClick={() => setMode('doctor-encounters')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Khám trực tiếp</button>}
+              {account?.roles.includes('LAB_STAFF') &&
+                <button onClick={() => setMode('lab-workspace')} className='rounded-lg px-3 py-2 hover:bg-suncare-100'>Cận lâm sàng</button>}
               {account?.roles.includes('CASHIER') &&
                 <button onClick={() => setMode('cashier-payments')} className="rounded-lg px-3 py-2 hover:bg-suncare-100">Thu phí</button>}
               <button onClick={openLogoutDialog} className="rounded-lg bg-suncare-100 px-3 py-2 hover:bg-suncare-200">Đăng xuất</button>
@@ -201,7 +206,7 @@ function App() {
         </div>
       </header>
 
-      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens', 'drugs', 'cashier-payments'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
+      <main className={authState === 'guest' ? 'flex w-full flex-1 flex-col' : ['patient-appointments', 'doctor-appointments', 'doctor-encounters', 'allergens', 'drugs', 'cashier-payments', 'lab-workspace', 'lab-timetable'].includes(mode) ? 'w-full flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8' : mode === 'onsite-search' ? 'flex w-full flex-1 flex-col px-3 py-3 sm:px-5 lg:px-8 xl:min-h-0 xl:overflow-hidden' : mode === 'department-schedule' ? 'w-full flex-1 px-3 py-5 sm:px-5 lg:px-8' : 'mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10'}>
         {authState === 'signedIn' && mode === 'drugs' && account?.permissions.includes('CATALOG_MANAGE') &&
           <Suspense fallback={<p role='status'>Đang tải danh mục thuốc...</p>}>
             <DrugManagement key={account.accountId} onSessionExpired={handleSessionExpired} />
@@ -316,6 +321,14 @@ function App() {
         {authState === 'signedIn' && mode === 'doctor-encounters' && account?.roles.includes('DOCTOR') &&
           <Suspense fallback={<p role='status' className='p-6'>Đang tải màn khám...</p>}>
             <DoctorEncounters key={account.accountId} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'lab-timetable' && account?.roles.includes('LAB_STAFF') &&
+          <Suspense fallback={<p role='status'>Đang tải lịch được giao...</p>}>
+            <LabTimetable key={account.accountId} onSessionExpired={handleSessionExpired} />
+          </Suspense>}
+        {authState === 'signedIn' && mode === 'lab-workspace' && account?.roles.includes('LAB_STAFF') &&
+          <Suspense fallback={<p role='status'>Đang tải cận lâm sàng...</p>}>
+            <LabWorkspace key={account.accountId} account={account} onSessionExpired={handleSessionExpired} />
           </Suspense>}
         {authState === 'signedIn' && mode === 'cashier-payments' && account?.roles.includes('CASHIER') &&
           <Suspense fallback={<p role='status'>Đang tải màn thu phí...</p>}>

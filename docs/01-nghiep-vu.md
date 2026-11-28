@@ -45,6 +45,10 @@ Yêu cầu bổ sung ngày 2026-11-25 về dị ứng: một bệnh nhân có th
 
 **Online:** chọn chuyên khoa/giờ, có thể chọn bác sĩ → xác định bác sĩ và báo giá → giữ chỗ 5 phút + hóa đơn phí khám → yêu cầu MoMo → giao dịch hợp lệ trong hạn → Appointment + Encounter → video → khám; CLS nếu có theo luồng thu bổ sung. Mất kết nối không tự kết thúc Encounter.
 
+**Tiếp nhận CLS (P25):** chỉ định đủ tiền/còn hạn xuất hiện tại phòng hỗ trợ dịch vụ thuộc khoa thực hiện, theo phân công LAB đã công bố và còn giờ trực. Nhân viên xác nhận đúng bệnh nhân có mặt rồi tiếp nhận; check-in nội bộ và tiếp nhận cùng giao dịch, không có nút check-in riêng. Quyết định 2026-11-28: mỗi nhân viên có thể phụ trách nhiều chỉ định ACCEPTED/IN_PROGRESS đồng thời; mỗi chỉ định vẫn chỉ có một queue active và một người tiếp nhận. Quay lại/reload/đăng nhập lại không giải phóng trách nhiệm. Chỉ nhân viên đã nhận mới được bắt đầu; kiểm lại tiền/hạn/phòng/ca. Đã bắt đầu trong hạn được tiếp tục sau hạn. P25 chỉ đến bắt đầu; nhập/phát hành kết quả thuộc P27.
+
+**Phân lịch LAB (quyết định 2026-11-28):** trưởng khoa LAB có DOCTOR + DEPARTMENT_HEAD và nhiệm kỳ đúng khoa được tạo/công bố lịch cho nhân viên LAB_STAFF thuộc khoa. Admin gán phân khoa và nhiệm kỳ, không tự có quyền công bố. Dùng ca sáng/chiều đã cấu hình và calendar thứ Hai–thứ Bảy hiện có; LAB không nhận chuyên khoa, sức chứa hoặc giá khám, không sinh OnlineSlot. Phòng LAB đang hoạt động phải có ít nhất một dịch vụ CLS đang được hỗ trợ. Nhiều nhân viên được cùng phòng/cùng ca; một nhân viên không giao ca giữa LAB/ONSITE/ONLINE. Lịch DRAFT được thêm/bỏ phân công; PUBLISHED chỉ đọc, không đổi công việc đang có chỉ định.
+
 **Hoãn CLS:** chỉ định đã đủ tiền nhưng chưa bắt đầu → không vào hàng đợi, hoặc đóng lượt xếp hàng hiện tại → Encounter WAITING_CLS → quay lại trong hạn → lab xác nhận có mặt, mở lượt hàng đợi mới → tiếp tục. Hết hạn: hủy chỉ định, hủy dòng khoản phải thu trên InvoiceLine, tạo yêu cầu hoàn; bác sĩ quyết định kết thúc/tiếp tục khám.
 
 ## Mặc định kỹ thuật của bản thiết kế

@@ -10,7 +10,7 @@ public record WorkAssignmentResponse(
         long roomId,
         String roomCode,
         String roomName,
-        long specialtyId,
+        Long specialtyId,
         String specialtyName,
         Long shiftId,
         String shiftCode,

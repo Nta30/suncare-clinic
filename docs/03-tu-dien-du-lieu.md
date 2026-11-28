@@ -24,7 +24,7 @@ Tiền `decimal(19,0)` VND; số lượng `decimal(12,3)`; số đo `decimal(18,
 | DepartmentSpecialty | department_id → Department; specialty_id → Specialty; PK(department_id,specialty_id); is_active bit để ngừng liên kết mà không xóa lịch sử; updated_at, version (V14). |
 | StaffDepartment | staff_id → Staff; department_id → Department; valid_from datetime2(3); valid_to? datetime2(3); is_primary bit mặc định 1. Không giao khoảng cho cùng staff. |
 | StaffSpecialty | staff_id → Staff; specialty_id → Specialty; PK(staff_id,specialty_id); is_active bit. |
-| DepartmentHeadAssignment | staff_id → Staff; department_id → Department; valid_from datetime2(3); valid_to? datetime2(3); assigned_by → Account. Chỉ gán Staff có role `DOCTOR` và `DEPARTMENT_HEAD`; xác định phạm vi quyền theo khoa/thời hạn, không suy từ Role đơn thuần. |
+| DepartmentHeadAssignment | staff_id → Staff; department_id → Department; valid_from datetime2(3); valid_to? datetime2(3); assigned_by → Account. Chỉ gán Staff có role `DOCTOR` và `DEPARTMENT_HEAD`; khoa CLINICAL hoặc LAB theo quyết định 2026-11-28; nhiệm kỳ nằm trong phân khoa, xác định phạm vi quyền theo khoa/thời hạn, không suy từ Role đơn thuần. |
 | Room | code UQ; department_id → Department; name nvarchar(150); room_type CONSULTATION/LAB/ONLINE; is_active bit. V15 bổ sung loại ONLINE theo D24; phòng ONLINE được quản lý như tài nguyên phòng, gắn khoa và chống giao lịch. Một phòng CONSULTATION chỉ một bác sĩ tại một thời điểm; phòng LAB được nhiều staff. |
 
 Account tạo sau Patient/Staff trong cùng transaction, tránh FK vòng. Không lưu account_id ngược trong hai bảng hồ sơ. Hồ sơ có thể tồn tại chưa cấp tài khoản nhưng mọi Account phải có một hồ sơ. Với đăng ký bệnh nhân, tạo cả hai nguyên tử.

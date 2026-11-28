@@ -70,6 +70,7 @@ class OnsiteAppointmentBookingIT {
     @MockitoSpyBean private com.suncare.clinic.modules.prescription.repository.PrescriptionRepository prescriptionRepository;
     @MockitoSpyBean private com.suncare.clinic.modules.clinical.repository.ClinicalOrderRepository orderRepository;
 
+    @MockitoSpyBean private com.suncare.clinic.modules.clinical.repository.LabWorkspaceRepository labRepository;
     private MockMvc mvc;
     private String prefix;
     private long departmentId;
@@ -181,7 +182,12 @@ class OnsiteAppointmentBookingIT {
         reset(symptomRepository);
         reset(prescriptionRepository);
         reset(orderRepository);
+        reset(labRepository);
         if (prefix == null) return;
+        jdbc.update("DELETE FROM dbo.ClinicalQueueEntry WHERE order_id IN (SELECT id FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?))",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.WorkAssignment WHERE schedule_id IN (SELECT id FROM dbo.WorkSchedule WHERE department_id=?)",labDepartmentId);
+        jdbc.update("DELETE FROM dbo.WorkSchedule WHERE department_id=?",labDepartmentId);
+        jdbc.update("DELETE FROM dbo.StaffDepartment WHERE department_id=?",labDepartmentId);
         jdbc.update("DELETE FROM dbo.SystemSetting WHERE changed_by IN (?,?)",accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
 
         jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type='ClinicalOrder' AND action='CLINICAL_ORDER_READY' AND entity_id IN (SELECT id FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?))",prefix+"CLS");
@@ -1474,6 +1480,7 @@ class OnsiteAppointmentBookingIT {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"rollback"));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='ClinicalOrder' AND actor_id=?",Integer.class,accountIdForStaff(doctorOneId)));
         reset(orderRepository);
+        reset(labRepository);
         mvc.perform(orderRequest(encounter,service,prefix+"rollback")).andExpect(status().isOk());
         doThrow(new IllegalStateException("P24 existing draft failure")).when(orderRepository).event(anyLong(),anyLong());
         assertThrows(jakarta.servlet.ServletException.class, () -> mvc.perform(orderRequest(encounter,service,prefix+"rollback2")));
@@ -3132,4 +3139,135 @@ class OnsiteAppointmentBookingIT {
     }
 
     private record ShiftTimes(LocalTime start, LocalTime end) { }
+
+    private long labRoom;
+    private long[] labSetup(boolean pay) throws Exception {
+        long invoice=clsCashInvoice();
+        labRoom=jdbc.queryForObject("SELECT id FROM dbo.Room WHERE code=?",Long.class,prefix+"LAB");
+        long schedule=jdbc.queryForObject("INSERT dbo.WorkSchedule(department_id,period_start,period_end,status) OUTPUT INSERTED.id VALUES (?,CAST(GETDATE() AS date),CAST(GETDATE() AS date),'PUBLISHED')",Long.class,labDepartmentId);
+        for(long staff:new long[]{doctorOneId,doctorTwoId}) {
+            jdbc.update("INSERT dbo.AccountRole(account_id,role_id,granted_at) SELECT ?,id,SYSUTCDATETIME() FROM dbo.Role WHERE code='LAB_STAFF'",accountIdForStaff(staff));
+            jdbc.update("INSERT dbo.StaffDepartment(staff_id,department_id,valid_from) VALUES (?,?,DATEADD(day,-1,SYSUTCDATETIME()))",staff,labDepartmentId);
+            jdbc.update("INSERT dbo.WorkAssignment(schedule_id,staff_id,room_id,work_date,mode,starts_at,ends_at) VALUES (?,?,?,CAST(GETDATE() AS date),'LAB',DATEADD(hour,-1,SYSUTCDATETIME()),DATEADD(hour,1,SYSUTCDATETIME()))",schedule,staff,labRoom);
+        }
+        if(pay) mvc.perform(cashRequest(invoice,cashierToken(),prefix+"labpaid","{\"amount\":450000}")).andExpect(status().isOk());
+        return jdbc.queryForList("SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=? ORDER BY id",Long.class,invoice).stream().mapToLong(Long::longValue).toArray();
+    }
+    private String labBody(long id,boolean present) throws Exception {
+        return json.writeValueAsString(java.util.Map.of("roomId",labRoom,"version",labRepository.detail(id).version(),"patientPresent",present));
+    }
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder labRequest(long id,String action,String token,String key,String body) {
+        return post("/api/lab/orders/"+id+"/"+action).header("Authorization","Bearer "+token).header("Idempotency-Key",key).contentType(MediaType.APPLICATION_JSON).content(body);
+    }
+    @Test
+    void labAcceptStartReloadAndReplayPreserveAssignment() throws Exception {
+        long[] orders=labSetup(true); long id=orders[0];
+        mvc.perform(get("/api/lab/orders?roomId="+labRoom).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id=?",Integer.class,id));
+        String body=labBody(id,true);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"accept",body)).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACCEPTED"));
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"accept",body)).andExpect(status().isOk());
+        mvc.perform(get("/api/lab/orders/"+id+"?roomId="+labRoom).header("Authorization","Bearer "+doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(labRequest(id,"start",doctorTwoToken,prefix+"wrong",labBody(id,false))).andExpect(status().isConflict());
+        body=labBody(id,false);
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"start",body)).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"start",body)).andExpect(status().isOk());
+        mvc.perform(labRequest(orders[1],"accept",doctorToken,prefix+"second-accept",labBody(orders[1],true))).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACCEPTED"));
+        mvc.perform(labRequest(orders[1],"start",doctorToken,prefix+"second-start",labBody(orders[1],false))).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id IN (?,?) AND accepted_by=? AND status='STARTED'",Integer.class,id,orders[1],doctorOneId));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET fully_paid_at=DATEADD(day,-20,SYSUTCDATETIME()),expires_at=DATEADD(day,-10,SYSUTCDATETIME()) WHERE id=?",id);
+        mvc.perform(get("/api/lab/orders/"+id+"?roomId="+labRoom).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.acceptedBy").value(doctorOneId));
+        mvc.perform(get("/api/lab/orders?roomId="+labRoom).header("Authorization","Bearer "+doctorTwoToken)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id=? AND status='STARTED'",Integer.class,id));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE order_id=? AND to_status='IN_PROGRESS'",Integer.class,id));
+    }
+    @Test
+    void labRejectsUnpaidWrongRoomOutsideShiftAndInvalidRole() throws Exception {
+        long id=labSetup(false)[0];
+        mvc.perform(get("/api/lab/orders?roomId="+labRoom).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"unpaid",labBody(id,true))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_PAYMENT_REQUIRED"));
+        mvc.perform(get("/api/lab/assignments")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/lab/assignments").header("Authorization","Bearer "+patientOneToken)).andExpect(status().isForbidden());
+        jdbc.update("UPDATE dbo.WorkAssignment SET ends_at=DATEADD(minute,-1,SYSUTCDATETIME()) WHERE staff_id=? AND mode='LAB'",doctorOneId);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"shift",labBody(id,true))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_NOT_ON_DUTY"));
+        mvc.perform(labRequest(id,"accept",doctorTwoToken,prefix+"room",labBody(id,true).replace("\"roomId\":"+labRoom,"\"roomId\":99999999"))).andExpect(status().isConflict());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id=?",Integer.class,id));
+    }
+    @Test
+    void labExpiryVersionPresenceAndCancelledLineAreCheckedUnderLock() throws Exception {
+        long id=labSetup(true)[0];
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"presence",labBody(id,false))).andExpect(status().isBadRequest());
+        String old=labBody(id,true);jdbc.update("UPDATE dbo.ClinicalOrder SET indication='Changed' WHERE id=?",id);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"stale",old)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_VERSION_CONFLICT"));
+        jdbc.update("UPDATE dbo.InvoiceLine SET status='CANCELLED',cancelled_at=SYSUTCDATETIME(),cancel_reason='ORDER_CANCELLED' WHERE order_id=?",id);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"cancel",labBody(id,true))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_PAYMENT_REQUIRED"));
+        jdbc.update("UPDATE dbo.InvoiceLine SET status='ACTIVE',cancelled_at=NULL,cancel_reason=NULL WHERE order_id=?",id);
+        jdbc.update("UPDATE dbo.ClinicalOrder SET fully_paid_at=DATEADD(day,-20,SYSUTCDATETIME()),expires_at=SYSUTCDATETIME() WHERE id=?",id);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"expired",labBody(id,true))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_ORDER_EXPIRED"));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET expires_at=DATEADD(day,1,SYSUTCDATETIME()) WHERE id=?",id);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"accept",labBody(id,true))).andExpect(status().isOk());
+        jdbc.update("UPDATE dbo.ClinicalOrder SET expires_at=SYSUTCDATETIME() WHERE id=?",id);
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"late",labBody(id,false))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_ORDER_EXPIRED"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE id=? AND started_at IS NOT NULL",Integer.class,id));
+    }
+    @Test
+    void labAuditFailureRollsBackQueueStateEventsAndReceipt() throws Exception {
+        long id=labSetup(true)[0];String body=labBody(id,true);
+        doThrow(new IllegalStateException("P25 audit failure")).when(labRepository).event(org.mockito.ArgumentMatchers.eq(id),anyLong(),anyString(),anyString(),org.mockito.ArgumentMatchers.any());
+        assertThrows(Exception.class,()->mvc.perform(labRequest(id,"accept",doctorToken,prefix+"rollback",body)));
+        assertEquals("READY",labRepository.detail(id).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id=?",Integer.class,id));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"rollback"));
+        reset(labRepository);
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"rollback",body)).andExpect(status().isOk());
+        jdbc.update("DELETE dbo.AccountRole WHERE account_id=? AND role_id=(SELECT id FROM dbo.Role WHERE code='LAB_STAFF')",accountIdForStaff(doctorOneId));
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"revoked",labBody(id,false))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void labStartChecksExactExpiryBoundaryAndRollsBackWhenAuditFails() throws Exception {
+        long id=labSetup(true)[0];
+        mvc.perform(labRequest(id,"accept",doctorToken,prefix+"accept",labBody(id,true))).andExpect(status().isOk());
+        var expiry=labRepository.now().plusSeconds(30);
+        jdbc.update("UPDATE dbo.ClinicalOrder SET expires_at=? WHERE id=?",expiry,id);
+        org.mockito.Mockito.doReturn(expiry).when(labRepository).now();
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"at-expiry",labBody(id,false))).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LAB_ORDER_EXPIRED"));
+        org.mockito.Mockito.doReturn(expiry.minusNanos(1000000)).when(labRepository).now();
+        String body=labBody(id,false);
+        doThrow(new IllegalStateException("P25 start audit failure")).when(labRepository).event(org.mockito.ArgumentMatchers.eq(id),anyLong(),anyString(),org.mockito.ArgumentMatchers.eq("IN_PROGRESS"),org.mockito.ArgumentMatchers.any());
+        assertThrows(Exception.class,()->mvc.perform(labRequest(id,"start",doctorToken,prefix+"start",body)));
+        assertEquals("ACCEPTED",labRepository.detail(id).status());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE id=? AND started_at IS NOT NULL",Integer.class,id));
+        reset(labRepository);org.mockito.Mockito.doReturn(expiry.minusNanos(1000000)).when(labRepository).now();
+        mvc.perform(labRequest(id,"start",doctorToken,prefix+"start",body)).andExpect(status().isOk());
+        assertEquals(expiry.minusNanos(1000000),jdbc.queryForObject("SELECT started_at FROM dbo.ClinicalOrder WHERE id=?",LocalDateTime.class,id));
+    }
+    @Test
+    void labTwoStaffCannotAcceptSameOrderAcrossSqlSessions() throws Exception { labRace(false); }
+    @Test
+    void labOneStaffCanAcceptTwoOrdersAcrossSqlSessions() throws Exception { labRace(true); }
+    private void labRace(boolean sameStaff) throws Exception {
+        long[] ids=labSetup(true);
+        if(sameStaff) {
+            long encounter=previousEncounter(patientTwoId,doctorOneId,"LABRACE","IN_PROGRESS");
+            long service=jdbc.queryForObject("SELECT id FROM dbo.Service WHERE code=?",Long.class,prefix+"CLS");
+            var extra=clsDraft(encounter,service,"lab-extra");long invoice=extra.get("invoiceId").asLong();
+            mvc.perform(clsIssue(encounter,invoice,invoiceRepository.detail(encounter,invoice,false).version(),prefix+"lab-extra-issue")).andExpect(status().isOk());
+            mvc.perform(cashRequest(invoice,doctorTwoToken,prefix+"lab-extra-paid","{\"amount\":800000}")).andExpect(status().isOk());
+            ids[1]=extra.get("id").asLong();
+        }
+        String firstBody=labBody(ids[0],true);String secondBody=labBody(sameStaff?ids[1]:ids[0],true);
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        var barrier=new java.util.concurrent.CyclicBarrier(2);
+        org.mockito.Mockito.doAnswer(call->{sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class));barrier.await(15,java.util.concurrent.TimeUnit.SECONDS);return call.callRealMethod();})
+            .when(labRepository).encounterId(anyLong());
+        ExecutorService pool=Executors.newFixedThreadPool(2);
+        try {
+            var a=pool.submit(()->mvc.perform(labRequest(ids[0],"accept",doctorToken,prefix+"race1",firstBody)).andReturn().getResponse().getStatus());
+            var b=pool.submit(()->mvc.perform(labRequest(sameStaff?ids[1]:ids[0],"accept",sameStaff?doctorToken:doctorTwoToken,prefix+"race2",secondBody)).andReturn().getResponse().getStatus());
+            var codes=new java.util.ArrayList<>(java.util.List.of(a.get(30,java.util.concurrent.TimeUnit.SECONDS),b.get(30,java.util.concurrent.TimeUnit.SECONDS)));codes.sort(Integer::compareTo);
+            assertEquals(sameStaff?java.util.List.of(200,200):java.util.List.of(200,409),codes);assertEquals(2,sessions.size());
+            assertEquals(sameStaff?2:1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id IN (?,?) AND status='ACCEPTED'",Integer.class,ids[0],ids[1]));
+        } finally {pool.shutdownNow();reset(labRepository);}
+    }
 }

@@ -18,8 +18,8 @@ Mọi chuyển trạng thái kiểm tra lại dưới khóa, có event/audit tro
 | Encounter | IN_PROGRESS → COMPLETED | Có FINAL diagnosis, mọi order COMPLETED và current published version đã review hoặc CANCELLED; không còn khoản phải thu; không còn đơn DRAFT. Không bắt buộc đơn. |
 | Encounter | PLANNED → CANCELLED/NO_SHOW | Theo transaction Appointment tương ứng; không cho bệnh nhân hủy Encounter đang khám. |
 | ClinicalOrder | PENDING_PAYMENT → READY | SYSTEM khi phân bổ đủ nguyên giá và chưa hủy; ghi fully_paid_at, validity_days, expires_at đúng một lần. |
-| ClinicalOrder | READY → QUEUED | Lab đúng phạm vi xác nhận có mặt, chọn phòng hỗ trợ service, now < expires_at; tạo queue WAITING. |
-| ClinicalOrder | QUEUED → ACCEPTED | Lab đang trực phòng đó nhận; queue WAITING → ACCEPTED. |
+| ClinicalOrder | READY → QUEUED | Check-in nội bộ của lệnh Tiếp nhận: LAB_STAFF đúng phòng/ca xác nhận có mặt, đủ tiền và now < expires_at; nguyên tử với chuyển ACCEPTED. |
+| ClinicalOrder | QUEUED → ACCEPTED | Cùng transaction Tiếp nhận, lưu queue ACCEPTED; Staff chưa có queue ACCEPTED/STARTED khác dưới khóa Staff. Không có action check-in riêng trên UI. |
 | ClinicalOrder | ACCEPTED → IN_PROGRESS | Nhân viên đã nhận, kiểm tra lại còn hạn và tiền; queue ACCEPTED → STARTED; ghi started_at. |
 | ClinicalOrder | QUEUED/ACCEPTED → READY | Bệnh nhân hoãn trước bắt đầu, lab đóng queue DEFERRED; không đổi hạn. |
 | ClinicalOrder | IN_PROGRESS → COMPLETED | Lab phát hành kết quả đầu tiên; queue STARTED → DONE. |
@@ -55,7 +55,7 @@ Ký hiệu: “của mình” với bác sĩ là Appointment.doctor_id = staff c
 | Xác nhận tiền mặt | — | — | — | — | Có | — |
 | Xác nhận MoMo | Không ai thao tác thủ công; chỉ hệ thống xác minh callback/đối soát | — | — | — | — | — |
 | Xử lý hoàn tiền | Xem tiến độ của mình | — | — | — | Mặc định v1, cần xác nhận vận hành | Audit |
-| Phân lịch/công bố | — | Xem của mình | Xem của mình | Trong khoa được giao | — | Quản trị danh mục, không tự có quyền trưởng khoa |
+| Phân lịch/công bố | — | Xem của mình | Xem của mình | Trong khoa CLINICAL hoặc LAB được giao, nhiệm kỳ phải phủ đợt lịch; LAB phân cho LAB_STAFF | — | Gán phân khoa/nhiệm kỳ và quản trị danh mục, không tự có quyền công bố |
 | Giá/danh mục/role | — | — | — | — | — | Có |
 | Danh mục thuốc (P22.a) | — | — | — | — | — | CATALOG_MANAGE xem/tạo/sửa/ngừng sử dụng; không sửa snapshot đơn thuốc |
 | API đơn thuốc (P22.b.1) | — | Đọc danh mục active; xem đơn của mình; tạo/lưu/phát hành/bỏ DRAFT khi Encounter IN_PROGRESS | — | Theo role DOCTOR và bác sĩ phụ trách | — | Không mặc nhiên có quyền kê đơn |

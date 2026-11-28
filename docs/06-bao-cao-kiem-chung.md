@@ -69,7 +69,7 @@ Khoa trong báo cáo lượt khám là Appointment.department_id; khoa CLS là C
 | AT21 | Quyết định Cashier2026-11-26: hóa đơn A=150.000, B=300.000; tiền mặt thu đủ450.000 theo line_no A rồi B, thử thu300.000 bị chặn | Từ chối khoản thiếu trước ghi Payment; thu đủ phân bổ A150.000/B300.000. Kiểm chứng READY thuộcP24, không suy từ UI Cashier hoặc hóa đơn ISSUED. Kịch bản tiền mặt một phần trước đây đã được thay bằng quyết định này; vẫn kiểm tra từng allocation để hoàn/hủy đúng dòng. |
 | AT22 | MoMo và tiền mặt đồng thời trả cùng hóa đơn | Không allocate vượt charge; MoMo thực thu thừa có request hoàn. |
 | AT23 | Order vừa trả đủ nhưng chưa đến lab | READY, có hạn 10 ngày, chưa có queue. |
-| AT24 | Lab xác nhận có mặt trong hạn | Tạo một active queue ở phòng hỗ trợ service, không tạo lịch khám mới. |
+| AT24 | Lab xác nhận có mặt trong hạn | Lệnh Tiếp nhận tạo active queue ACCEPTED và Order ACCEPTED nguyên tử, đúng phòng/ca; không tạo lịch khám mới. Hai nhân viên nhận cùng một chỉ định: chỉ một thành công. Một nhân viên nhận hai chỉ định khác nhau đồng thời: cả hai thành công nếu từng chỉ định đủ điều kiện. Reload giữ người phụ trách. |
 | AT25 | Hoãn sau xếp hàng/tiếp nhận nhưng chưa STARTED, quay lại nhiều lần | Queue cũ DEFERRED, row mới khi quay lại; cùng Order/Encounter/tiền/hạn, không thu lại. |
 | AT26 | Cấu hình đổi từ 10 sang 7 ngày | Order cũ giữ 10 ngày; Order trả đủ sau thay đổi dùng 7. |
 | AT27 | Bắt đầu ở expires_at−1ms, kết quả sau hạn | Cho bắt đầu, job không hủy; phát hành bình thường. |

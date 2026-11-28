@@ -35,6 +35,7 @@ class WorkScheduleIT {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private ObjectMapper json;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean private com.suncare.clinic.modules.scheduling.repository.WorkScheduleRepository scheduleRepository;
     private MockMvc mvc;
     private String prefix;
     private long headStaffId;
@@ -60,6 +61,8 @@ class WorkScheduleIT {
 
     @BeforeEach
     void setUp() throws Exception {
+        org.mockito.Mockito.reset(scheduleRepository);
+        org.junit.jupiter.api.Assertions.assertEquals("SuncareClinicMigrationTest",jdbc.queryForObject("SELECT DB_NAME()",String.class));
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
         prefix = "P13" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
         headStaffId = insertStaff(prefix + "H", "P13 Head");
@@ -144,9 +147,12 @@ class WorkScheduleIT {
 
     @AfterEach
     void cleanUp() {
+        org.mockito.Mockito.reset(scheduleRepository);
+        jdbc.update("DELETE dbo.RoomService WHERE room_id=?",roomId);
+        jdbc.update("DELETE dbo.Service WHERE code=?",prefix+"LABCLS");
         jdbc.update("DELETE FROM dbo.WorkAssignment WHERE schedule_id IN (SELECT id FROM dbo.WorkSchedule WHERE department_id = ?)", departmentId);
         jdbc.update("DELETE FROM dbo.WorkSchedule WHERE department_id = ?", departmentId);
-        jdbc.update("DELETE FROM dbo.AuditEvent WHERE actor_id = ?", headAccountId);
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE actor_id IN (?,?)", headAccountId,doctorAccountId);
         jdbc.update("DELETE FROM dbo.DepartmentHeadAssignment WHERE staff_id = ?", headStaffId);
         jdbc.update("DELETE FROM dbo.StaffSpecialty WHERE staff_id = ?", doctorStaffId);
         jdbc.update("DELETE FROM dbo.StaffDepartment WHERE staff_id IN (?, ?)", headStaffId, doctorStaffId);
@@ -161,6 +167,7 @@ class WorkScheduleIT {
         jdbc.update("DELETE FROM dbo.AuthToken WHERE account_id = ?", headAccountId);
         jdbc.update("DELETE FROM dbo.AuthToken WHERE account_id = ?", doctorAccountId);
         jdbc.update("DELETE FROM dbo.AuthToken WHERE account_id = ?", outsideDoctorAccountId);
+        jdbc.update("DELETE FROM dbo.AuthToken WHERE account_id = ?", labAccountId);
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", headAccountId);
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", doctorAccountId);
         jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id = ?", outsideDoctorAccountId);
@@ -300,5 +307,103 @@ class WorkScheduleIT {
 
     private long insertStaff(String code, String name) {
         return jdbc.queryForObject("INSERT INTO dbo.Staff (code, full_name, sex, is_active) OUTPUT INSERTED.id VALUES (?, ?, 'UNKNOWN', 1)", Long.class, code, name);
+    }
+
+    private void labFixture() {
+        jdbc.update("UPDATE dbo.Department SET department_type='LAB' WHERE id=?",departmentId);
+        jdbc.update("UPDATE dbo.Room SET room_type='LAB' WHERE id=?",roomId);
+        long service=jdbc.queryForObject("INSERT dbo.Service(code,name,service_type,result_type,is_active) OUTPUT INSERTED.id VALUES (?,'P25 fictitious test','CLS','LAB',1)",Long.class,prefix+"LABCLS");
+        jdbc.update("INSERT dbo.RoomService(room_id,service_id,is_active) VALUES (?,?,1)",roomId,service);
+    }
+    private long labDraft() throws Exception {
+        return json.readTree(mvc.perform(post("/api/head/schedules").header("Authorization","Bearer "+headToken)
+            .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("departmentId",departmentId,"periodStart",periodStart,"periodEnd",periodEnd))))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+    }
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder labAssignment(long schedule,long staff,java.util.List<java.util.Map<String,Object>> slots) throws Exception {
+        return post("/api/head/schedules/"+schedule+"/assignments").header("Authorization","Bearer "+headToken).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(java.util.Map.of("staffId",staff,"roomId",roomId,"mode","LAB","workSlots",slots)));
+    }
+    private java.util.List<java.util.Map<String,Object>> labSlots() {
+        return java.util.List.of(java.util.Map.of("workDate",periodStart,"shiftId",shiftId));
+    }
+    @Test void labHeadAssignsPublishesAndMultipleStaffShareRoomWithoutPriceOrSpecialty() throws Exception {
+        labFixture();scheduleId=labDraft();
+        mvc.perform(get("/api/head/schedules/options?departmentId="+departmentId).header("Authorization","Bearer "+headToken))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.departments[0].departmentType").value("LAB")).andExpect(jsonPath("$.rooms[0].roomType").value("LAB"));
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isCreated())
+            .andExpect(jsonPath("$[0].mode").value("LAB")).andExpect(jsonPath("$[0].specialtyId").isEmpty()).andExpect(jsonPath("$[0].capacity").isEmpty());
+        jdbc.update("INSERT dbo.AccountRole(account_id,role_id,granted_at) SELECT ?,id,SYSUTCDATETIME() FROM dbo.Role WHERE code='LAB_STAFF'",doctorAccountId);
+        mvc.perform(labAssignment(scheduleId,doctorStaffId,labSlots())).andExpect(status().isCreated()).andExpect(jsonPath("$.length()").value(2));
+        for(int retry=0;retry<2;retry++) mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED"));
+        org.junit.jupiter.api.Assertions.assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.OnlineSlot WHERE assignment_id IN (SELECT id FROM dbo.WorkAssignment WHERE schedule_id=?)",Integer.class,scheduleId));
+        org.junit.jupiter.api.Assertions.assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='WorkSchedule' AND entity_id=? AND action='WORK_SCHEDULE_PUBLISHED'",Integer.class,scheduleId));
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isConflict());
+    }
+    @Test void labAssignmentRejectsWrongRoleRoomUnsupportedServiceAndInvalidBatchAtomically() throws Exception {
+        labFixture();scheduleId=labDraft();
+        mvc.perform(labAssignment(scheduleId,doctorStaffId,labSlots())).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_STAFF_ROLE"));
+        jdbc.update("UPDATE dbo.RoomService SET is_active=0 WHERE room_id=?",roomId);
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_ROOM"));
+        jdbc.update("UPDATE dbo.RoomService SET is_active=1 WHERE room_id=?",roomId);
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots()).content(json.writeValueAsString(java.util.Map.of("staffId",labStaffId,"roomId",otherRoomId,"mode","LAB","workSlots",labSlots())))).andExpect(status().isBadRequest());
+        mvc.perform(labAssignment(scheduleId,labStaffId,java.util.List.of(java.util.Map.of("workDate",periodStart,"shiftId",shiftId),java.util.Map.of("workDate",periodStart.plusDays(1),"shiftId",Long.MAX_VALUE)))).andExpect(status().isBadRequest());
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots()).content(json.writeValueAsString(java.util.Map.of("staffId",labStaffId,"roomId",roomId,"mode","LAB","specialtyId",specialtyId,"workSlots",labSlots())))).andExpect(status().isBadRequest());
+        org.junit.jupiter.api.Assertions.assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.WorkAssignment WHERE schedule_id=?",Integer.class,scheduleId));
+    }
+    @Test void labPublishRevalidatesRoleMembershipShiftAndHeadTerm() throws Exception {
+        labFixture();scheduleId=labDraft();
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isCreated());
+        jdbc.update("DELETE dbo.AccountRole WHERE account_id=?",labAccountId);
+        mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVALID_STAFF"));
+        jdbc.update("INSERT dbo.AccountRole(account_id,role_id,granted_at) SELECT ?,id,SYSUTCDATETIME() FROM dbo.Role WHERE code='LAB_STAFF'",labAccountId);
+        jdbc.update("UPDATE dbo.StaffDepartment SET valid_to=? WHERE staff_id=?",periodStart.atStartOfDay().minusHours(7),labStaffId);
+        mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andExpect(status().isConflict());
+        jdbc.update("UPDATE dbo.StaffDepartment SET valid_to=NULL WHERE staff_id=?",labStaffId);
+        jdbc.update("UPDATE dbo.WorkAssignment SET ends_at=DATEADD(minute,1,ends_at) WHERE schedule_id=?",scheduleId);
+        mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVALID_SHIFT_TIME"));
+        jdbc.update("UPDATE dbo.DepartmentHeadAssignment SET valid_to=? WHERE staff_id=?",periodStart.atStartOfDay().minusHours(7),headStaffId);
+        mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("HEAD_TERM_OUTSIDE_PERIOD"));
+        org.junit.jupiter.api.Assertions.assertEquals("DRAFT",jdbc.queryForObject("SELECT status FROM dbo.WorkSchedule WHERE id=?",String.class,scheduleId));
+    }
+
+    @Test void labAuditFailureRollsBackAssignmentAndPublication() throws Exception {
+        labFixture();scheduleId=labDraft();
+        org.mockito.Mockito.doThrow(new IllegalStateException("P25 lab audit failure")).when(scheduleRepository).audit(
+            org.mockito.ArgumentMatchers.anyLong(),org.mockito.ArgumentMatchers.eq("WORK_ASSIGNMENT_ADDED"),org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyLong(),org.mockito.ArgumentMatchers.anyString());
+        org.junit.jupiter.api.Assertions.assertThrows(Exception.class,()->mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())));
+        org.junit.jupiter.api.Assertions.assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.WorkAssignment WHERE schedule_id=?",Integer.class,scheduleId));
+        org.mockito.Mockito.reset(scheduleRepository);
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isCreated());
+        org.mockito.Mockito.doThrow(new IllegalStateException("P25 publish audit failure")).when(scheduleRepository).audit(
+            org.mockito.ArgumentMatchers.anyLong(),org.mockito.ArgumentMatchers.eq("WORK_SCHEDULE_PUBLISHED"),org.mockito.ArgumentMatchers.anyString(),org.mockito.ArgumentMatchers.anyLong(),org.mockito.ArgumentMatchers.anyString());
+        org.junit.jupiter.api.Assertions.assertThrows(Exception.class,()->mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)));
+        org.junit.jupiter.api.Assertions.assertEquals("DRAFT",jdbc.queryForObject("SELECT status FROM dbo.WorkSchedule WHERE id=?",String.class,scheduleId));
+        org.mockito.Mockito.reset(scheduleRepository);
+    }
+    @Test void labAdminCanGrantHeadTermButCannotPublishWithoutOwnTerm() throws Exception {
+        labFixture();jdbc.update("DELETE dbo.DepartmentHeadAssignment WHERE staff_id=?",headStaffId);
+        jdbc.update("INSERT dbo.AccountRole(account_id,role_id,granted_at) SELECT ?,id,SYSUTCDATETIME() FROM dbo.Role WHERE code='SYSTEM_ADMIN'",doctorAccountId);
+        mvc.perform(post("/api/admin/staff-assignments/heads").header("Authorization","Bearer "+doctorToken).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(java.util.Map.of("staffId",headStaffId,"departmentId",departmentId,"validFrom",LocalDateTime.now().minusDays(1)))))
+            .andExpect(status().isOk());
+        scheduleId=labDraft();
+        mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+doctorToken)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/head/schedules/options?departmentId="+otherDepartmentId).header("Authorization","Bearer "+headToken)).andExpect(status().isForbidden());
+    }
+    @Test void labConcurrentPublicationAcrossSchedulesAllowsOnlyOneStaffAssignment() throws Exception {
+        labFixture();scheduleId=labDraft();long other=labDraft();
+        mvc.perform(labAssignment(scheduleId,labStaffId,labSlots())).andExpect(status().isCreated());
+        mvc.perform(labAssignment(other,labStaffId,labSlots())).andExpect(status().isCreated());
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();var barrier=new java.util.concurrent.CyclicBarrier(2);
+        org.mockito.Mockito.doAnswer(call->{sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class));barrier.await(15,java.util.concurrent.TimeUnit.SECONDS);return call.callRealMethod();})
+            .when(scheduleRepository).lockMutation();
+        var pool=java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var a=pool.submit(()->mvc.perform(post("/api/head/schedules/"+scheduleId+"/publish").header("Authorization","Bearer "+headToken)).andReturn().getResponse().getStatus());
+            var b=pool.submit(()->mvc.perform(post("/api/head/schedules/"+other+"/publish").header("Authorization","Bearer "+headToken)).andReturn().getResponse().getStatus());
+            var codes=new java.util.ArrayList<>(java.util.List.of(a.get(30,java.util.concurrent.TimeUnit.SECONDS),b.get(30,java.util.concurrent.TimeUnit.SECONDS)));codes.sort(Integer::compareTo);
+            org.junit.jupiter.api.Assertions.assertEquals(java.util.List.of(200,409),codes);org.junit.jupiter.api.Assertions.assertEquals(2,sessions.size());
+        } finally {pool.shutdownNow();org.mockito.Mockito.reset(scheduleRepository);}
     }
 }
