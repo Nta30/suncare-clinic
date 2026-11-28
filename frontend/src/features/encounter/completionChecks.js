@@ -1,4 +1,4 @@
-export function completionChecks({ clinical, billing, prescriptions, blockers = [] }) {
+export function completionChecks({ clinical, billing, prescriptions, orders, blockers = [] }) {
   const row = (name, status, detail) => ({ name, status, detail })
   const diagnosis = clinical ? row('Chẩn đoán xác định', clinical.diagnoses.some((item) => item.diagnosisType === 'FINAL') ? 'pass' : 'fail',
     clinical.diagnoses.some((item) => item.diagnosisType === 'FINAL') ? 'Đã lưu chẩn đoán FINAL.' : 'Chưa có chẩn đoán FINAL được lưu.') : row('Chẩn đoán xác định', 'warning', 'Chưa đọc được dữ liệu chẩn đoán.')
@@ -12,6 +12,12 @@ export function completionChecks({ clinical, billing, prescriptions, blockers = 
     const hasCls = billing.invoices.some(({ invoice }) => invoice.lines.some((line) => line.lineType === 'CLS'))
     cls = hasCls ? row('Chỉ định cận lâm sàng', 'fail', 'Có dòng CLS. Lượt khám có chỉ định CLS chưa hỗ trợ hoàn tất tại đây.')
       : row('Chỉ định cận lâm sàng', 'warning', 'Chưa thấy dòng CLS trong hóa đơn. Chưa xác nhận được toàn bộ chỉ định; hệ thống sẽ kiểm tra lại khi hoàn tất.')
+  }
+  if (orders) {
+    const unpaid = orders.filter((item) => item.status !== 'CANCELLED' && ['NOT_DUE', 'UNPAID', 'PARTIAL'].includes(item.paymentStatus)).length
+    const unfinished = orders.filter((item) => !['COMPLETED', 'CANCELLED'].includes(item.status)).length
+    if (orders.length) cls = row('Chỉ định cận lâm sàng', 'fail', `${unpaid} chỉ định chưa thanh toán đủ; ${unfinished} chỉ định chưa hoàn thành. Chưa thể hoàn tất lượt khám có CLS tại đây.`)
+    else if (cls.status !== 'fail') cls = row('Chỉ định cận lâm sàng', 'pass', 'Không có chỉ định CLS. Hệ thống vẫn kiểm tra lại khi hoàn tất.')
   }
   let prescription = row('Đơn thuốc', 'warning', 'Chưa đọc được dữ liệu đơn thuốc.')
   if (prescriptions) {

@@ -43,7 +43,7 @@ public class CashPaymentService {
         BigDecimal due = lines.stream().map(InvoiceBalanceResponse.LineBalance::outstanding).reduce(BigDecimal.ZERO, BigDecimal::add);
         boolean active = lines.stream().anyMatch(line -> "ACTIVE".equals(line.status()));
         String status = !"ISSUED".equals(invoice.status()) || !active ? "NOT_APPLICABLE" : due.signum() > 0 ? "PENDING" : "PAID";
-        boolean canCollect = "PENDING".equals(status) && lines.stream().noneMatch(line -> "CLS".equals(line.lineType()) && "ACTIVE".equals(line.status()));
+        boolean canCollect = "PENDING".equals(status) && payableOrders(source.encounterId(),lines,payments.orderLines(invoiceId));
         var patient = workspace.patient(invoice.patientId());
         return new CashierInvoiceDetailResponse(invoice, patient[0], patient[1], due.toBigIntegerExact().toString(), status, canCollect);
     }
@@ -84,15 +84,16 @@ public class CashPaymentService {
         if (!"ISSUED".equals(invoice.status()))
             throw conflict("INVOICE_NOT_ISSUED", "Chỉ thu tiền cho hóa đơn đã phát hành.");
         var lines = payments.balances(invoiceId);
-        // CLS readiness/expiry is implemented together with order payment at P24.
-        if (lines.stream().anyMatch(line -> "CLS".equals(line.lineType()) && "ACTIVE".equals(line.status())))
-            throw conflict("CLS_PAYMENT_NOT_AVAILABLE", "Thu tiền chỉ định cận lâm sàng chưa được triển khai.");
+        var orders=payments.orderLines(invoiceId);
+        if(!payableOrders(source.encounterId(),lines,orders))
+            throw conflict("CLINICAL_ORDER_NOT_PAYABLE","Chỉ định không còn hợp lệ để thu tiền. Hãy tải lại hóa đơn.");
         BigDecimal outstanding = lines.stream().map(InvoiceBalanceResponse.LineBalance::outstanding)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (request.amount().compareTo(outstanding) > 0)
             throw conflict("PAYMENT_EXCEEDS_BALANCE", "Số tiền không khớp khoản thanh toán. Hãy tải lại hóa đơn.");
         if (request.amount().compareTo(outstanding) < 0)
             throw conflict("FULL_PAYMENT_REQUIRED", "Hóa đơn phải được thanh toán toàn bộ. Hãy tải lại hóa đơn.");
+        int validity=orders.stream().anyMatch(order->order.unpaid()) ? payments.validityDays() : 10;
         long paymentId = payments.insert(invoiceId, actor.accountId(), key, request.amount());
         BigDecimal remaining = request.amount();
         for (var line : lines) {
@@ -100,6 +101,15 @@ public class CashPaymentService {
             if (allocated.signum() > 0) payments.allocate(paymentId, line.lineId(), allocated);
             remaining = remaining.subtract(allocated);
             if (remaining.signum() == 0) break;
+        }
+        if(remaining.signum()!=0) throw conflict("PAYMENT_ALLOCATION_INVALID","Không thể phân bổ đủ tiền vào các dòng hóa đơn.");
+        var settled=payments.balances(invoiceId);
+        for(var order:orders) {
+            if(order.unpaid()) {
+                if(settled.stream().noneMatch(line->line.lineId()==order.lineId() && line.outstanding().signum()==0))
+                    throw conflict("PAYMENT_ALLOCATION_INVALID","Dòng chỉ định chưa được phân bổ đủ tiền.");
+                payments.ready(order.orderId(),paymentId,validity);
+            }
         }
         payments.audit(actor.accountId(), paymentId);
         return payments.detail(paymentId, false);
@@ -112,8 +122,22 @@ public class CashPaymentService {
             throw conflict("ONLINE_HOLD_CASH_NOT_ALLOWED", "Không thu tiền mặt cho hóa đơn giữ chỗ khám online.");
         if (source.encounterId() == null || source.appointmentId() == null) throw notFound();
         payments.lockSource(source);
+        invoices.lockClinicalOrders(invoiceId);
         invoices.lockInvoice(source.encounterId(), invoiceId);
         return source;
+    }
+
+    private boolean payableOrders(long encounterId,java.util.List<InvoiceBalanceResponse.LineBalance> lines,
+            java.util.List<CashPaymentRepository.OrderLine> orders) {
+        for(var line:lines) {
+            if(!"CLS".equals(line.lineType()) || !"ACTIVE".equals(line.status())) continue;
+            var order=orders.stream().filter(item->item.lineId()==line.lineId()).findFirst().orElse(null);
+            if(order==null || order.encounterId()!=encounterId || !order.serviceMatches()) return false;
+            if(line.outstanding().signum()>0) {
+                if(!"PENDING_PAYMENT".equals(order.status()) || !order.unpaid()) return false;
+            } else if(order.unpaid() || "CANCELLED".equals(order.status())) return false;
+        }
+        return true;
     }
 
     private ApiException notFound() {

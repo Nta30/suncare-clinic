@@ -3,6 +3,7 @@ package com.suncare.clinic.modules.billing.service;
 import com.suncare.clinic.common.exception.ApiException;
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.billing.dto.InvoiceResponse;
+import com.suncare.clinic.modules.billing.dto.InvoicePrintResponse;
 import com.suncare.clinic.modules.billing.dto.EncounterBillingSummaryResponse;
 import com.suncare.clinic.modules.billing.repository.CashPaymentRepository;
 import com.suncare.clinic.modules.billing.dto.IssueInvoiceRequest;
@@ -44,6 +45,14 @@ public class InvoiceService {
     }
 
     @Transactional
+    public InvoicePrintResponse printDetail(CurrentAccountResponse account, long encounterId, long invoiceId) {
+        owned(account, encounterId);
+        var detail = invoices.printDetail(encounterId, invoiceId);
+        if (detail == null) throw new ApiException(HttpStatus.NOT_FOUND, "INVOICE_NOT_FOUND", "Không tìm thấy hóa đơn của lượt khám.");
+        return detail;
+    }
+
+    @Transactional
     public EncounterBillingSummaryResponse summary(CurrentAccountResponse account, long encounterId) {
         owned(account, encounterId);
         var source = invoices.source(encounterId);
@@ -62,7 +71,10 @@ public class InvoiceService {
             String paymentStatus = "VOID".equals(invoice.status()) || !hasPayableLines ? "NOT_APPLICABLE"
                     : !"ISSUED".equals(invoice.status()) ? "NOT_DUE"
                     : settled && paid.signum() > 0 ? "PAID" : paid.signum() > 0 ? "PARTIAL" : "UNPAID";
-            billingInvoices.add(new EncounterBillingSummaryResponse.BillingInvoice(invoice, money(paid), paymentStatus));
+            var outstanding = "VOID".equals(invoice.status()) ? java.math.BigDecimal.ZERO
+                    : balances.stream().filter(line -> "ACTIVE".equals(line.status()))
+                        .map(line -> line.outstanding()).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            billingInvoices.add(new EncounterBillingSummaryResponse.BillingInvoice(invoice, money(paid), paymentStatus, money(outstanding)));
             received = received.add(paid);
             if ("VOID".equals(invoice.status())) continue;
             invoiced = invoiced.add(invoice.totalAmount());
@@ -109,25 +121,42 @@ public class InvoiceService {
         if(replay!=null) return replay;
         writable(state);
         configured();
+        invoices.lockClinicalOrders(invoiceId);
         invoices.lockInvoice(encounterId,invoiceId);
         var invoice=invoices.detail(encounterId,invoiceId,false);
         if(invoice==null) throw notFound();
         if(!"DRAFT".equals(invoice.status())) throw conflict("INVOICE_NOT_DRAFT","Hóa đơn đã phát hành hoặc đã hủy, không thể phát hành lại.");
         var source=invoices.source(encounterId);
         requireSource(source);
-        // P20 only issues the examination invoice. CLS draft lines belong to P24.
-        if(invoice.patientId()!=source.patientId() || invoice.lines().size()!=1) throw invalidInvoice();
-        var line=invoice.lines().getFirst();
-        if(!"EXAMINATION".equals(line.lineType()) || !"ACTIVE".equals(line.status()) || line.serviceId()!=source.serviceId()
-                || line.priceId()!=source.priceId() || line.quantity().compareTo(java.math.BigDecimal.ONE)!=0
-                || line.unitPrice().compareTo(source.amount())!=0 || line.amount().compareTo(source.amount())!=0
-                || invoice.totalAmount().compareTo(source.amount())!=0) throw invalidInvoice();
+        validateDraft(encounterId,invoice,source);
         if(invoices.issue(invoiceId,version(request.version()),account.accountId(),source,facilityName,facilityAddress)!=1)
             throw conflict("INVOICE_CHANGED","Hóa đơn đã thay đổi. Hãy tải lại trước khi phát hành.");
         invoices.snapshotLine(invoiceId,source.serviceName());
         invoices.audit(account.accountId(),invoiceId,"INVOICE_ISSUED");
         invoices.receipt(account.accountId(),type,key,hash,invoiceId);
         return invoices.detail(encounterId,invoiceId,false);
+    }
+
+    private void validateDraft(long encounterId,InvoiceResponse invoice,InvoiceRepository.Source source) {
+        if(invoice.patientId()!=source.patientId() || invoice.lines().isEmpty() || !"VND".equals(invoice.currency()))
+            throw invalidInvoice();
+        java.math.BigDecimal total=java.math.BigDecimal.ZERO;
+        for(var line:invoice.lines()) {
+            if(!"ACTIVE".equals(line.status()) || line.serviceName()==null || line.serviceName().isBlank()
+                    || line.unitName()==null || line.unitName().isBlank()
+                    || line.quantity().compareTo(java.math.BigDecimal.ONE)!=0 || line.unitPrice().signum()<=0
+                    || line.amount().compareTo(line.unitPrice())!=0) throw invalidInvoice();
+            if("EXAMINATION".equals(line.lineType())) {
+                if(line.serviceId()!=source.serviceId() || line.priceId()!=source.priceId()
+                        || line.amount().compareTo(source.amount())!=0) throw invalidInvoice();
+            } else if(!"CLS".equals(line.lineType())) throw invalidInvoice();
+            total=total.add(line.amount());
+        }
+        var examinations=invoices.examinationLines(encounterId);
+        if(examinations.size()!=1 || !"ACTIVE".equals(examinations.getFirst().lineStatus())) throw invalidInvoice();
+        var examination=examinations.getFirst();
+        if(examination.invoiceId()!=invoice.id() && !"ISSUED".equals(examination.invoiceStatus())) throw invalidInvoice();
+        if(total.compareTo(invoice.totalAmount())!=0 || !invoices.validClinicalLines(encounterId,invoice.id())) throw invalidInvoice();
     }
 
     private String owned(CurrentAccountResponse account,long encounterId) {
@@ -179,5 +208,5 @@ public class InvoiceService {
     }
     private ApiException notFound() { return new ApiException(HttpStatus.NOT_FOUND,"INVOICE_NOT_FOUND","Không tìm thấy hóa đơn hoặc lượt khám."); }
     private ApiException conflict(String code,String message) { return new ApiException(HttpStatus.CONFLICT,code,message); }
-    private ApiException invalidInvoice() { return conflict("INVOICE_INVALID","Hóa đơn thiếu dòng phí khám hoặc tổng/snapshot không khớp. Hãy tải lại và kiểm tra."); }
+    private ApiException invalidInvoice() { return conflict("INVOICE_INVALID","Hóa đơn thiếu phí khám, chỉ định không hợp lệ hoặc tổng/snapshot không khớp. Hãy tải lại và kiểm tra."); }
 }

@@ -17,12 +17,12 @@ async function request(path = '', method = 'GET', data, idempotencyKey, signal) 
       signal,
     })
   } catch (failure) {
-    if (failure.name === 'TimeoutError') throw new Error('Tra cứu danh mục quá thời gian chờ. Hãy thử lại.', { cause: failure })
+    if (failure.name === 'TimeoutError') throw new Error(method === 'GET' ? 'Tra cứu danh mục quá thời gian chờ. Hãy thử lại.' : 'Chưa nhận được phản hồi. Hãy thử lại cùng yêu cầu để xác minh kết quả.', { cause: failure })
     throw new Error('Không kết nối được máy chủ. Hãy thử lại sau.', { cause: failure })
   }
   let body
   try {
-    body = (path.includes('/invoices') || path.endsWith('/billing-summary'))
+    body = (path.includes('/invoices') || path.includes('/clinical-orders') || path.endsWith('/billing-summary'))
       ? JSON.parse(await response.text(), (key, value, context) => {
         if (!['amount', 'totalAmount', 'unitPrice'].includes(key) || typeof value !== 'number') return value
         if (context?.source) return context.source
@@ -73,9 +73,14 @@ export function savePatientAllergy(encounterId, itemId, data) {
 }
 
 export const getEncounterClinical = (id) => request(`/${id}/clinical`)
+export const getClinicalOrders = (id, signal) => request(`/${id}/clinical-orders`, 'GET', undefined, undefined, signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000))
+export const getClinicalOrderOptions = (id, search, signal) => request(`/${id}/clinical-orders/options?${new URLSearchParams({ search })}`, 'GET', undefined, undefined, signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000))
+export const createClinicalOrder = (id, data, key) => request(`/${id}/clinical-orders`, 'POST', data, key, AbortSignal.timeout(20000))
 export const searchSymptoms = (search, signal) => request(`/api/doctor/symptoms?${new URLSearchParams({ search })}`, 'GET', undefined, undefined,
   signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000))
 export const getEncounterInvoices = (id) => request(`/${id}/invoices`)
+export const getInvoicePrintDetail = (id, invoiceId, signal) => request(`/${id}/invoices/${invoiceId}/print-detail`, 'GET', undefined, undefined,
+  signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000))
 export const getEncounterBillingSummary = (id) => request(`/${id}/billing-summary`)
 export const createExaminationInvoice = (id, key) => request(`/${id}/invoices`, 'POST', undefined, key)
 export const issueExaminationInvoice = (id, invoiceId, version, key) => request(`/${id}/invoices/${invoiceId}/issue`, 'POST', { version }, key)

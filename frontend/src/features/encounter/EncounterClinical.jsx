@@ -1,5 +1,6 @@
 import { cloneElement, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { FlaskConical } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faXmark } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
@@ -110,7 +111,7 @@ function DiagnosisEditor({ type, data, disabled, encounterId, perform, errors, o
   </section>
 }
 
-function ClinicalWorkspace({ data, encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onGuardChange }) {
+function ClinicalWorkspace({ data, encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, orders, onActivateOrders, onSessionExpired, perform, busy, errors, onGuardChange }) {
   const [notes, setNotes] = useState(() => Object.fromEntries(noteFields.map(([name]) => [name, data.notes[name] || ''])))
   const [savedNotes, setSavedNotes] = useState(data.notes)
   const [symptoms, setSymptoms] = useState(data.notes.symptoms || [])
@@ -153,7 +154,9 @@ function ClinicalWorkspace({ data, encounterId, section, footerProps, locked, si
           <section className={box} aria-label='Hỏi bệnh'><h3 className='border-b border-clinical-border pb-3 font-bold'>Hỏi bệnh</h3>{noteField('chiefComplaint')}<SymptomMultiSelect value={symptoms} onChange={setSymptoms} disabled={disabled} onSessionExpired={onSessionExpired} />{fields('notes').symptoms && <p role='alert' className='text-sm text-clinical-danger'>{fields('notes').symptoms}</p>}{noteField('historyOfPresentIllness')}<p className='text-xs text-clinical-muted'>Bệnh sử ghi nhận thời điểm khởi phát, diễn biến, đặc điểm triệu chứng và điều trị trước đó. Chọn “Lưu hồ sơ khám” để lưu thay đổi.</p></section>
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Khám thực thể</h3>{noteField('examinationNote')}</section>
           <DiagnosisEditor type='PRELIMINARY' {...{ data, encounterId, disabled, perform, onSessionExpired, onGuardChange }} errors={fields('diagnosis')} />
+          <section className={box} aria-label='Chỉ định cận lâm sàng'><h3 className='flex items-center gap-2 font-bold'><FlaskConical size={18} className='text-clinical-leaf' />Cận lâm sàng</h3><p className='text-sm text-clinical-muted'>Chỉ định xét nghiệm và chẩn đoán hình ảnh khi cần bổ sung thông tin cho lượt khám.</p><Button variant='primary' disabled={locked} onClick={onActivateOrders}>+ Thêm chỉ định CLS</Button></section>
         </div>
+        <div id='encounter-panel-orders' role='tabpanel' aria-labelledby='encounter-tab-orders' hidden={section !== 'orders'}>{orders}</div>
         <div id='encounter-panel-treatment' role='tabpanel' aria-labelledby='encounter-tab-treatment' hidden={section !== 'treatment'} className='space-y-4'>
           <DiagnosisEditor type='FINAL' {...{ data, encounterId, disabled, perform, onSessionExpired, onGuardChange }} errors={fields('diagnosis')} />
           <section className={box}><h3 className='border-b border-clinical-border pb-3 font-bold'>Hướng xử trí và điều trị</h3>{noteField('treatmentPlan')}</section>
@@ -170,7 +173,7 @@ function ClinicalWorkspace({ data, encounterId, section, footerProps, locked, si
   </>
 }
 
-export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', footerProps, locked, sidebar, invoices, prescriptions, onGuardChange }) {
+export default function EncounterClinical({ encounterId, onSessionExpired, section = 'clinical', footerProps, locked, sidebar, invoices, prescriptions, orders, onActivateOrders, onGuardChange }) {
   const [state, setState] = useState({ loading: true })
   const [reload, setReload] = useState(0)
   const [busy, setBusy] = useState('')
@@ -217,6 +220,6 @@ export default function EncounterClinical({ encounterId, onSessionExpired, secti
       <Button onClick={() => setMessage('')} aria-label='Đóng thông báo lưu thành công' className='shrink-0 border-transparent px-3'><FontAwesomeIcon icon={faXmark} aria-hidden='true' /></Button>
     </div>, document.body)}
     {!state.data.editable && <p className='text-sm text-clinical-muted'>Hồ sơ chỉ đọc. Chỉ được ghi nhận khi lượt khám đang diễn ra.</p>}
-    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, onSessionExpired, perform, busy, errors, onGuardChange }} />
+    <ClinicalWorkspace key={reload} data={state.data} {...{ encounterId, section, footerProps, locked, sidebar, invoices, prescriptions, orders, onActivateOrders, onSessionExpired, perform, busy, errors, onGuardChange }} />
   </div>
 }

@@ -76,6 +76,8 @@ Không tạo bảng EMR sao chép. Patient → Appointment → Encounter là đ�
 | ResultValue | result_version_id → ResultVersion; line_no int; analyte_id? → ServiceAnalyte; analyte_name nvarchar(150); numeric_value? decimal(18,6); text_value? nvarchar(1000); unit? nvarchar(50); reference_text? nvarchar(500); abnormal_flag? NORMAL/LOW/HIGH/CRITICAL; sort_order int; UQ(result_version_id,line_no). Một trong numeric/text, lưu tên/đơn vị/ngưỡng snapshot; mã chỉ số lấy qua analyte_id nếu thuộc danh mục. |
 | ResultAttachment | result_version_id → ResultVersion; file_id → FileObject; PK(result_version_id,file_id). |
 
+ClinicalOrder.indication không bắt buộc nhập. API chuẩn hóa giá trị thiếu, NULL hoặc chỉ có khoảng trắng thành chuỗi rỗng trước khi ghi; cột SQL vẫn NOT NULL. Không tự điền lý do giả.
+
 ClinicalOrder.status là trạng thái vận hành, không thay trạng thái thanh toán/hoàn. READY có thể chưa đến hoặc đã hoãn, phân biệt bằng lịch sử queue. EXPIRED thể hiện bằng CANCELLED + cancel_reason=EXPIRED. Order COMPLETED nghĩa là đã phát hành kết quả, không đồng nghĩa bác sĩ đã đánh giá. Bản kết quả hiện hành là phiên bản PUBLISHED có version_no lớn nhất; bản nháp đính chính không che bản đã phát hành.
 
 ## E. Đơn thuốc

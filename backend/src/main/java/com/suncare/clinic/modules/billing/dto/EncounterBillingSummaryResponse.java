@@ -8,5 +8,5 @@ public record EncounterBillingSummaryResponse(String examinationAmount, String i
         List<Cost> costs, List<BillingInvoice> invoices) {
     public record Cost(String serviceName, String unitName, BigDecimal quantity, String unitPrice,
             String amount, String status) {}
-    public record BillingInvoice(InvoiceResponse invoice, String receivedAmount, String paymentStatus) {}
+    public record BillingInvoice(InvoiceResponse invoice, String receivedAmount, String paymentStatus, String outstandingAmount) {}
 }

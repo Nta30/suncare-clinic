@@ -1,0 +1,272 @@
+.dialog {
+  margin: auto;
+  padding: 0;
+  width: min(64rem, calc(100% - 1.5rem));
+  max-width: none;
+  max-height: calc(100dvh - 1.5rem);
+  border: 1px solid var(--color-clinical-border);
+  border-radius: 1rem;
+  background: white;
+  color: var(--color-clinical-ink);
+  box-shadow: 0 20px 70px #0003;
+}
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.dialog::backdrop {
+  background: #16231cb3;
+}
+.modalHeader,
+.modalFooter {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 1rem 1.25rem;
+}
+.modalHeader {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-clinical-border);
+}
+.modalFooter {
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-clinical-border);
+}
+.scroll {
+  overflow: auto;
+  min-height: 0;
+  padding: 1.25rem;
+  overscroll-behavior: contain;
+}
+.paper {
+  padding: 1.5rem;
+  border: 1px solid var(--color-clinical-border);
+  border-radius: 0.75rem;
+  background: white;
+  color: #16231c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.brandHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid #d5dad6;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.logo > span {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--color-suncare-400);
+  color: #26342c;
+  font-size: 1.4rem;
+}
+.logo strong,
+.logo small {
+  display: block;
+}
+.logo strong {
+  font-size: 1.05rem;
+}
+.logo small {
+  color: #536158;
+}
+.facility {
+  flex: 1;
+  min-width: 12rem;
+  text-align: right;
+}
+.facility h3 {
+  font-size: 1rem;
+  font-weight: 750;
+}
+.facility p {
+  overflow-wrap: anywhere;
+  color: #536158;
+}
+.title {
+  margin: 1.5rem 0 1rem;
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+.identifiers,
+.patient {
+  margin: 0.5rem 0 1.25rem;
+}
+.identifiers div,
+.patient div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+  padding: 0.1rem 0;
+}
+.identifiers dt,
+.patient dt {
+  color: #536158;
+}
+.patient {
+  border-top: 1px solid #d5dad6;
+  padding-top: 1rem;
+}
+.code {
+  overflow-wrap: anywhere;
+}
+.tableViewport {
+  min-width: 0;
+  overflow-x: auto;
+}
+.services {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+  table-layout: fixed;
+}
+.services th {
+  background: #f6f5f1;
+  font-weight: 700;
+}
+.services th,
+.services td {
+  border-bottom: 1px solid #d5dad6;
+  padding: 0.65rem 0.4rem;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.services .sequence {
+  width: 6%;
+}
+.services .quantity {
+  width: 12%;
+}
+.services .amount {
+  text-align: right;
+  width: 17%;
+  font-variant-numeric: tabular-nums;
+}
+.services .totalRow th,
+.services .totalRow td {
+  padding-top: 1.2rem;
+  border-bottom: none;
+  font-size: 1.1rem;
+  font-weight: 750;
+  background: white;
+}
+.printRoot {
+  display: none;
+}
+@media (max-width: 600px) {
+  .scroll {
+    padding: 0.65rem;
+  }
+  .paper {
+    padding: 0.75rem;
+    font-size: 11px;
+  }
+  .facility {
+    text-align: left;
+  }
+  .title {
+    font-size: 1.3rem;
+  }
+  .services th,
+  .services td {
+    padding: 0.5rem 0.2rem;
+  }
+  .modalHeader,
+  .modalFooter {
+    padding: 0.75rem;
+  }
+}
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm;
+  }
+  :global(html:has(body[data-suncare-invoice-print])) {
+    background: white !important;
+    color-scheme: light;
+  }
+  :global(body[data-suncare-invoice-print]) {
+    margin: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  :global(body[data-suncare-invoice-print])
+    > :global(:not([data-suncare-invoice-paper])) {
+    display: none !important;
+  }
+  .dialog::backdrop {
+    display: none !important;
+  }
+  .printRoot {
+    display: block !important;
+    width: auto !important;
+    position: static !important;
+  }
+  .paper {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    width: auto;
+    font:
+      10pt/1.5 Arial,
+      sans-serif;
+    box-shadow: none;
+  }
+  .brandHeader {
+    flex-wrap: nowrap;
+    break-inside: avoid;
+  }
+  .facility {
+    text-align: right;
+  }
+  .title {
+    font-size: 19pt;
+  }
+  .services {
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .tableViewport {
+    overflow: visible;
+  }
+  .invoiceTail {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .services thead {
+    display: table-header-group;
+  }
+  .services tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .services th,
+  .services td {
+    font-size: 9pt;
+    padding: 2.5mm 1.5mm;
+  }
+  .identifiers,
+  .patient {
+    break-inside: avoid;
+  }
+  .services .totalRow th,
+  .services .totalRow td {
+    font-size: 13pt;
+    break-inside: avoid;
+  }
+}

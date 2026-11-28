@@ -66,6 +66,52 @@ public class CashPaymentRepository {
                 .stream().findFirst().orElse(null);
     }
 
+    public List<OrderLine> orderLines(long invoiceId) {
+        return jdbc.query("""
+                SELECT l.id AS line_id,l.service_id AS line_service,o.id,o.encounter_id,o.service_id,o.status,
+                       o.fully_paid_at,o.expires_at,o.validity_days,o.started_at,o.completed_at
+                FROM dbo.InvoiceLine l JOIN dbo.ClinicalOrder o ON o.id=l.order_id
+                WHERE l.invoice_id=? AND l.line_type='CLS' AND l.status='ACTIVE' ORDER BY o.id
+                """,(rs,n)->new OrderLine(rs.getLong("id"),rs.getLong("line_id"),rs.getLong("encounter_id"),
+                rs.getLong("service_id")==rs.getLong("line_service"),rs.getString("status"),
+                rs.getObject("fully_paid_at")==null && rs.getObject("expires_at")==null
+                    && rs.getObject("validity_days")==null && rs.getObject("started_at")==null
+                    && rs.getObject("completed_at")==null),invoiceId);
+    }
+
+    public int validityDays() {
+        var values=jdbc.query("""
+                SELECT CASE WHEN TRY_CONVERT(int,setting_value) BETWEEN 1 AND
+                    DATEDIFF(DAY,SYSUTCDATETIME(),CONVERT(datetime2,'9999-12-31'))
+                    THEN TRY_CONVERT(int,setting_value) END
+                FROM dbo.SystemSetting WITH (HOLDLOCK) WHERE setting_key='CLS_VALIDITY_DAYS'
+                """,(rs,n)->rs.getObject(1,Integer.class));
+        if(values.isEmpty()) return 10;
+        if(values.getFirst()==null) throw new com.suncare.clinic.common.exception.ApiException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,"CLS_VALIDITY_INVALID","Cấu hình hạn CLS không hợp lệ. Hãy liên hệ quản trị viên.");
+        return values.getFirst();
+    }
+
+    public void ready(long orderId,long paymentId,int days) {
+        int changed=jdbc.update("""
+                UPDATE o SET status='READY',fully_paid_at=p.paid_at,validity_days=?,
+                    expires_at=DATEADD(DAY,?,p.paid_at),updated_at=SYSUTCDATETIME()
+                FROM dbo.ClinicalOrder o CROSS JOIN dbo.Payment p
+                WHERE o.id=? AND p.id=? AND o.status='PENDING_PAYMENT' AND o.fully_paid_at IS NULL
+                    AND o.validity_days IS NULL AND o.expires_at IS NULL AND o.started_at IS NULL
+                """,days,days,orderId,paymentId);
+        if(changed!=1) throw new com.suncare.clinic.common.exception.ApiException(
+                org.springframework.http.HttpStatus.CONFLICT,"CLINICAL_ORDER_NOT_PAYABLE","Chỉ định đã thay đổi. Hãy tải lại hóa đơn.");
+        jdbc.update("""
+                INSERT dbo.ClinicalOrderEvent(order_id,from_status,to_status,occurred_at,reason)
+                SELECT ?,'PENDING_PAYMENT','READY',paid_at,N'Đã phân bổ đủ tiền' FROM dbo.Payment WHERE id=?
+                """,orderId,paymentId);
+        jdbc.update("""
+                INSERT dbo.AuditEvent(actor_type,action,entity_type,entity_id,occurred_at,correlation_id,redacted_change)
+                VALUES ('SYSTEM','CLINICAL_ORDER_READY','ClinicalOrder',?,SYSUTCDATETIME(),?,?)
+                """,orderId,UUID.randomUUID().toString(),"payment_id="+paymentId);
+    }
+
     public long insert(long invoiceId, long actorId, String key, BigDecimal amount) {
         return jdbc.queryForObject("""
                 INSERT dbo.Payment(code,invoice_id,method,amount,currency,status,paid_at,confirmed_by,idempotency_key)
@@ -100,4 +146,5 @@ public class CashPaymentRepository {
 
     public record Source(Long encounterId, Long appointmentId, Long holdId) {}
     public record Existing(long id, long invoiceId, Long actorId, String method, BigDecimal amount) {}
+    public record OrderLine(long orderId,long lineId,long encounterId,boolean serviceMatches,String status,boolean unpaid) {}
 }

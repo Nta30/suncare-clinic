@@ -68,10 +68,12 @@ class OnsiteAppointmentBookingIT {
     @MockitoSpyBean private com.suncare.clinic.modules.billing.repository.CashPaymentRepository cashPaymentRepository;
     @MockitoSpyBean private com.suncare.clinic.modules.encounter.repository.SymptomRepository symptomRepository;
     @MockitoSpyBean private com.suncare.clinic.modules.prescription.repository.PrescriptionRepository prescriptionRepository;
+    @MockitoSpyBean private com.suncare.clinic.modules.clinical.repository.ClinicalOrderRepository orderRepository;
 
     private MockMvc mvc;
     private String prefix;
     private long departmentId;
+    private long labDepartmentId;
     private long specialtyId;
     private long shiftId;
     private boolean createdShift;
@@ -95,6 +97,7 @@ class OnsiteAppointmentBookingIT {
 
     @BeforeEach
     void setUp() throws Exception {
+        assertEquals("SuncareClinicMigrationTest",jdbc.queryForObject("SELECT DB_NAME()",String.class));
         reset(bookingRepository);
         reset(encounterRepository);
         reset(historyRepository);
@@ -177,7 +180,23 @@ class OnsiteAppointmentBookingIT {
         reset(cashPaymentRepository);
         reset(symptomRepository);
         reset(prescriptionRepository);
+        reset(orderRepository);
         if (prefix == null) return;
+        jdbc.update("DELETE FROM dbo.SystemSetting WHERE changed_by IN (?,?)",accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
+
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type='ClinicalOrder' AND action='CLINICAL_ORDER_READY' AND entity_id IN (SELECT id FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?))",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.PaymentAllocation WHERE invoice_line_id IN (SELECT l.id FROM dbo.InvoiceLine l JOIN dbo.ClinicalOrder o ON o.id=l.order_id JOIN dbo.Service s ON s.id=o.service_id WHERE s.code=?)",prefix+"CLS");
+
+        jdbc.update("DELETE FROM dbo.CommandReceipt WHERE resource_type='ClinicalOrder' AND account_id IN (?,?)",accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.AuditEvent WHERE entity_type='ClinicalOrder' AND actor_id IN (?,?)",accountIdForStaff(doctorOneId),accountIdForStaff(doctorTwoId));
+        jdbc.update("DELETE FROM dbo.ClinicalOrderEvent WHERE order_id IN (SELECT id FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?))",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.InvoiceLine WHERE order_id IN (SELECT id FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?))",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.ClinicalOrder WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?)",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.RoomService WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?)",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.ServicePrice WHERE service_id IN (SELECT id FROM dbo.Service WHERE code=?)",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.Service WHERE code=?",prefix+"CLS");
+        jdbc.update("DELETE FROM dbo.Room WHERE code=?",prefix+"LAB");
+        jdbc.update("DELETE FROM dbo.Department WHERE code=?",prefix+"LABDEP");
 
         jdbc.update("DELETE FROM dbo.AuditEvent WHERE action='ENCOUNTER_COMPLETED' AND actor_id IN (?,?)", accountIdForStaff(doctorOneId), accountIdForStaff(doctorTwoId));
         jdbc.update("DELETE FROM dbo.ClinicalOrder WHERE code=?", prefix + "CLS");
@@ -1345,6 +1364,628 @@ class OnsiteAppointmentBookingIT {
             go.countDown();
             pool.shutdownNow();
             reset(encounterRepository);
+        }
+    }
+
+    private long clinicalOrderService() {
+        labDepartmentId=jdbc.queryForObject("INSERT dbo.Department(code,name,department_type,is_active) OUTPUT INSERTED.id VALUES (?,N'Khoa giả P24','LAB',1)",Long.class,prefix+"LABDEP");
+        long service=jdbc.queryForObject("INSERT dbo.Service(code,name,service_type,result_type,is_active) OUTPUT INSERTED.id VALUES (?,N'CLS giả P24','CLS','LAB',1)",Long.class,prefix+"CLS");
+        long room=jdbc.queryForObject("INSERT dbo.Room(code,name,room_type,department_id,is_active) OUTPUT INSERTED.id VALUES (?,N'Phòng giả P24','LAB',?,1)",Long.class,prefix+"LAB",labDepartmentId);
+        jdbc.update("INSERT dbo.RoomService(room_id,service_id,is_active) VALUES (?,?,1)",room,service);
+        jdbc.update("INSERT dbo.ServicePrice(service_id,amount,valid_from,created_by) VALUES (?,150000,DATEADD(DAY,-1,SYSUTCDATETIME()),?)",service,accountIdForStaff(doctorOneId));
+        return service;
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder orderRequest(long encounter,long service,String key) {
+        return post("/api/doctor/encounters/"+encounter+"/clinical-orders")
+                .header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",key)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"serviceId\":"+service+",\"performingDepartmentId\":"+labDepartmentId+",\"indication\":\"Kiểm tra giả P24\"}");
+    }
+
+    @Test
+    void clinicalOrderCreatesAtomicDraftSnapshotsAndReplays() throws Exception {
+        long encounter=startedEncounter("cls-create");
+        long service=clinicalOrderService();
+        var first=json.readTree(mvc.perform(orderRequest(encounter,service,prefix+"order")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING_PAYMENT")).andReturn().getResponse().getContentAsString());
+        long invoice=first.get("invoiceId").asLong();
+        assertEquals(new BigDecimal("650000"),jdbc.queryForObject("SELECT total_amount FROM dbo.Invoice WHERE id=?",BigDecimal.class,invoice));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine WHERE invoice_id=?",Integer.class,invoice));
+        jdbc.update("UPDATE dbo.Service SET name=N'Tên mới' WHERE id=?",service);
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=300000 WHERE service_id=?",service);
+        mvc.perform(orderRequest(encounter,service,prefix+"order")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(first.get("id").asLong())).andExpect(jsonPath("$.replayed").value(true))
+                .andExpect(jsonPath("$.amount").value(150000)).andExpect(jsonPath("$.serviceName").value("CLS giả P24"));
+        mvc.perform(orderRequest(encounter,service,prefix+"order2")).andExpect(status().isOk()).andExpect(jsonPath("$.invoiceId").value(invoice));
+        mvc.perform(orderRequest(encounter,service,prefix+"order").content("{\"serviceId\":"+service+",\"performingDepartmentId\":"+labDepartmentId+",\"indication\":\"Nội dung khác\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine WHERE invoice_id=? AND line_type='EXAMINATION'",Integer.class,invoice));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=? AND (fully_paid_at IS NOT NULL OR expires_at IS NOT NULL)",Integer.class,encounter));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE order_id IN (SELECT id FROM dbo.ClinicalOrder WHERE encounter_id=?)",Integer.class,encounter));
+    }
+
+    @Test
+    void clinicalOrderCreatesSupplementWithoutChangingIssuedInvoice() throws Exception {
+        long invoice=cashInvoice(true);
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,invoice);
+        long service=clinicalOrderService();
+        mvc.perform(orderRequest(encounter,service,prefix+"supplement")).andExpect(status().isOk());
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,encounter));
+        assertEquals(new BigDecimal("500000"),jdbc.queryForObject("SELECT total_amount FROM dbo.Invoice WHERE id=? AND status='ISSUED'",BigDecimal.class,invoice));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine WHERE invoice_id=?",Integer.class,invoice));
+        assertEquals(new BigDecimal("150000"),jdbc.queryForObject("SELECT total_amount FROM dbo.Invoice WHERE encounter_id=? AND status='DRAFT'",BigDecimal.class,encounter));
+    }
+
+    @Test
+    void clinicalOrderChecksInputOwnershipStatePriceAndRoom() throws Exception {
+        long encounter=startedEncounter("cls-invalid");
+        long service=clinicalOrderService();
+        mvc.perform(orderRequest(encounter,service,prefix+"bad").with(request -> {
+            request.removeHeader("Authorization");
+            request.addHeader("Authorization","Bearer "+doctorTwoToken);
+            return request;
+        }))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/doctor/encounters/"+encounter+"/clinical-orders").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/doctor/encounters/"+encounter+"/clinical-orders").header("Authorization","Bearer "+patientOneToken).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(orderRequest(encounter,service,prefix+"bad").content("{}" )).andExpect(status().isBadRequest());
+        mvc.perform(orderRequest(encounter,service,prefix+"bad").content("{\"serviceId\":"+service+",\"performingDepartmentId\":"+labDepartmentId+",\"requestedRoomId\":999999,\"indication\":\"test\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("CLINICAL_ROOM_UNSUPPORTED"));
+        jdbc.update("UPDATE dbo.RoomService SET is_active=0 WHERE service_id=?",service);
+        mvc.perform(orderRequest(encounter,service,prefix+"bad")).andExpect(status().isConflict());
+        jdbc.update("UPDATE dbo.RoomService SET is_active=1 WHERE service_id=?",service);
+        jdbc.update("UPDATE dbo.ServicePrice SET valid_from=DATEADD(DAY,1,SYSUTCDATETIME()) WHERE service_id=?",service);
+        mvc.perform(orderRequest(encounter,service,prefix+"bad")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("CLINICAL_PRICE_UNAVAILABLE"));
+        jdbc.update("UPDATE dbo.Encounter SET status='COMPLETED',completed_at=SYSUTCDATETIME() WHERE id=?",encounter);
+        mvc.perform(orderRequest(encounter,service,prefix+"bad")).andExpect(status().isConflict());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=?",Integer.class,encounter));
+    }
+
+    @Test
+    void clinicalOrderAllowsOmittedNullEmptyReasonAndReplaysCanonicalPayload() throws Exception {
+        long encounter = startedEncounter("cls-optional");
+        long service = clinicalOrderService();
+        String base = "{\"serviceId\":" + service + ",\"performingDepartmentId\":" + labDepartmentId;
+        String key = prefix + "optional";
+        String[] reasons = { "", ",\"indication\":null", ",\"indication\":\"\"", ",\"indication\":\"   \"" };
+        for (int i = 0; i < reasons.length; i++) {
+            mvc.perform(orderRequest(encounter, service, key).content(base + reasons[i] + "}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(i > 0));
+        }
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=? AND indication=N''", Integer.class, encounter));
+        mvc.perform(orderRequest(encounter, service, prefix + "too-long")
+                .content(base + ",\"indication\":\"" + "a".repeat(2001) + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void clinicalOrderRollsBackOrderLineInvoiceAndReceiptWhenAuditFails() throws Exception {
+        long encounter=startedEncounter("cls-rollback");
+        long service=clinicalOrderService();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("P24 injected failure after event/audit");
+        }).when(orderRepository).event(anyLong(),anyLong());
+        assertThrows(jakarta.servlet.ServletException.class, () -> mvc.perform(orderRequest(encounter,service,prefix+"rollback")));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=?",Integer.class,encounter));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,encounter));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"rollback"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='ClinicalOrder' AND actor_id=?",Integer.class,accountIdForStaff(doctorOneId)));
+        reset(orderRepository);
+        mvc.perform(orderRequest(encounter,service,prefix+"rollback")).andExpect(status().isOk());
+        doThrow(new IllegalStateException("P24 existing draft failure")).when(orderRepository).event(anyLong(),anyLong());
+        assertThrows(jakarta.servlet.ServletException.class, () -> mvc.perform(orderRequest(encounter,service,prefix+"rollback2")));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=?",Integer.class,encounter));
+        assertEquals(new BigDecimal("650000"),jdbc.queryForObject("SELECT total_amount FROM dbo.Invoice WHERE encounter_id=?",BigDecimal.class,encounter));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine l JOIN dbo.Invoice i ON i.id=l.invoice_id WHERE i.encounter_id=?",Integer.class,encounter));
+    }
+
+    @Test
+    void clinicalOrderConcurrentRetryUsesTwoSqlSessions() throws Exception {
+        clinicalOrderRace(false);
+    }
+
+    @Test
+    void clinicalOrderConcurrentDifferentKeysShareOneDraftAndOneExaminationFee() throws Exception {
+        clinicalOrderRace(true);
+    }
+
+    private void clinicalOrderRace(boolean differentKeys) throws Exception {
+        long encounter=startedEncounter("cls-race");
+        long service=clinicalOrderService();
+        ExecutorService pool=Executors.newFixedThreadPool(2);
+        CountDownLatch ready=new CountDownLatch(2);
+        CountDownLatch go=new CountDownLatch(1);
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class));
+            ready.countDown();
+            if (!go.await(15,java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("P24 barrier timeout");
+            return invocation.callRealMethod();
+        }).when(encounterRepository).appointmentId(encounter);
+        try {
+            var first=pool.submit(() -> mvc.perform(orderRequest(encounter,service,prefix+"race")).andReturn());
+            var second=pool.submit(() -> mvc.perform(orderRequest(encounter,service,prefix+(differentKeys ? "race2" : "race"))).andReturn());
+            assertTrue(ready.await(15,java.util.concurrent.TimeUnit.SECONDS));
+            go.countDown();
+            assertEquals(200,first.get(30,java.util.concurrent.TimeUnit.SECONDS).getResponse().getStatus());
+            assertEquals(200,second.get(30,java.util.concurrent.TimeUnit.SECONDS).getResponse().getStatus());
+            assertEquals(2,sessions.size());
+            assertEquals(differentKeys ? 2 : 1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=?",Integer.class,encounter));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Invoice WHERE encounter_id=?",Integer.class,encounter));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine l JOIN dbo.Invoice i ON i.id=l.invoice_id WHERE i.encounter_id=? AND l.line_type='EXAMINATION'",Integer.class,encounter));
+            assertEquals(new BigDecimal(differentKeys ? "800000" : "650000"),jdbc.queryForObject("SELECT total_amount FROM dbo.Invoice WHERE encounter_id=?",BigDecimal.class,encounter));
+        } finally { go.countDown(); pool.shutdownNow(); reset(encounterRepository); }
+    }
+
+    private tools.jackson.databind.JsonNode clsDraft(long encounter,long service,String suffix) throws Exception {
+        return json.readTree(mvc.perform(orderRequest(encounter,service,prefix+suffix)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder clsIssue(
+            long encounter,long invoice,String version,String key) throws Exception {
+        return post("/api/doctor/encounters/"+encounter+"/invoices/"+invoice+"/issue")
+                .header("Authorization","Bearer "+doctorToken).header("Idempotency-Key",key)
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(java.util.Map.of("version",version)));
+    }
+
+    @Test
+    void clsInvoiceIssuesMixedLinesWithoutRepricingAndReplays() throws Exception {
+        long encounter=startedEncounter("cls-issue");
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"first").get("invoiceId").asLong();
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=300000 WHERE service_id=?",service);
+        clsDraft(encounter,service,"second");
+        var draft=invoiceRepository.detail(encounter,invoice,false);
+        jdbc.update("UPDATE dbo.ServicePrice SET valid_to=DATEADD(SECOND,-1,SYSUTCDATETIME()) WHERE service_id=?",service);
+        jdbc.update("UPDATE dbo.Service SET name=N'Tên danh mục thay đổi' WHERE id=?",service);
+        mvc.perform(clsIssue(encounter,invoice,draft.version(),prefix+"issue"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ISSUED"))
+                .andExpect(jsonPath("$.totalAmount").value(950000)).andExpect(jsonPath("$.lines.length()").value(3))
+                .andExpect(jsonPath("$.lines[1].serviceName").value("CLS giả P24"))
+                .andExpect(jsonPath("$.lines[1].unitPrice").value(150000)).andExpect(jsonPath("$.lines[2].unitPrice").value(300000));
+        var issued=invoiceRepository.detail(encounter,invoice,false);
+        jdbc.update("UPDATE dbo.Patient SET full_name=N'Tên sau phát hành' WHERE id=?",patientOneId);
+        mvc.perform(clsIssue(encounter,invoice,draft.version(),prefix+"issue"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true))
+                .andExpect(jsonPath("$.patientName").value(issued.patientName()));
+        mvc.perform(clsIssue(encounter,invoice,issued.version(),prefix+"issue"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        mvc.perform(clsIssue(encounter,invoice,issued.version(),prefix+"new-issue"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_NOT_DRAFT"));
+        assertEquals(issued,invoiceRepository.detail(encounter,invoice,false));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='Invoice' AND entity_id=? AND action='INVOICE_ISSUED'",Integer.class,invoice));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE encounter_id=? AND status='PENDING_PAYMENT' AND fully_paid_at IS NULL AND validity_days IS NULL AND expires_at IS NULL",Integer.class,encounter));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id=?",Integer.class,invoice));
+    }
+
+    @Test
+    void clsInvoiceIssuesSupplementAndPreservesPaidOriginal() throws Exception {
+        long original=cashInvoice(true);
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,original);
+        mvc.perform(cashRequest(original,cashierToken(),prefix+"paid","{\"amount\":500000}")).andExpect(status().isOk());
+        var before=invoiceRepository.detail(encounter,original,false);
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"supplement").get("invoiceId").asLong();
+        var draft=invoiceRepository.detail(encounter,invoice,false);
+        mvc.perform(clsIssue(encounter,invoice,draft.version(),prefix+"issue"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ISSUED"))
+                .andExpect(jsonPath("$.lines.length()").value(1)).andExpect(jsonPath("$.lines[0].lineType").value("CLS"))
+                .andExpect(jsonPath("$.totalAmount").value(150000));
+        assertEquals(before,invoiceRepository.detail(encounter,original,false));
+        assertEquals(new BigDecimal("500000"),jdbc.queryForObject("SELECT SUM(amount) FROM dbo.Payment WHERE invoice_id=?",BigDecimal.class,original));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.InvoiceLine l JOIN dbo.Invoice i ON i.id=l.invoice_id WHERE i.encounter_id=? AND l.line_type='EXAMINATION'",Integer.class,encounter));
+        mvc.perform(cashRequest(invoice,doctorTwoToken,prefix+"not-yet","{\"amount\":150000}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void clsInvoiceRejectsInvalidTotalsSnapshotsAndOrderReferences() throws Exception {
+        long encounter=startedEncounter("cls-invalid-issue");
+        long service=clinicalOrderService();
+        var order=clsDraft(encounter,service,"order");
+        long invoice=order.get("invoiceId").asLong();
+        long id=order.get("id").asLong();
+        long line=order.get("invoiceLineId").asLong();
+        String version=invoiceRepository.detail(encounter,invoice,false).version();
+        jdbc.update("UPDATE dbo.Invoice SET total_amount=1 WHERE id=?",invoice);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.Invoice SET total_amount=650000 WHERE id=?",invoice);
+        jdbc.update("UPDATE dbo.InvoiceLine SET service_name=N' ' WHERE id=?",line);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.InvoiceLine SET service_name=N'CLS giả P24' WHERE id=?",line);
+        long other=startedEncounter("cls-other-issue");
+        jdbc.update("UPDATE dbo.ClinicalOrder SET encounter_id=? WHERE id=?",other,id);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET encounter_id=?,service_id=? WHERE id=?",encounter,serviceId,id);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET service_id=?,status='CANCELLED',cancelled_at=SYSUTCDATETIME(),cancel_reason='CLINICAL_DECISION' WHERE id=?",service,id);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET status='PENDING_PAYMENT',cancelled_at=NULL,cancel_reason=NULL WHERE id=?",id);
+        long examPrice=jdbc.queryForObject("SELECT price_id FROM dbo.InvoiceLine WHERE invoice_id=? AND line_type='EXAMINATION'",Long.class,invoice);
+        jdbc.update("UPDATE dbo.InvoiceLine SET price_id=? WHERE id=?",examPrice,line);
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_INVALID"));
+        jdbc.update("UPDATE dbo.InvoiceLine SET price_id=? WHERE id=?",order.get("priceId").asLong(),line);
+        version=invoiceRepository.detail(encounter,invoice,false).version();
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"invalid")).andExpect(status().isOk());
+    }
+
+    @Test
+    void clsInvoiceChecksOwnershipInputStaleVersionAndRevokedRole() throws Exception {
+        long encounter=startedEncounter("cls-issue-auth");
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"first").get("invoiceId").asLong();
+        String oldVersion=invoiceRepository.detail(encounter,invoice,false).version();
+        clsDraft(encounter,service,"second");
+        String version=invoiceRepository.detail(encounter,invoice,false).version();
+        mvc.perform(clsIssue(encounter,invoice,oldVersion,prefix+"stale")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("INVOICE_CHANGED"));
+        for(String token:java.util.List.of(doctorTwoToken,patientOneToken)) {
+            mvc.perform(clsIssue(encounter,invoice,version,prefix+"auth").with(request -> {
+                request.removeHeader("Authorization"); request.addHeader("Authorization","Bearer "+token); return request;
+            })).andExpect(token.equals(doctorTwoToken) ? status().isNotFound() : status().isForbidden());
+        }
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"auth").with(request -> {request.removeHeader("Authorization"); return request;}))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(clsIssue(encounter,invoice,"bad",prefix+"auth")).andExpect(status().isBadRequest());
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"auth").content("{\"version\":\""+version+"\",\"amount\":1}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"auth")).andExpect(status().isOk());
+        jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id=? AND role_id=(SELECT id FROM dbo.Role WHERE code='DOCTOR')",accountIdForStaff(doctorOneId));
+        mvc.perform(clsIssue(encounter,invoice,version,prefix+"auth")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clsInvoiceRollsBackPublicationSnapshotsAuditAndReceipt() throws Exception {
+        long encounter=startedEncounter("cls-issue-rollback");
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"order").get("invoiceId").asLong();
+        var draft=invoiceRepository.detail(encounter,invoice,false);
+        jdbc.update("UPDATE dbo.Patient SET full_name=N'Tên mới trước phát hành' WHERE id=?",patientOneId);
+        org.mockito.Mockito.doAnswer(call -> { call.callRealMethod(); throw new IllegalStateException("P24.b audit failure"); })
+                .when(invoiceRepository).audit(anyLong(),anyLong(),org.mockito.ArgumentMatchers.eq("INVOICE_ISSUED"));
+        assertThrows(jakarta.servlet.ServletException.class,() -> mvc.perform(clsIssue(encounter,invoice,draft.version(),prefix+"issue")));
+        assertEquals(draft,invoiceRepository.detail(encounter,invoice,false));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.CommandReceipt WHERE idempotency_key=?",Integer.class,prefix+"issue"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_id=? AND entity_type='Invoice' AND action='INVOICE_ISSUED'",Integer.class,invoice));
+        reset(invoiceRepository);
+        mvc.perform(clsIssue(encounter,invoice,draft.version(),prefix+"issue")).andExpect(status().isOk());
+    }
+
+    @Test
+    void clsInvoiceConcurrentRetryUsesTwoSqlSessions() throws Exception {
+        long encounter=startedEncounter("cls-issue-race");
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"order").get("invoiceId").asLong();
+        String version=invoiceRepository.detail(encounter,invoice,false).version();
+        ExecutorService pool=Executors.newFixedThreadPool(2);
+        CountDownLatch ready=new CountDownLatch(2);
+        CountDownLatch go=new CountDownLatch(1);
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        org.mockito.Mockito.doAnswer(call -> {
+            sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class)); ready.countDown();
+            if(!go.await(15,java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("P24.b barrier timeout");
+            return call.callRealMethod();
+        }).when(encounterRepository).appointmentId(encounter);
+        try {
+            var first=pool.submit(() -> mvc.perform(clsIssue(encounter,invoice,version,prefix+"race")).andReturn());
+            var second=pool.submit(() -> mvc.perform(clsIssue(encounter,invoice,version,prefix+"race")).andReturn());
+            assertTrue(ready.await(15,java.util.concurrent.TimeUnit.SECONDS)); go.countDown();
+            var a=first.get(30,java.util.concurrent.TimeUnit.SECONDS).getResponse();
+            var b=second.get(30,java.util.concurrent.TimeUnit.SECONDS).getResponse();
+            assertEquals(200,a.getStatus()); assertEquals(200,b.getStatus()); assertEquals(2,sessions.size());
+            assertTrue(json.readTree(a.getContentAsString()).get("replayed").asBoolean()!=json.readTree(b.getContentAsString()).get("replayed").asBoolean());
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE entity_type='Invoice' AND entity_id=? AND action='INVOICE_ISSUED'",Integer.class,invoice));
+        } finally {go.countDown(); pool.shutdownNow(); reset(encounterRepository);}
+    }
+
+    private long clsCashInvoice() throws Exception {
+        long original=cashInvoice(true);
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,original);
+        long service=clinicalOrderService();
+        long invoice=clsDraft(encounter,service,"cash-cls1").get("invoiceId").asLong();
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=300000 WHERE service_id=?",service);
+        clsDraft(encounter,service,"cash-cls2");
+        mvc.perform(clsIssue(encounter,invoice,invoiceRepository.detail(encounter,invoice,false).version(),prefix+"issue-cls"))
+                .andExpect(status().isOk());
+        return invoice;
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void clsCashFullPaymentAllocatesBothLinesAndSetsDefaultDeadlineOnce() throws Exception {
+        jdbc.update("DELETE FROM dbo.SystemSetting WHERE setting_key='CLS_VALIDITY_DAYS'");
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        mvc.perform(get("/api/cashier/invoices/"+invoice+"/detail").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.canCollect").value(true));
+        mvc.perform(cashRequest(invoice,token,prefix+"short","{\"amount\":300000}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("FULL_PAYMENT_REQUIRED"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id=?",Integer.class,invoice));
+        var payment=json.readTree(mvc.perform(cashRequest(invoice,token,prefix+"full","{\"amount\":450000}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allocations[0].amount").value(150000))
+                .andExpect(jsonPath("$.allocations[1].amount").value(300000)).andReturn().getResponse().getContentAsString());
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder o JOIN dbo.InvoiceLine l ON l.order_id=o.id JOIN dbo.Payment p ON p.invoice_id=l.invoice_id WHERE l.invoice_id=? AND o.status='READY' AND o.validity_days=10 AND o.fully_paid_at=p.paid_at AND o.expires_at=DATEADD(DAY,10,p.paid_at)",Integer.class,invoice));
+        var deadlines=jdbc.queryForList("SELECT o.id,o.fully_paid_at,o.expires_at,o.version FROM dbo.ClinicalOrder o JOIN dbo.InvoiceLine l ON l.order_id=o.id WHERE l.invoice_id=? ORDER BY o.id",invoice);
+        mvc.perform(cashRequest(invoice,token,prefix+"full","{\"amount\":450000}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.replayed").value(true)).andExpect(jsonPath("$.id").value(payment.get("id").asLong()));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE to_status='READY' AND order_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+        var after=jdbc.queryForList("SELECT o.id,o.fully_paid_at,o.expires_at,o.version FROM dbo.ClinicalOrder o JOIN dbo.InvoiceLine l ON l.order_id=o.id WHERE l.invoice_id=? ORDER BY o.id",invoice);
+        for(int i=0;i<2;i++) {
+            assertEquals(deadlines.get(i).get("expires_at"),after.get(i).get("expires_at"));
+            org.junit.jupiter.api.Assertions.assertArrayEquals((byte[])deadlines.get(i).get("version"),(byte[])after.get(i).get("version"));
+        }
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalQueueEntry WHERE order_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+        mvc.perform(get("/api/cashier/invoices/"+invoice+"/detail").header("Authorization","Bearer "+token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.canCollect").value(false));
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void clsCashConfigurationChangeOnlyAffectsNewlyPaidOrders() throws Exception {
+        jdbc.update("DELETE FROM dbo.SystemSetting WHERE setting_key='CLS_VALIDITY_DAYS'");
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        mvc.perform(cashRequest(invoice,token,prefix+"ten","{\"amount\":450000}")).andExpect(status().isOk());
+        jdbc.update("INSERT dbo.SystemSetting(setting_key,setting_value,changed_by) VALUES ('CLS_VALIDITY_DAYS','7',?)",accountIdForStaff(doctorOneId));
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,invoice);
+        long service=jdbc.queryForObject("SELECT id FROM dbo.Service WHERE code=?",Long.class,prefix+"CLS");
+        var order=clsDraft(encounter,service,"new-seven");
+        long next=order.get("invoiceId").asLong();
+        mvc.perform(clsIssue(encounter,next,invoiceRepository.detail(encounter,next,false).version(),prefix+"issue-seven")).andExpect(status().isOk());
+        mvc.perform(cashRequest(next,token,prefix+"seven","{\"amount\":300000}")).andExpect(status().isOk());
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder o JOIN dbo.InvoiceLine l ON l.order_id=o.id WHERE l.invoice_id=? AND o.validity_days=10 AND o.expires_at=DATEADD(DAY,10,o.fully_paid_at)",Integer.class,invoice));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder WHERE id=? AND validity_days=7 AND expires_at=DATEADD(DAY,7,fully_paid_at)",Integer.class,order.get("id").asLong()));
+    }
+
+    @Test
+    void clsCashRejectsWrongRoleInvalidOrderAndExpiredRepayment() throws Exception {
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        mvc.perform(cashRequest(invoice,null,prefix+"auth","{\"amount\":450000}")).andExpect(status().isUnauthorized());
+        mvc.perform(cashRequest(invoice,doctorToken,prefix+"auth","{\"amount\":450000}")).andExpect(status().isForbidden());
+        mvc.perform(cashRequest(invoice,token,prefix+"over","{\"amount\":450001}")).andExpect(status().isConflict());
+        long order=jdbc.queryForObject("SELECT TOP 1 order_id FROM dbo.InvoiceLine WHERE invoice_id=? ORDER BY line_no",Long.class,invoice);
+        jdbc.update("UPDATE dbo.ClinicalOrder SET status='READY',fully_paid_at=DATEADD(DAY,-20,SYSUTCDATETIME()),validity_days=10,expires_at=DATEADD(DAY,-10,SYSUTCDATETIME()) WHERE id=?",order);
+        mvc.perform(cashRequest(invoice,token,prefix+"expired","{\"amount\":450000}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("CLINICAL_ORDER_NOT_PAYABLE"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id=?",Integer.class,invoice));
+        jdbc.update("UPDATE dbo.ClinicalOrder SET status='PENDING_PAYMENT',fully_paid_at=NULL,validity_days=NULL,expires_at=NULL WHERE id=?",order);
+        mvc.perform(cashRequest(invoice,token,prefix+"paid","{\"amount\":450000}")).andExpect(status().isOk());
+        jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id=? AND role_id=(SELECT id FROM dbo.Role WHERE code='CASHIER')",accountIdForStaff(doctorTwoId));
+        mvc.perform(cashRequest(invoice,token,prefix+"paid","{\"amount\":450000}")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clsCashRollbackIncludesPaymentAllocationOrdersEventsAndAudit() throws Exception {
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        org.mockito.Mockito.doAnswer(call->{call.callRealMethod();throw new IllegalStateException("P24.c failure after READY");})
+                .when(cashPaymentRepository).ready(anyLong(),anyLong(),org.mockito.ArgumentMatchers.anyInt());
+        assertThrows(jakarta.servlet.ServletException.class,()->mvc.perform(cashRequest(invoice,token,prefix+"rollback","{\"amount\":450000}")));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id=?",Integer.class,invoice));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.PaymentAllocation WHERE invoice_line_id IN (SELECT id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrder o JOIN dbo.InvoiceLine l ON l.order_id=o.id WHERE l.invoice_id=? AND o.status='PENDING_PAYMENT' AND fully_paid_at IS NULL AND expires_at IS NULL",Integer.class,invoice));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE to_status='READY' AND order_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.AuditEvent WHERE action='CLINICAL_ORDER_READY' AND entity_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+        reset(cashPaymentRepository);
+        mvc.perform(cashRequest(invoice,token,prefix+"rollback","{\"amount\":450000}")).andExpect(status().isOk());
+    }
+
+    @Test
+    void clsCashConcurrentRetryAndCompetingKeysUseTwoSqlSessions() throws Exception {
+        long invoice=clsCashInvoice();
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,invoice);
+        long service=jdbc.queryForObject("SELECT id FROM dbo.Service WHERE code=?",Long.class,prefix+"CLS");
+        long next=clsDraft(encounter,service,"race-next").get("invoiceId").asLong();
+        mvc.perform(clsIssue(encounter,next,invoiceRepository.detail(encounter,next,false).version(),prefix+"issue-next")).andExpect(status().isOk());
+        String token=cashierToken();
+        var sessions=java.util.concurrent.ConcurrentHashMap.<Integer>newKeySet();
+        var barrier=new java.util.concurrent.CyclicBarrier(2);
+        org.mockito.Mockito.doAnswer(call->{sessions.add(jdbc.queryForObject("SELECT @@SPID",Integer.class));barrier.await(15,java.util.concurrent.TimeUnit.SECONDS);return call.callRealMethod();})
+                .when(cashPaymentRepository).lockSource(org.mockito.ArgumentMatchers.any());
+        ExecutorService pool=Executors.newFixedThreadPool(2);
+        try {
+            for(int phase=0;phase<2;phase++) {
+                sessions.clear(); final int step=phase;
+                var tasks=new java.util.ArrayList<Future<Integer>>();
+                for(int i=0;i<2;i++) { final int index=i; tasks.add(pool.submit(()->mvc.perform(cashRequest(step==0?invoice:next,token,
+                        prefix+"race"+step+(step==0?"same":index),step==0?"{\"amount\":450000}":"{\"amount\":300000}"))
+                        .andReturn().getResponse().getStatus())); }
+                var codes=new java.util.ArrayList<>(java.util.List.of(tasks.get(0).get(30,java.util.concurrent.TimeUnit.SECONDS),tasks.get(1).get(30,java.util.concurrent.TimeUnit.SECONDS)));
+                codes.sort(Integer::compareTo);
+                assertEquals(step==0?java.util.List.of(200,200):java.util.List.of(200,409),codes);
+                assertEquals(2,sessions.size());
+            }
+        } finally {pool.shutdownNow();reset(cashPaymentRepository);}
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id IN (?,?)",Integer.class,invoice,next));
+        assertEquals(3,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE to_status='READY' AND order_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id IN (?,?))",Integer.class,invoice,next));
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void clsCashRejectsValidityOutsideSqlDateRangeBeforeRecordingMoney() throws Exception {
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        jdbc.update("DELETE FROM dbo.SystemSetting WHERE setting_key='CLS_VALIDITY_DAYS'");
+        jdbc.update("INSERT dbo.SystemSetting(setting_key,setting_value,changed_by) VALUES ('CLS_VALIDITY_DAYS','2147483647',?)",accountIdForStaff(doctorOneId));
+        mvc.perform(cashRequest(invoice,token,prefix+"bad-config","{\"amount\":450000}"))
+                .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.code").value("CLS_VALIDITY_INVALID"));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.Payment WHERE invoice_id=?",Integer.class,invoice));
+    }
+
+    @Test
+    void clsCashSettlesLegacyPartialAllocationsWithoutRenewingPaidOrder() throws Exception {
+        long invoice=clsCashInvoice();
+        String token=cashierToken();
+        var lines=jdbc.queryForList("SELECT id,order_id FROM dbo.InvoiceLine WHERE invoice_id=? ORDER BY line_no",invoice);
+        long firstLine=((Number)lines.get(0).get("id")).longValue();
+        long secondLine=((Number)lines.get(1).get("id")).longValue();
+        long firstOrder=((Number)lines.get(0).get("order_id")).longValue();
+        long legacy=cashPaymentRepository.insert(invoice,accountIdForStaff(doctorTwoId),prefix+"legacy",new BigDecimal("200000"));
+        cashPaymentRepository.allocate(legacy,firstLine,new BigDecimal("150000"));
+        cashPaymentRepository.allocate(legacy,secondLine,new BigDecimal("50000"));
+        cashPaymentRepository.ready(firstOrder,legacy,10);
+        long encounter=jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?",Long.class,invoice);
+        mvc.perform(get(clsReadPath(encounter)).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].paidAmount").value("50000"))
+                .andExpect(jsonPath("$[0].outstandingAmount").value("250000"))
+                .andExpect(jsonPath("$[1].paidAmount").value("150000"))
+                .andExpect(jsonPath("$[1].outstandingAmount").value("0"));
+        byte[] version=jdbc.queryForObject("SELECT version FROM dbo.ClinicalOrder WHERE id=?",byte[].class,firstOrder);
+        mvc.perform(cashRequest(invoice,token,prefix+"remainder","{\"amount\":250000}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allocations.length()").value(1))
+                .andExpect(jsonPath("$.allocations[0].invoiceLineId").value(secondLine))
+                .andExpect(jsonPath("$.allocations[0].amount").value(250000));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(version,jdbc.queryForObject("SELECT version FROM dbo.ClinicalOrder WHERE id=?",byte[].class,firstOrder));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM dbo.ClinicalOrderEvent WHERE to_status='READY' AND order_id IN (SELECT order_id FROM dbo.InvoiceLine WHERE invoice_id=?)",Integer.class,invoice));
+    }
+
+    private String clsReadPath(long encounter) { return "/api/doctor/encounters/"+encounter+"/clinical-orders"; }
+
+    @Test
+    void clsReadOptionsOnlyExposeEffectiveServicesAndSupportedActiveRooms() throws Exception {
+        long encounter=startedEncounter("cls-options");
+        long service=clinicalOrderService();
+        String path=clsReadPath(encounter)+"/options";
+        mvc.perform(get(path).param("search",prefix).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].serviceId").value(service)).andExpect(jsonPath("$[0].amount").value("150000"))
+                .andExpect(jsonPath("$[0].rooms[0].departmentId").value(labDepartmentId));
+        mvc.perform(get(path).param("search","%_'[]").header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get(path).param("search","x".repeat(101)).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isBadRequest());
+        jdbc.update("UPDATE dbo.RoomService SET is_active=0 WHERE service_id=?",service);
+        mvc.perform(get(path).param("search",prefix).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        jdbc.update("UPDATE dbo.RoomService SET is_active=1 WHERE service_id=?",service);
+        jdbc.update("UPDATE dbo.ServicePrice SET valid_to=DATEADD(SECOND,-1,SYSUTCDATETIME()) WHERE service_id=?",service);
+        mvc.perform(get(path).param("search",prefix).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void clsReadListPreservesSnapshotsAndShowsPaymentDeadlineWithoutWriting() throws Exception {
+        long encounter=startedEncounter("cls-read");
+        String path=clsReadPath(encounter);
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        long service=clinicalOrderService();
+        var order=clsDraft(encounter,service,"read-order");
+        long invoice=order.get("invoiceId").asLong();
+        jdbc.update("UPDATE dbo.Service SET name=N'Tên danh mục mới' WHERE id=?",service);
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=999999 WHERE service_id=?",service);
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].serviceName").value("CLS giả P24"))
+                .andExpect(jsonPath("$[0].amount").value("150000")).andExpect(jsonPath("$[0].paymentStatus").value("NOT_DUE"))
+                .andExpect(jsonPath("$[0].serviceCode").value(prefix+"CLS"))
+                .andExpect(jsonPath("$[0].paidAmount").value("0")).andExpect(jsonPath("$[0].outstandingAmount").value("150000"));
+        mvc.perform(clsIssue(encounter,invoice,invoiceRepository.detail(encounter,invoice,false).version(),prefix+"read-issue")).andExpect(status().isOk());
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentStatus").value("UNPAID"));
+        mvc.perform(cashRequest(invoice,cashierToken(),prefix+"read-pay","{\"amount\":650000}")).andExpect(status().isOk());
+        byte[] version=jdbc.queryForObject("SELECT version FROM dbo.ClinicalOrder WHERE id=?",byte[].class,order.get("id").asLong());
+        mvc.perform(get(path).header("Authorization","Bearer "+doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paymentStatus").value("PAID")).andExpect(jsonPath("$[0].status").value("READY"))
+                .andExpect(jsonPath("$[0].fullyPaidAt").isNotEmpty()).andExpect(jsonPath("$[0].expiresAt").isNotEmpty())
+                .andExpect(jsonPath("$[0].paidAmount").value("150000")).andExpect(jsonPath("$[0].outstandingAmount").value("0"));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(version,jdbc.queryForObject("SELECT version FROM dbo.ClinicalOrder WHERE id=?",byte[].class,order.get("id").asLong()));
+    }
+
+    @Test
+    void clsReadChecksRoleOwnerAndRevocationOnBothEndpoints() throws Exception {
+        long encounter=startedEncounter("cls-read-auth");
+        for(String suffix:java.util.List.of("","/options")) {
+            String path=clsReadPath(encounter)+suffix;
+            mvc.perform(get(path)).andExpect(status().isUnauthorized());
+            mvc.perform(get(path).header("Authorization","Bearer "+patientOneToken)).andExpect(status().isForbidden());
+            mvc.perform(get(path).header("Authorization","Bearer "+doctorTwoToken)).andExpect(status().isNotFound());
+            mvc.perform(get(clsReadPath(Long.MAX_VALUE)+suffix).header("Authorization","Bearer "+doctorToken)).andExpect(status().isNotFound());
+        }
+        jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id=? AND role_id=(SELECT id FROM dbo.Role WHERE code='DOCTOR')",accountIdForStaff(doctorOneId));
+        for(String suffix:java.util.List.of("","/options"))
+            mvc.perform(get(clsReadPath(encounter)+suffix).header("Authorization","Bearer "+doctorToken)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clsReadIncludesOrdersWithoutInvoiceLinesAsUnknownInsteadOfHidingThem() throws Exception {
+        long encounter=startedEncounter("cls-read-missing");
+        long service=clinicalOrderService();
+        jdbc.update("INSERT dbo.ClinicalOrder(code,encounter_id,service_id,performing_department_id,ordered_by,indication,status) VALUES (?,?,?,?,?,N'Fixture thiếu line','PENDING_PAYMENT')",
+                prefix+"missing",encounter,service,labDepartmentId,accountIdForStaff(doctorOneId));
+        mvc.perform(get(clsReadPath(encounter)).header("Authorization","Bearer "+doctorToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].paymentStatus").value("UNKNOWN"))
+                .andExpect(jsonPath("$[0].invoiceId").isEmpty()).andExpect(jsonPath("$[0].amount").isEmpty());
+    }
+
+    @Test
+    void invoicePrintDetailChecksScopeAndPreservesExaminationSnapshot() throws Exception {
+        long invoice = cashInvoice(true);
+        long encounter = jdbc.queryForObject("SELECT encounter_id FROM dbo.Invoice WHERE id=?", Long.class, invoice);
+        String path = "/api/doctor/encounters/" + encounter + "/invoices/" + invoice + "/print-detail";
+        byte[] version = jdbc.queryForObject("SELECT version FROM dbo.Invoice WHERE id=?", byte[].class, invoice);
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        mvc.perform(get(path).header("Authorization", "Bearer " + patientOneToken)).andExpect(status().isForbidden());
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorTwoToken)).andExpect(status().isNotFound());
+        mvc.perform(get(path.replace("/invoices/" + invoice, "/invoices/" + Long.MAX_VALUE))
+                .header("Authorization", "Bearer " + doctorToken)).andExpect(status().isNotFound());
+        var expected = invoiceRepository.detail(encounter, invoice, false);
+        jdbc.update("UPDATE dbo.Patient SET full_name=N'Tên mới sau phát hành',address=N'Địa chỉ mới' WHERE id=?", expected.patientId());
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.invoice.totalAmount").value(500000))
+                .andExpect(jsonPath("$.invoice.patientName").value(expected.patientName()))
+                .andExpect(jsonPath("$.patientCode").isNotEmpty()).andExpect(jsonPath("$.encounterCode").isNotEmpty())
+                .andExpect(jsonPath("$.rooms.length()").value(0));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(version, jdbc.queryForObject("SELECT version FROM dbo.Invoice WHERE id=?", byte[].class, invoice));
+        jdbc.update("DELETE FROM dbo.AccountRole WHERE account_id=? AND role_id=(SELECT id FROM dbo.Role WHERE code='DOCTOR')", accountIdForStaff(doctorOneId));
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void invoicePrintGuidanceTracksEachOrderAndQueueWithoutChangingIssuedSnapshot() throws Exception {
+        long encounter = startedEncounter("print-rooms");
+        long service = clinicalOrderService();
+        var first = clsDraft(encounter, service, "print-first");
+        long invoice = first.get("invoiceId").asLong();
+        var second = clsDraft(encounter, service, "print-second");
+        long preferred = jdbc.queryForObject("SELECT id FROM dbo.Room WHERE code=?", Long.class, prefix + "LAB");
+        jdbc.update("UPDATE dbo.ClinicalOrder SET requested_room_id=? WHERE id=?", preferred, first.get("id").asLong());
+        mvc.perform(clsIssue(encounter, invoice, invoiceRepository.detail(encounter, invoice, false).version(), prefix + "print-issue"))
+                .andExpect(status().isOk());
+        String path = "/api/doctor/encounters/" + encounter + "/invoices/" + invoice + "/print-detail";
+        var before = invoiceRepository.detail(encounter, invoice, false);
+        jdbc.update("UPDATE dbo.Service SET name=N'Tên danh mục mới sau phát hành' WHERE id=?", service);
+        jdbc.update("UPDATE dbo.ServicePrice SET amount=999999 WHERE service_id=?", service);
+        mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.rooms.length()").value(2))
+                .andExpect(jsonPath("$.rooms[0].lineId").value(first.get("invoiceLineId").asLong()))
+                .andExpect(jsonPath("$.rooms[0].source").value("PREFERRED"))
+                .andExpect(jsonPath("$.rooms[0].roomCode").value(prefix + "LAB"))
+                .andExpect(jsonPath("$.invoice.lines[1].serviceName").value("CLS giả P24"))
+                .andExpect(jsonPath("$.rooms[1].source").value("UNASSIGNED"));
+        mvc.perform(cashRequest(invoice, cashierToken(), prefix + "print-pay", "{\"amount\":800000}"))
+                .andExpect(status().isOk());
+        long actual = jdbc.queryForObject("INSERT dbo.Room(code,name,room_type,department_id,is_active) OUTPUT INSERTED.id VALUES (?,N'Phòng thực hiện giả','LAB',?,1)", Long.class, prefix + "PRINTROOM", labDepartmentId);
+        try {
+            jdbc.update("INSERT dbo.RoomService(room_id,service_id,is_active) VALUES (?,?,1)", actual, service);
+            // Operational fixture only: P25's write workflow is outside this read/print task.
+            jdbc.update("INSERT dbo.ClinicalQueueEntry(order_id,room_id,checked_in_by,checked_in_at,status) VALUES (?,?,?,SYSUTCDATETIME(),'WAITING')",
+                    first.get("id").asLong(), actual, accountIdForStaff(doctorOneId));
+            mvc.perform(get(path).header("Authorization", "Bearer " + doctorToken)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.rooms[0].source").value("ASSIGNED"))
+                    .andExpect(jsonPath("$.rooms[0].roomCode").value(prefix + "PRINTROOM"))
+                    .andExpect(jsonPath("$.invoice.lines.length()").value(3))
+                    .andExpect(jsonPath("$.invoice.totalAmount").value(800000));
+            assertEquals(before, invoiceRepository.detail(encounter, invoice, false));
+            mvc.perform(get("/api/doctor/encounters/" + encounter + "/billing-summary").header("Authorization", "Bearer " + doctorToken))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.invoices[0].outstandingAmount").value("0"));
+        } finally {
+            jdbc.update("DELETE FROM dbo.ClinicalQueueEntry WHERE order_id IN (?,?)", first.get("id").asLong(), second.get("id").asLong());
+            jdbc.update("DELETE FROM dbo.RoomService WHERE room_id=?", actual);
+            jdbc.update("DELETE FROM dbo.Room WHERE id=?", actual);
         }
     }
 

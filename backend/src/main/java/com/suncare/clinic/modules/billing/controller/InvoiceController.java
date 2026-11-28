@@ -2,6 +2,7 @@ package com.suncare.clinic.modules.billing.controller;
 
 import com.suncare.clinic.modules.account.dto.CurrentAccountResponse;
 import com.suncare.clinic.modules.billing.dto.InvoiceResponse;
+import com.suncare.clinic.modules.billing.dto.InvoicePrintResponse;
 import com.suncare.clinic.modules.billing.dto.IssueInvoiceRequest;
 import com.suncare.clinic.modules.billing.service.InvoiceService;
 import jakarta.validation.Valid;
@@ -17,6 +18,11 @@ public class InvoiceController {
     @GetMapping
     public List<InvoiceResponse> list(@AuthenticationPrincipal CurrentAccountResponse account,@PathVariable long encounterId) {
         return invoices.list(account,encounterId);
+    }
+    @GetMapping("/{invoiceId}/print-detail")
+    public InvoicePrintResponse printDetail(@AuthenticationPrincipal CurrentAccountResponse account,
+            @PathVariable long encounterId, @PathVariable long invoiceId) {
+        return invoices.printDetail(account, encounterId, invoiceId);
     }
     @PostMapping
     public InvoiceResponse create(@AuthenticationPrincipal CurrentAccountResponse account,@PathVariable long encounterId,

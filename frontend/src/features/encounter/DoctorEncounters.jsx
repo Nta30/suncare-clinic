@@ -7,6 +7,8 @@ import EncounterPatientHeader from './EncounterPatientHeader'
 import EncounterInvoices from './EncounterInvoices'
 import EncounterCompletion from './EncounterCompletion'
 import EncounterPrescriptions from '../prescription/EncounterPrescriptions'
+import EncounterClinicalOrders from '../clinical/EncounterClinicalOrders'
+import { encounterSteps } from '../clinical/clinicalOrderState'
 import PatientEncounterHistory from './PatientEncounterHistory'
 import { getEncounterWorklist, getEncounter, startEncounter, savePatientHistory, savePatientAllergy } from '../../services/encounterApi'
 
@@ -14,7 +16,6 @@ const inputClass = 'mt-1 min-h-11 w-full rounded-lg border border-clinical-borde
 const historyTypes = { PERSONAL: 'Bản thân', FAMILY: 'Gia đình', SURGERY: 'Phẫu thuật' }
 const severities = { UNKNOWN: 'Chưa xác định', MILD: 'Nhẹ', MODERATE: 'Vừa', SEVERE: 'Nặng' }
 const statuses = { PLANNED: 'Chưa bắt đầu', IN_PROGRESS: 'Đang khám', WAITING_CLS: 'Chờ cận lâm sàng', COMPLETED: 'Đã hoàn tất', CANCELLED: 'Đã hủy', NO_SHOW: 'Vắng mặt' }
-const encounterSections = [['clinical', 'Khám lâm sàng'], ['treatment', 'Chẩn đoán và điều trị'], ['invoices', 'Viện phí']]
 const completionBlockLabels = {
   history: 'Tiền sử bệnh lý đang sửa: lưu hoặc bỏ nội dung.',
   allergy: 'Tiền sử dị ứng đang sửa: lưu hoặc bỏ nội dung.',
@@ -24,6 +25,7 @@ const completionBlockLabels = {
   'diagnosis-FINAL': 'Chẩn đoán xác định đang soạn: lưu hoặc chọn “Bỏ chỉnh sửa” trong Chẩn đoán và điều trị.',
   prescription: 'Đơn thuốc đang soạn hoặc chờ xác minh: kiểm tra mục Đơn thuốc ngoại trú.',
   invoice: 'Hóa đơn đang được xử lý: chờ thao tác kết thúc.',
+  'clinical-order': 'Chỉ định CLS đang soạn hoặc chờ xác minh: lưu, bỏ nội dung hoặc thử lại tại mục CLS.',
   'clinical-request': 'Dữ liệu khám đang tải, đang lưu hoặc tải lỗi: kiểm tra thông báo và thử lại dữ liệu khám.',
 }
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Saigon', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
@@ -126,6 +128,20 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged, onGuardChang
   const [present, setPresent] = useState(false)
   const [dirty, setDirty] = useState({})
   const [completionLocked, setCompletionLocked] = useState(false)
+  const [billingRevision, setBillingRevision] = useState(0)
+  const [clsRequested, setClsRequested] = useState(false)
+  const [hasCls, setHasCls] = useState(false)
+  const encounterSections = encounterSteps(clsRequested || hasCls)
+  const orderPresence = useCallback((value) => setHasCls(value), [])
+  function activateOrders() {
+    setClsRequested(true)
+    setActiveSection('orders')
+  }
+  function removeOrdersStep() {
+    setClsRequested(false)
+    setActiveSection('clinical')
+  }
+  const orderCreated = useCallback(() => setBillingRevision((value) => value + 1), [])
   const messageRef = useRef(null)
   const hasUnsaved = Object.values(dirty).some(Boolean)
   const onDirtyChange = useCallback((kind, value) => {
@@ -223,16 +239,16 @@ function EncounterPanel({ encounterId, onSessionExpired, onChanged, onGuardChang
     </EncounterPatientHeader>
     {actionError && <ErrorBox message={actionError} />}
     {message && <p ref={messageRef} tabIndex={-1} role='status' className='rounded-lg border border-clinical-success/30 bg-white p-3 text-sm font-semibold text-clinical-success'>{message}</p>}
-    <div role='tablist' aria-label='Các mục trong lượt khám' className='grid grid-cols-3 gap-2'>
+    <div role='tablist' aria-label='Các mục trong lượt khám' className={`grid gap-2 ${encounterSections.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
       {encounterSections.map(([code, label], index) => <button type='button' key={code} role='tab' id={`encounter-tab-${code}`} aria-controls={`encounter-panel-${code}`} aria-selected={activeSection === code} tabIndex={activeSection === code ? 0 : -1} onClick={() => setActiveSection(code)} onKeyDown={(event) => navigateSection(event, index)} className={`min-h-14 rounded-xl border px-2 py-3 text-xs font-semibold sm:text-sm ${activeSection === code ? 'border-suncare-700 bg-suncare-100 text-suncare-900' : 'border-clinical-border bg-white text-clinical-muted hover:bg-suncare-50'}`}>{label}</button>)}
     </div>
-    {/* P24 adds a real CLS tab here; P26 actions stay separate from note saving. */}
-      <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} locked={completionLocked} sidebar={sidebar} onGuardChange={onDirtyChange}
+      <EncounterClinical key={`${encounterId}-${item.status}`} encounterId={encounterId} onSessionExpired={onSessionExpired} section={activeSection} locked={completionLocked} sidebar={sidebar} onGuardChange={onDirtyChange} onActivateOrders={activateOrders}
         footerProps={{ sections: encounterSections, onMove: moveSection, completion: <EncounterCompletion encounterId={encounterId} patientName={item.patientName} encounterCode={item.encounterCode} encounterStatus={item.status}
           blockers={[...Object.entries(dirty).filter(([, value]) => value).map(([kind]) => completionBlockLabels[kind] || 'Có nội dung đang soạn.'), ...(busy ? ['Tiền sử/dị ứng đang lưu: chờ thao tác kết thúc.'] : [])]}
           onLockChange={setCompletionLocked} onCompleted={onCompleted} onSessionExpired={onSessionExpired} /> }}
         prescriptions={<EncounterPrescriptions key={encounterId} encounterId={encounterId} active={activeSection === 'treatment'} writable={data.editable && item.status === 'IN_PROGRESS'} onSessionExpired={onSessionExpired} allergies={activeAllergies} onGuardChange={onDirtyChange} />}
-        invoices={<EncounterInvoices encounterId={encounterId} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} onGuardChange={onDirtyChange} />} />
+        orders={<EncounterClinicalOrders key={encounterId} encounterId={encounterId} active={activeSection === 'orders'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} onGuardChange={onDirtyChange} onCreated={orderCreated} onPresenceChange={orderPresence} onRemoveStep={removeOrdersStep} onOpenInvoices={() => setActiveSection('invoices')} />}
+        invoices={<EncounterInvoices encounterId={encounterId} revision={billingRevision} active={activeSection === 'invoices'} writable={data.editable && ['IN_PROGRESS', 'WAITING_CLS'].includes(item.status)} onSessionExpired={onSessionExpired} onGuardChange={onDirtyChange} />} />
   </div>
 }
 export default function DoctorEncounters({ onSessionExpired }) {

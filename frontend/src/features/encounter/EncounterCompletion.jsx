@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../components/ui/Button'
-import { completeEncounter, getEncounterClinical, getEncounterBillingSummary } from '../../services/encounterApi'
+import { completeEncounter, getEncounterClinical, getEncounterBillingSummary, getClinicalOrders } from '../../services/encounterApi'
 import { getPrescriptions } from '../../services/prescriptionApi'
 import { completionChecks } from './completionChecks'
 
@@ -39,7 +39,7 @@ export default function EncounterCompletion({ encounterId, patientName, encounte
   async function load() {
     const requestId = ++sequence.current
     setCheck({ loading: true })
-    const results = await Promise.allSettled([getEncounterClinical(encounterId), getEncounterBillingSummary(encounterId), getPrescriptions(encounterId)])
+    const results = await Promise.allSettled([getEncounterClinical(encounterId), getEncounterBillingSummary(encounterId), getPrescriptions(encounterId), getClinicalOrders(encounterId)])
     if (requestId !== sequence.current) return
     const expired = results.find((result) => result.status === 'rejected' && result.reason.status === 401)
     if (expired) { onSessionExpired(expired.reason.message); return }
@@ -47,12 +47,13 @@ export default function EncounterCompletion({ encounterId, patientName, encounte
     const clinical = value(0)
     const billing = value(1)
     const prescriptions = value(2)
-    const failures = results.flatMap((result, index) => result.status === 'rejected' ? [`${['Chẩn đoán', 'Viện phí', 'Đơn thuốc'][index]}: ${result.reason.message}`] : [])
-    if ((clinical && !Array.isArray(clinical.diagnoses)) || (billing && (!Array.isArray(billing.invoices) || billing.invoices.some(({ invoice }) => !Array.isArray(invoice?.lines)))) || (prescriptions && !Array.isArray(prescriptions))) {
+    const orders = value(3)
+    const failures = results.flatMap((result, index) => result.status === 'rejected' ? [`${['Chẩn đoán', 'Viện phí', 'Đơn thuốc', 'Chỉ định CLS'][index]}: ${result.reason.message}`] : [])
+    if ((orders && !Array.isArray(orders)) || (clinical && !Array.isArray(clinical.diagnoses)) || (billing && (!Array.isArray(billing.invoices) || billing.invoices.some(({ invoice }) => !Array.isArray(invoice?.lines)))) || (prescriptions && !Array.isArray(prescriptions))) {
       setCheck({ error: 'Dữ liệu kiểm tra không hợp lệ. Hãy kiểm tra lại.' })
       return
     }
-    setCheck({ clinical, billing, prescriptions, error: failures.join(' ') })
+    setCheck({ clinical, billing, prescriptions, orders, error: failures.join(' ') })
   }
   function launch() {
     setOpen(true)

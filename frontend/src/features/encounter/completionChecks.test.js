@@ -52,3 +52,13 @@ test('missing API data remains warning rather than fabricated success', () => {
   const rows = completionChecks({})
   assert.deepEqual(rows.map((row) => row.status), ['warning', 'warning', 'warning', 'pass', 'warning'])
 })
+
+test('actual CLS orders report payment/progress counts without opening P28 completion gate', () => {
+  const data = eligible()
+  data.orders = [{ status: 'PENDING_PAYMENT', paymentStatus: 'UNPAID' }, { status: 'READY', paymentStatus: 'PAID' }]
+  const cls = completionChecks(data)[4]
+  assert.equal(cls.status, 'fail')
+  assert.match(cls.detail, /1 chỉ định chưa thanh toán đủ; 2 chỉ định chưa hoàn thành/)
+  data.orders = []
+  assert.equal(completionChecks(data)[4].status, 'pass')
+})
